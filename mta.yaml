@@ -84,12 +84,9 @@ resources:
     service-name: appsdflcexpensemanager-destination-service
     service-plan: lite
 - name: appsdflcexpensemanager-uaa
-  type: org.cloudfoundry.managed-service
+  type: org.cloudfoundry.existing-service
   parameters:
-    path: ./xs-security.json
-    service: xsuaa
-    service-name: appsdflcexpensemanager-xsuaa-service
-    service-plan: application
+    service-name: ExpenseManager-uaa-${space}
 - name: appsdflcexpensemanager-repo-host
   type: org.cloudfoundry.managed-service
   parameters:

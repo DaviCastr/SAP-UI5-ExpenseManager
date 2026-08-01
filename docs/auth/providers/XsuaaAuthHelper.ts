@@ -5,7 +5,6 @@ interface RuntimeConfig {
     odataService: string;
     authDomain?: string;
     clientId?: string;
-    clientSecret?: string;
     scope?: string;
 }
 
@@ -57,7 +56,6 @@ export class XsuaaAuthHelper {
             code,
             redirect_uri: redirectUri,
             client_id: config.clientId ?? "",
-            client_secret: config.clientSecret ?? "",
             code_verifier: codeVerifier
         });
 

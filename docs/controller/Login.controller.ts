@@ -17,7 +17,7 @@ export default class Login extends BaseController {
         await AuthenticationService.login();
 
         if (Environment.current() === EnvironmentType.GITHUB) {
-            this.navTo("Home");
+            MessageToast.show("Redirecionando para a autenticação do XSUAA...");
             return;
         }
 

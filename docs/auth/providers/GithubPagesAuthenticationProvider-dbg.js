@@ -42,7 +42,22 @@ sap.ui.define(["../AuthenticationService", "../storage/SessionStorage", "./Xsuaa
     }
     async isAuthenticated() {
       const session = AuthenticationService.getSession();
-      return !!session && session.expiresAt > Date.now();
+      if (session && session.expiresAt > Date.now()) {
+        return true;
+      }
+      if (typeof window === "undefined") {
+        return false;
+      }
+      const searchParams = new URLSearchParams(window.location.search);
+      const authCode = searchParams.get("code");
+      if (!authCode) {
+        return false;
+      }
+      const codeVerifier = sessionStorage.getItem("expensemanager.codeVerifier") ?? "";
+      const tokenResponse = await XsuaaAuthHelper.exchangeAuthorizationCode(authCode, codeVerifier);
+      const sessionData = XsuaaAuthHelper.createSession(tokenResponse);
+      SessionStorage.save(sessionData);
+      return true;
     }
   }
   var __exports = {

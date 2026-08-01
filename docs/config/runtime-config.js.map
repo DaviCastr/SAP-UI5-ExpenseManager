@@ -1,1 +1,1 @@
-{"version":3,"file":"runtime-config.js","names":["window","__EXPENSE_MANAGER_CONFIG__","btpHost","odataService","authDomain","clientId","clientSecret","scope"],"sources":["runtime-config-dbg.js"],"mappings":"AAAAA,OAAOC,2BAA6B,CAClCC,QAAS,uEACTC,aAAc,2EACdC,WAAY,iEACZC,SAAU,oCACVC,aAAc,oFACdC,MAAO","ignoreList":[]}
+{"version":3,"file":"runtime-config.js","names":["window","__EXPENSE_MANAGER_CONFIG__","btpHost","odataService"],"sources":["runtime-config-dbg.js"],"mappings":"AAAAA,OAAOC,2BAA6B,CAClCC,QAAS,uEACTC,aAAc","ignoreList":[]}

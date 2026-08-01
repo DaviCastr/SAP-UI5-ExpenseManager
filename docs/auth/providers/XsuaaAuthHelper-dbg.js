@@ -39,7 +39,6 @@ sap.ui.define([], function () {
         code,
         redirect_uri: redirectUri,
         client_id: config.clientId ?? "",
-        client_secret: config.clientSecret ?? "",
         code_verifier: codeVerifier
       });
       const response = await fetch(`${config.authDomain}/oauth/token`, {

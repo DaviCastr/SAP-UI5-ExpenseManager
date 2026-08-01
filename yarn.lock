@@ -4446,7 +4446,7 @@ math-intrinsics@^1.1.0:
   resolved "https://registry.npmjs.org/math-intrinsics/-/math-intrinsics-1.1.0.tgz"
   integrity sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==
 
-mbt@^1.2.29:
+mbt@^1.2.49:
   version "1.2.49"
   resolved "https://registry.npmjs.org/mbt/-/mbt-1.2.49.tgz"
   integrity sha512-m3mmBiIQ6BObto6MkOVgovSGLIzNatunE/uZ1FaLNTKb41foqouOdlGr4TAzJb6zgJM46C3WYUS27oOU/T4dMQ==

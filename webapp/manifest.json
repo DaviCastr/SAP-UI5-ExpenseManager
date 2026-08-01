@@ -17,7 +17,7 @@
     },
     "dataSources": {
       "mainService": {
-        "uri": "https://orgname-dev-expensemanager.cfapps.us10-003.hana.ondemand.com/service/ExpenseManager/",
+        "uri": "/api/service/ExpenseManager/",
         "type": "OData",
         "settings": {
           "annotations": [],

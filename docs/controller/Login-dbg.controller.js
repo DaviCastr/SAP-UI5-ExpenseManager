@@ -19,7 +19,7 @@ sap.ui.define(["./BaseController", "../auth/AuthenticationService", "../util/Env
     async onLogin() {
       await AuthenticationService.login();
       if (Environment.current() === EnvironmentType.GITHUB) {
-        this.navTo("Home");
+        MessageToast.show("Redirecionando para a autenticação do XSUAA...");
         return;
       }
       MessageToast.show("Aguarde a autenticação do BTP");

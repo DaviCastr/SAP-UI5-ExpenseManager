@@ -3,8 +3,8 @@
   "authenticationMethod": "route",
   "routes": [
     {
-      "source": "^/here/(.*)$",
-      "target": "/here/$1",
+      "source": "^/api/(.*)$",
+      "target": "/$1",
       "destination": "ExpenseManager",
       "authenticationType": "xsuaa",
       "csrfProtection": false

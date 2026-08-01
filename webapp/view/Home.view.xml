@@ -2,67 +2,123 @@
     controllerName="apps.dflc.expensemanager.controller.Home"
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
+    xmlns:core="sap.ui.core"
 >
-    <Page id="homePage" title="{i18n>homeTitle}" showHeader="false">
+    <Page id="homePage" showHeader="false" enableScrolling="true" class="financePage">
         <content>
-            <VBox class="dashboardShell">
-                <HBox class="heroCard" justifyContent="SpaceBetween" alignItems="Center">
-                    <VBox class="heroCopy">
-                        <Text text="{i18n>heroEyebrow}" class="eyebrow" />
-                        <Title text="{i18n>heroTitle}" level="H1" />
-                        <Text text="{i18n>heroSubtitle}" class="heroSubtitle" />
-                        <Button text="{i18n>heroButton}" press=".onOpenInsights" type="Emphasized" class="heroButton" />
-                    </VBox>
-                    <VBox class="heroSummary">
-                        <Text text="{i18n>heroBalanceLabel}" class="summaryLabel" />
-                        <Title text="{i18n>heroBalanceValue}" level="H2" />
-                        <Text text="{i18n>heroBalanceHint}" class="summaryHint" />
-                    </VBox>
+            <VBox class="financeShell">
+                <HBox class="topBar" justifyContent="SpaceBetween" alignItems="Center">
+                    <HBox alignItems="Center" class="brandGroup">
+                        <core:Icon src="sap-icon://wallet" class="brandMark" />
+                        <VBox>
+                            <Title text="meu fluxo" level="H2" class="brandTitle" />
+                            <Text text="Visão geral • agosto" class="brandCaption" />
+                        </VBox>
+                    </HBox>
+                    <HBox alignItems="Center" class="topActions">
+                        <Button icon="sap-icon://bell" type="Transparent" tooltip="Notificações" class="iconAction" />
+                        <Button text="Registrar gasto" icon="sap-icon://add" type="Emphasized" press=".onOpenExpenseDialog" class="primaryAction" />
+                    </HBox>
                 </HBox>
 
-                <HBox class="statsGrid" wrap="Wrap">
-                    <VBox class="statCard">
-                        <Text text="{i18n>statIncome}" class="statLabel" />
-                        <Title text="R$ 8.400" level="H3" />
-                    </VBox>
-                    <VBox class="statCard">
-                        <Text text="{i18n>statExpenses}" class="statLabel" />
-                        <Title text="R$ 2.980" level="H3" />
-                    </VBox>
-                    <VBox class="statCard">
-                        <Text text="{i18n>statSavings}" class="statLabel" />
-                        <Title text="R$ 5.420" level="H3" />
-                    </VBox>
-                    <VBox class="statCard">
-                        <Text text="{i18n>statCards}" class="statLabel" />
-                        <Title text="3 ativos" level="H3" />
-                    </VBox>
-                </HBox>
-
-                <HBox class="contentGrid" wrap="Wrap">
-                    <VBox class="panelCard panelWide">
-                        <HBox justifyContent="SpaceBetween" alignItems="Center">
-                            <Title text="{i18n>sectionCards}" level="H3" />
-                            <Button text="{i18n>sectionCardsAction}" type="Transparent" />
+                <HBox class="balanceHero" justifyContent="SpaceBetween" alignItems="Stretch" wrap="Wrap">
+                    <VBox class="balanceCopy">
+                        <Text text="SEU DINHEIRO, COM CLAREZA" class="eyebrow" />
+                        <Title text="Olá! Vamos cuidar do seu mês." level="H1" class="heroTitle" />
+                        <Text text="Acompanhe o que entra, o que sai e tome decisões sem planilhas complicadas." class="heroSubtitle" />
+                        <HBox class="heroActions" wrap="Wrap">
+                            <Button text="Adicionar cartão" icon="sap-icon://credit-card" type="Transparent" press=".onOpenCardDialog" class="secondaryAction" />
+                            <Button text="Ver planejamento" icon="sap-icon://line-chart" type="Transparent" press=".onOpenInsights" class="linkAction" />
                         </HBox>
-                        <List items="{/Cards}" class="dashboardList">
-                            <StandardListItem
-                                title="{Name}"
-                                description="{i18n>creditCardDescription}"
-                                info="R$ {Limit}"
-                                infoState="Success"
-                            />
+                    </VBox>
+                    <VBox class="balanceCard">
+                        <Text text="DISPONÍVEL ESTE MÊS" class="balanceLabel" />
+                        <ObjectNumber number="{ui>/summary/available}" unit="R$" class="balanceNumber" />
+                        <HBox alignItems="Center" class="balanceTrend">
+                            <core:Icon src="sap-icon://trend-up" />
+                            <Text text="{ui>/summary/trend}" />
+                        </HBox>
+                    </VBox>
+                </HBox>
+
+                <HBox class="metricGrid" wrap="Wrap">
+                    <VBox class="metricCard incomeMetric">
+                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="RECEITAS" class="metricLabel" /><core:Icon src="sap-icon://trend-up" /></HBox>
+                        <ObjectNumber number="{ui>/summary/income}" unit="R$" class="metricNumber" />
+                        <Text text="Entradas previstas no mês" class="metricHint" />
+                    </VBox>
+                    <VBox class="metricCard expenseMetric">
+                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="GASTOS" class="metricLabel" /><core:Icon src="sap-icon://cart" /></HBox>
+                        <ObjectNumber number="{ui>/summary/expenses}" unit="R$" class="metricNumber" />
+                        <Text text="{ui>/summary/expenseHint}" class="metricHint" />
+                    </VBox>
+                    <VBox class="metricCard saveMetric">
+                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="PARA GUARDAR" class="metricLabel" /><core:Icon src="sap-icon://savings" /></HBox>
+                        <ObjectNumber number="{ui>/summary/savings}" unit="R$" class="metricNumber" />
+                        <Text text="Meta mensal de reserva" class="metricHint" />
+                    </VBox>
+                </HBox>
+
+                <HBox class="dashboardGrid" wrap="Wrap">
+                    <VBox class="surfaceCard transactionsPanel">
+                        <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
+                            <VBox><Title text="Movimentações recentes" level="H3" /><Text text="Tudo o que aconteceu por aqui" class="sectionHint" /></VBox>
+                            <Button text="Ver todas" type="Transparent" press=".onOpenInsights" />
+                        </HBox>
+                        <List items="{/Transactions}" showSeparators="None" class="transactionList" noDataText="Ainda não há movimentações.">
+                            <CustomListItem>
+                                <HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="transactionItem">
+                                    <HBox alignItems="Center">
+                                        <VBox class="transactionIcon"><core:Icon src="sap-icon://receipt" /></VBox>
+                                        <VBox><Text text="{Description}" class="transactionTitle" /><Text text="{Date}" class="transactionDate" /></VBox>
+                                    </HBox>
+                                    <ObjectNumber number="{Amount}" unit="{Currency_code}" class="transactionAmount" />
+                                </HBox>
+                            </CustomListItem>
                         </List>
                     </VBox>
 
-                    <VBox class="panelCard">
-                        <Title text="{i18n>sectionPerson}" level="H3" />
-                        <List items="{/Persons}" class="dashboardList">
-                            <StandardListItem title="{Name}" description="{Email}" />
+                    <VBox class="surfaceCard cardsPanel">
+                        <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
+                            <VBox><Title text="Seus cartões" level="H3" /><Text text="Limites e próximos vencimentos" class="sectionHint" /></VBox>
+                            <Button icon="sap-icon://add" type="Transparent" press=".onOpenCardDialog" tooltip="Adicionar cartão" />
+                        </HBox>
+                        <List items="{/Cards}" showSeparators="None" class="cardList" noDataText="Adicione seu primeiro cartão.">
+                            <CustomListItem>
+                                <VBox class="creditCardItem">
+                                    <HBox justifyContent="SpaceBetween" alignItems="Center"><Text text="{Name}" class="creditCardName" /><core:Icon src="sap-icon://credit-card" /></HBox>
+                                    <Text text="Limite disponível" class="creditCardLabel" />
+                                    <ObjectNumber number="{AvailableLimit}" unit="{Currency_code}" class="creditCardValue" />
+                                    <HBox justifyContent="SpaceBetween"><Text text="Fecha dia {ClosingDay}" class="creditCardFoot" /><Text text="Vence dia {DueDay}" class="creditCardFoot" /></HBox>
+                                </VBox>
+                            </CustomListItem>
                         </List>
                     </VBox>
                 </HBox>
             </VBox>
         </content>
+
+        <Dialog id="expenseDialog" title="Registrar um gasto" class="financeDialog" contentWidth="28rem">
+            <VBox class="dialogContent">
+                <Text text="Registre agora e acompanhe o impacto no seu próximo fechamento." class="dialogIntro" />
+                <Label text="Descrição" labelFor="expenseDescription" /><Input id="expenseDescription" value="{ui>/newExpense/description}" placeholder="Ex.: Mercado da semana" />
+                <Label text="Valor" labelFor="expenseAmount" /><Input id="expenseAmount" value="{ui>/newExpense/amount}" type="Number" placeholder="0,00" />
+                <Label text="Cartão" labelFor="expenseCard" /><Select id="expenseCard" selectedKey="{ui>/newExpense/cardId}" items="{/Cards}"><core:Item key="{ID}" text="{Name}" /></Select>
+                <Label text="Categoria" labelFor="expenseCategory" /><Select id="expenseCategory" selectedKey="{ui>/newExpense/categoryId}" items="{/Categories}"><core:Item key="{ID}" text="{Name}" /></Select>
+            </VBox>
+            <beginButton><Button text="Registrar" type="Emphasized" press=".onCreateExpense" /></beginButton>
+            <endButton><Button text="Cancelar" press=".onCloseExpenseDialog" /></endButton>
+        </Dialog>
+
+        <Dialog id="cardDialog" title="Novo cartão" class="financeDialog" contentWidth="28rem">
+            <VBox class="dialogContent">
+                <Text text="O cartão será criado como rascunho. Você poderá revisá-lo antes de publicar." class="dialogIntro" />
+                <Label text="Nome do cartão" labelFor="cardName" /><Input id="cardName" value="{ui>/newCard/name}" placeholder="Ex.: Cartão principal" />
+                <Label text="Limite" labelFor="cardLimit" /><Input id="cardLimit" value="{ui>/newCard/limit}" type="Number" placeholder="0,00" />
+                <Label text="Moeda" labelFor="cardCurrency" /><Select id="cardCurrency" selectedKey="{ui>/newCard/currency}"><core:Item key="BRL" text="Real brasileiro (BRL)" /><core:Item key="USD" text="Dólar americano (USD)" /></Select>
+            </VBox>
+            <beginButton><Button text="Salvar rascunho" type="Emphasized" press=".onCreateCardDraft" /></beginButton>
+            <endButton><Button text="Cancelar" press=".onCloseCardDialog" /></endButton>
+        </Dialog>
     </Page>
 </mvc:View>

@@ -1,4 +1,4 @@
-sap.ui.define(["sap/ui/core/UIComponent", "./model/models", "./auth/AuthenticationService", "./auth/providers/AuthenticatedProviderFactory"], function (BaseComponent, ___model_models, ___auth_AuthenticationService, ___auth_providers_AuthenticatedProviderFactory) {
+sap.ui.define(["sap/ui/core/UIComponent", "./model/models", "./auth/AuthenticationService", "./auth/providers/AuthenticatedProviderFactory", "sap/ui/model/json/JSONModel"], function (BaseComponent, ___model_models, ___auth_AuthenticationService, ___auth_providers_AuthenticatedProviderFactory, JSONModel) {
   "use strict";
 
   const createDeviceModel = ___model_models["createDeviceModel"];
@@ -19,6 +19,18 @@ sap.ui.define(["sap/ui/core/UIComponent", "./model/models", "./auth/Authenticati
 
       // set the device model
       this.setModel(createDeviceModel(), "device");
+      this.setModel(new JSONModel({
+        summary: {
+          available: "5.420,00",
+          income: "8.400,00",
+          expenses: "2.980,00",
+          savings: "1.250,00",
+          trend: "12% melhor que no mês passado",
+          expenseHint: "35% da receita planejada"
+        },
+        newExpense: {},
+        newCard: {}
+      }), "ui");
 
       // enable routing
       this.getRouter().initialize();
