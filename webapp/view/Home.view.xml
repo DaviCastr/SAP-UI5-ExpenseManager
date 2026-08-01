@@ -1,0 +1,11 @@
+<mvc:View
+    controllerName="apps.dflc.expensemanager.controller.Home"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+>
+    <Page title="{i18n>homeTitle}">
+        <content>
+            <Text text="{i18n>homeSubtitle}" />
+        </content>
+    </Page>
+</mvc:View>

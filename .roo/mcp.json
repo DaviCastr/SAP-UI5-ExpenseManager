@@ -1,0 +1,34 @@
+{
+	"mcpServers": {
+		"cap": {
+			"type": "stdio",
+			"command": "/usr/local/bin/npx",
+			"args": [
+				"-y",
+				"@cap-js/mcp-server"
+			],
+			"disabled": true,
+			"alwaysAllow": []
+		},
+		"fiori": {
+			"type": "stdio",
+			"command": "/usr/local/bin/npx",
+			"args": [
+				"-y",
+				"@sap-ux/fiori-mcp-server"
+			],
+			"disabled": true,
+			"alwaysAllow": []
+		},
+		"ui5": {
+			"type": "stdio",
+			"command": "/usr/local/bin/npx",
+			"args": [
+				"-y",
+				"@ui5/mcp-server"
+			],
+			"disabled": true,
+			"alwaysAllow": []
+		}
+	}
+}

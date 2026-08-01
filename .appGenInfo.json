@@ -1,0 +1,24 @@
+{
+  "generationParameters": {
+    "generationDate": "Thu Jul 30 2026 22:11:49 GMT-0300 (Horário Padrão de Brasília)",
+    "generatorPlatform": "Visual Studio Code",
+    "serviceType": "File",
+    "metadataFilename": "metadata.xml",
+    "serviceUrl": "/here/goes/your/serviceurl/",
+    "appName": "expensemanager",
+    "appTitle": "Expense Manager",
+    "appDescription": "Expense Manager",
+    "appNamespace": "apps.dflc",
+    "ui5Theme": "sap_horizon_dark",
+    "ui5Version": "1.150.1",
+    "enableCodeAssist": true,
+    "enableEslint": true,
+    "enableTypeScript": true,
+    "showMockDataInfo": true,
+    "generatorVersion": "1.19.1",
+    "template": "Basic V4",
+    "generatorName": "SAP Fiori Application Generator",
+    "entityRelatedConfig": [],
+    "launchText": "To launch the generated application, run the following from the generated application root folder:\n\n```\n    npm start\n```"
+  }
+}

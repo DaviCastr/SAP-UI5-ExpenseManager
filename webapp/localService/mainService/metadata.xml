@@ -1,0 +1,2037 @@
+<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.0">
+    <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Capabilities.V1.xml">
+        <edmx:Include Alias="Capabilities" Namespace="Org.OData.Capabilities.V1"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
+        <edmx:Include Alias="Common" Namespace="com.sap.vocabularies.Common.v1"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.xml">
+        <edmx:Include Alias="Core" Namespace="Org.OData.Core.V1"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/UI.xml">
+        <edmx:Include Alias="UI" Namespace="com.sap.vocabularies.UI.v1"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Validation.V1.xml">
+        <edmx:Include Alias="Validation" Namespace="Org.OData.Validation.V1"/>
+    </edmx:Reference>
+    <edmx:DataServices>
+        <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="ExpenseManager">
+            <Annotation Term="Core.Links">
+                <Collection>
+                    <Record>
+                        <PropertyValue Property="rel" String="author"/>
+                        <PropertyValue Property="href" String="https://cap.cloud.sap"/>
+                    </Record>
+                </Collection>
+            </Annotation>
+            <EntityContainer Name="EntityContainer">
+                <EntitySet Name="Persons" EntityType="ExpenseManager.Persons">
+                    <NavigationPropertyBinding Path="Currency" Target="Currencies"/>
+                    <NavigationPropertyBinding Path="Shares" Target="Shares"/>
+                    <NavigationPropertyBinding Path="Categories" Target="Categories"/>
+                    <NavigationPropertyBinding Path="Cards" Target="Cards"/>
+                    <NavigationPropertyBinding Path="SiblingEntity" Target="Persons"/>
+                </EntitySet>
+                <EntitySet Name="Shares" EntityType="ExpenseManager.Shares">
+                    <NavigationPropertyBinding Path="Person" Target="Persons"/>
+                    <NavigationPropertyBinding Path="Entities" Target="Entities"/>
+                    <NavigationPropertyBinding Path="SiblingEntity" Target="Shares"/>
+                </EntitySet>
+                <EntitySet Name="Entities" EntityType="ExpenseManager.Entities">
+                    <NavigationPropertyBinding Path="Share" Target="Shares"/>
+                    <NavigationPropertyBinding Path="SiblingEntity" Target="Entities"/>
+                </EntitySet>
+                <EntitySet Name="Categories" EntityType="ExpenseManager.Categories">
+                    <NavigationPropertyBinding Path="Person" Target="Persons"/>
+                    <NavigationPropertyBinding Path="Transactions" Target="Transactions"/>
+                    <NavigationPropertyBinding Path="SiblingEntity" Target="Categories"/>
+                </EntitySet>
+                <EntitySet Name="Cards" EntityType="ExpenseManager.Cards">
+                    <NavigationPropertyBinding Path="Currency" Target="Currencies"/>
+                    <NavigationPropertyBinding Path="Invoices" Target="Invoices"/>
+                    <NavigationPropertyBinding Path="Person" Target="Persons"/>
+                    <NavigationPropertyBinding Path="SiblingEntity" Target="Cards"/>
+                </EntitySet>
+                <EntitySet Name="Invoices" EntityType="ExpenseManager.Invoices">
+                    <NavigationPropertyBinding Path="Currency" Target="Currencies"/>
+                    <NavigationPropertyBinding Path="Card" Target="Cards"/>
+                    <NavigationPropertyBinding Path="Transactions" Target="Transactions"/>
+                    <NavigationPropertyBinding Path="SiblingEntity" Target="Invoices"/>
+                </EntitySet>
+                <EntitySet Name="Transactions" EntityType="ExpenseManager.Transactions">
+                    <NavigationPropertyBinding Path="Currency" Target="Currencies"/>
+                    <NavigationPropertyBinding Path="Invoice" Target="Invoices"/>
+                    <NavigationPropertyBinding Path="Category" Target="Categories"/>
+                    <NavigationPropertyBinding Path="SiblingEntity" Target="Transactions"/>
+                </EntitySet>
+                <EntitySet Name="Backups" EntityType="ExpenseManager.Backups"/>
+                <EntitySet Name="Liabilities" EntityType="ExpenseManager.Liabilities">
+                    <NavigationPropertyBinding Path="Person" Target="Persons"/>
+                    <NavigationPropertyBinding Path="Currency" Target="Currencies"/>
+                    <NavigationPropertyBinding Path="Transactions" Target="LiabilityTransactions"/>
+                </EntitySet>
+                <EntitySet Name="LiabilityTransactions" EntityType="ExpenseManager.LiabilityTransactions">
+                    <NavigationPropertyBinding Path="Liability" Target="Liabilities"/>
+                    <NavigationPropertyBinding Path="Currency" Target="Currencies"/>
+                </EntitySet>
+                <EntitySet Name="Currencies" EntityType="ExpenseManager.Currencies">
+                    <NavigationPropertyBinding Path="texts" Target="Currencies_texts"/>
+                    <NavigationPropertyBinding Path="localized" Target="Currencies_texts"/>
+                </EntitySet>
+                <EntitySet Name="Currencies_texts" EntityType="ExpenseManager.Currencies_texts"/>
+                <ActionImport Name="AddCardExpense" Action="ExpenseManager.AddCardExpense"/>
+                <ActionImport Name="ExportBackup" Action="ExpenseManager.ExportBackup"/>
+                <ActionImport Name="SendInvoices" Action="ExpenseManager.SendInvoices"/>
+                <ActionImport Name="SimulateExpenses" Action="ExpenseManager.SimulateExpenses"/>
+                <ActionImport Name="SimulateFinancialFuture" Action="ExpenseManager.SimulateFinancialFuture"/>
+                <ActionImport Name="CreateLiability" Action="ExpenseManager.CreateLiability"/>
+                <ActionImport Name="PayLiability" Action="ExpenseManager.PayLiability"/>
+                <ActionImport Name="CloseLiability" Action="ExpenseManager.CloseLiability"/>
+                <ActionImport Name="RenegotiateLiability" Action="ExpenseManager.RenegotiateLiability"/>
+                <ActionImport Name="ReverseTransaction" Action="ExpenseManager.ReverseTransaction"/>
+                <ActionImport Name="RecalculateLiability" Action="ExpenseManager.RecalculateLiability"/>
+                <FunctionImport Name="CardExpensesByCategories" Function="ExpenseManager.CardExpensesByCategories"/>
+                <FunctionImport Name="RetrieveTransactionsByCategory" Function="ExpenseManager.RetrieveTransactionsByCategory"/>
+                <FunctionImport Name="RetrieveCompleteInvoice" Function="ExpenseManager.RetrieveCompleteInvoice"/>
+                <FunctionImport Name="Dashboard" Function="ExpenseManager.Dashboard"/>
+                <FunctionImport Name="Analytics" Function="ExpenseManager.Analytics"/>
+                <FunctionImport Name="PaymentSchedule" Function="ExpenseManager.PaymentSchedule"/>
+                <FunctionImport Name="FutureImpact" Function="ExpenseManager.FutureImpact"/>
+            </EntityContainer>
+            <EntityType Name="Persons">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                    <PropertyRef Name="IsActiveEntity"/>
+                </Key>
+                <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="Name" Type="Edm.String" MaxLength="100"/>
+                <Property Name="Image" Type="Edm.Stream"/>
+                <Property Name="ImageType" Type="Edm.String"/>
+                <Property Name="Income" Type="Edm.Decimal" Scale="variable"/>
+                <NavigationProperty Name="Currency" Type="ExpenseManager.Currencies">
+                    <ReferentialConstraint Property="Currency_code" ReferencedProperty="code"/>
+                </NavigationProperty>
+                <Property Name="Currency_code" Type="Edm.String" MaxLength="3"/>
+                <Property Name="Email" Type="Edm.String" MaxLength="100"/>
+                <Property Name="Phone" Type="Edm.String" MaxLength="20"/>
+                <NavigationProperty Name="Shares" Type="Collection(ExpenseManager.Shares)" Partner="Person">
+                    <OnDelete Action="Cascade"/>
+                </NavigationProperty>
+                <Property Name="ExpenseTarget" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="AmountToSave" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="TotalExpenses" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="TotalExpensesMonth" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="TotalExpensesPayed" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="TotalExpensesToPay" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="TotalExpensesClosed" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="MonthCriticallity" Type="Edm.Int32"/>
+                <Property Name="CriticallityToPay" Type="Edm.Int32"/>
+                <NavigationProperty Name="Categories" Type="Collection(ExpenseManager.Categories)" Partner="Person">
+                    <OnDelete Action="Cascade"/>
+                </NavigationProperty>
+                <NavigationProperty Name="Cards" Type="Collection(ExpenseManager.Cards)" Partner="Person">
+                    <OnDelete Action="Cascade"/>
+                </NavigationProperty>
+                <Property Name="IsActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="true"/>
+                <Property Name="HasActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <Property Name="HasDraftEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <NavigationProperty Name="DraftAdministrativeData" Type="ExpenseManager.DraftAdministrativeData" ContainsTarget="true"/>
+                <NavigationProperty Name="SiblingEntity" Type="ExpenseManager.Persons"/>
+                <Property Name="DraftMessages" Type="Collection(ExpenseManager.DRAFT_DraftAdministrativeData_DraftMessage)" Nullable="true"/>
+            </EntityType>
+            <EntityType Name="Shares">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                    <PropertyRef Name="IsActiveEntity"/>
+                </Key>
+                <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="User" Type="Edm.String" MaxLength="255"/>
+                <NavigationProperty Name="Person" Type="ExpenseManager.Persons" Partner="Shares">
+                    <ReferentialConstraint Property="Person_ID" ReferencedProperty="ID"/>
+                </NavigationProperty>
+                <Property Name="Person_ID" Type="Edm.Guid"/>
+                <NavigationProperty Name="Entities" Type="Collection(ExpenseManager.Entities)" Partner="Share">
+                    <OnDelete Action="Cascade"/>
+                </NavigationProperty>
+                <Property Name="IsActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="true"/>
+                <Property Name="HasActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <Property Name="HasDraftEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <NavigationProperty Name="DraftAdministrativeData" Type="ExpenseManager.DraftAdministrativeData" ContainsTarget="true"/>
+                <NavigationProperty Name="SiblingEntity" Type="ExpenseManager.Shares"/>
+                <Property Name="DraftMessages" Type="Collection(ExpenseManager.DRAFT_DraftAdministrativeData_DraftMessage)" Nullable="true"/>
+            </EntityType>
+            <EntityType Name="Entities">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                    <PropertyRef Name="IsActiveEntity"/>
+                </Key>
+                <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+                <NavigationProperty Name="Share" Type="ExpenseManager.Shares" Partner="Entities">
+                    <ReferentialConstraint Property="Share_ID" ReferencedProperty="ID"/>
+                </NavigationProperty>
+                <Property Name="Share_ID" Type="Edm.Guid"/>
+                <Property Name="Entity" Type="Edm.Int32"/>
+                <Property Name="Permission" Type="Edm.Int32"/>
+                <Property Name="IsActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="true"/>
+                <Property Name="HasActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <Property Name="HasDraftEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <NavigationProperty Name="DraftAdministrativeData" Type="ExpenseManager.DraftAdministrativeData" ContainsTarget="true"/>
+                <NavigationProperty Name="SiblingEntity" Type="ExpenseManager.Entities"/>
+                <Property Name="DraftMessages" Type="Collection(ExpenseManager.DRAFT_DraftAdministrativeData_DraftMessage)" Nullable="true"/>
+            </EntityType>
+            <EntityType Name="Categories">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                    <PropertyRef Name="IsActiveEntity"/>
+                </Key>
+                <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="Name" Type="Edm.String" MaxLength="20"/>
+                <Property Name="Image" Type="Edm.Stream"/>
+                <Property Name="ImageType" Type="Edm.String"/>
+                <NavigationProperty Name="Person" Type="ExpenseManager.Persons" Partner="Categories">
+                    <ReferentialConstraint Property="Person_ID" ReferencedProperty="ID"/>
+                </NavigationProperty>
+                <Property Name="Person_ID" Type="Edm.Guid"/>
+                <NavigationProperty Name="Transactions" Type="Collection(ExpenseManager.Transactions)" Partner="Category"/>
+                <Property Name="IsActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="true"/>
+                <Property Name="HasActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <Property Name="HasDraftEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <NavigationProperty Name="DraftAdministrativeData" Type="ExpenseManager.DraftAdministrativeData" ContainsTarget="true"/>
+                <NavigationProperty Name="SiblingEntity" Type="ExpenseManager.Categories"/>
+                <Property Name="DraftMessages" Type="Collection(ExpenseManager.DRAFT_DraftAdministrativeData_DraftMessage)" Nullable="true"/>
+            </EntityType>
+            <EntityType Name="Cards">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                    <PropertyRef Name="IsActiveEntity"/>
+                </Key>
+                <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="Name" Type="Edm.String" MaxLength="50"/>
+                <Property Name="Image" Type="Edm.Stream"/>
+                <Property Name="ImageType" Type="Edm.String"/>
+                <Property Name="Limit" Type="Edm.Decimal" Scale="variable"/>
+                <NavigationProperty Name="Currency" Type="ExpenseManager.Currencies">
+                    <ReferentialConstraint Property="Currency_code" ReferencedProperty="code"/>
+                </NavigationProperty>
+                <Property Name="Currency_code" Type="Edm.String" MaxLength="3"/>
+                <Property Name="AvailableLimit" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="DueDay" Type="Edm.Int32"/>
+                <Property Name="ClosingDay" Type="Edm.Int32"/>
+                <Property Name="InvoiceAmountForPayment" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="InvoiceAmountToPay" Type="Edm.Decimal" Scale="variable"/>
+                <NavigationProperty Name="Invoices" Type="Collection(ExpenseManager.Invoices)" Partner="Card">
+                    <OnDelete Action="Cascade"/>
+                </NavigationProperty>
+                <NavigationProperty Name="Person" Type="ExpenseManager.Persons" Partner="Cards">
+                    <ReferentialConstraint Property="Person_ID" ReferencedProperty="ID"/>
+                </NavigationProperty>
+                <Property Name="Person_ID" Type="Edm.Guid"/>
+                <Property Name="IsActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="true"/>
+                <Property Name="HasActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <Property Name="HasDraftEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <NavigationProperty Name="DraftAdministrativeData" Type="ExpenseManager.DraftAdministrativeData" ContainsTarget="true"/>
+                <NavigationProperty Name="SiblingEntity" Type="ExpenseManager.Cards"/>
+                <Property Name="DraftMessages" Type="Collection(ExpenseManager.DRAFT_DraftAdministrativeData_DraftMessage)" Nullable="true"/>
+            </EntityType>
+            <EntityType Name="Invoices">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                    <PropertyRef Name="IsActiveEntity"/>
+                </Key>
+                <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="Year" Type="Edm.Int32"/>
+                <Property Name="Month" Type="Edm.Int32"/>
+                <Property Name="Description" Type="Edm.String" MaxLength="255"/>
+                <Property Name="TotalAmount" Type="Edm.Decimal" Scale="variable"/>
+                <NavigationProperty Name="Currency" Type="ExpenseManager.Currencies">
+                    <ReferentialConstraint Property="Currency_code" ReferencedProperty="code"/>
+                </NavigationProperty>
+                <Property Name="Currency_code" Type="Edm.String" MaxLength="3"/>
+                <Property Name="InvoiceSent" Type="Edm.Boolean"/>
+                <NavigationProperty Name="Card" Type="ExpenseManager.Cards" Partner="Invoices">
+                    <ReferentialConstraint Property="Card_ID" ReferencedProperty="ID"/>
+                </NavigationProperty>
+                <Property Name="Card_ID" Type="Edm.Guid"/>
+                <NavigationProperty Name="Transactions" Type="Collection(ExpenseManager.Transactions)" Partner="Invoice">
+                    <OnDelete Action="Cascade"/>
+                </NavigationProperty>
+                <Property Name="IsActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="true"/>
+                <Property Name="HasActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <Property Name="HasDraftEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <NavigationProperty Name="DraftAdministrativeData" Type="ExpenseManager.DraftAdministrativeData" ContainsTarget="true"/>
+                <NavigationProperty Name="SiblingEntity" Type="ExpenseManager.Invoices"/>
+                <Property Name="DraftMessages" Type="Collection(ExpenseManager.DRAFT_DraftAdministrativeData_DraftMessage)" Nullable="true"/>
+            </EntityType>
+            <EntityType Name="Transactions">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                    <PropertyRef Name="IsActiveEntity"/>
+                </Key>
+                <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="Identifier" Type="Edm.Guid"/>
+                <Property Name="Date" Type="Edm.Date"/>
+                <Property Name="TotalAmount" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="Amount" Type="Edm.Decimal" Scale="variable"/>
+                <NavigationProperty Name="Currency" Type="ExpenseManager.Currencies">
+                    <ReferentialConstraint Property="Currency_code" ReferencedProperty="code"/>
+                </NavigationProperty>
+                <Property Name="Currency_code" Type="Edm.String" MaxLength="3"/>
+                <Property Name="TotalInstallments" Type="Edm.Int32"/>
+                <Property Name="Installment" Type="Edm.Int32"/>
+                <Property Name="Description" Type="Edm.String" MaxLength="255"/>
+                <NavigationProperty Name="Invoice" Type="ExpenseManager.Invoices" Partner="Transactions">
+                    <ReferentialConstraint Property="Invoice_ID" ReferencedProperty="ID"/>
+                </NavigationProperty>
+                <Property Name="Invoice_ID" Type="Edm.Guid"/>
+                <NavigationProperty Name="Category" Type="ExpenseManager.Categories" Partner="Transactions">
+                    <ReferentialConstraint Property="Category_ID" ReferencedProperty="ID"/>
+                </NavigationProperty>
+                <Property Name="Category_ID" Type="Edm.Guid"/>
+                <Property Name="IsActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="true"/>
+                <Property Name="HasActiveEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <Property Name="HasDraftEntity" Type="Edm.Boolean" Nullable="false" DefaultValue="false"/>
+                <NavigationProperty Name="DraftAdministrativeData" Type="ExpenseManager.DraftAdministrativeData" ContainsTarget="true"/>
+                <NavigationProperty Name="SiblingEntity" Type="ExpenseManager.Transactions"/>
+                <Property Name="DraftMessages" Type="Collection(ExpenseManager.DRAFT_DraftAdministrativeData_DraftMessage)" Nullable="true"/>
+            </EntityType>
+            <EntityType Name="Backups">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                </Key>
+                <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="Backup" Type="Edm.Stream"/>
+                <Property Name="BackupType" Type="Edm.String"/>
+            </EntityType>
+            <EntityType Name="Liabilities">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                </Key>
+                <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+                <NavigationProperty Name="Person" Type="ExpenseManager.Persons">
+                    <ReferentialConstraint Property="Person_ID" ReferencedProperty="ID"/>
+                </NavigationProperty>
+                <Property Name="Person_ID" Type="Edm.Guid"/>
+                <Property Name="Name" Type="Edm.String" MaxLength="120"/>
+                <Property Name="Creditor" Type="Edm.String" MaxLength="120"/>
+                <Property Name="Description" Type="Edm.String" MaxLength="500"/>
+                <Property Name="Type" Type="Edm.String" DefaultValue="GENERAL"/>
+                <Property Name="Status" Type="Edm.String" DefaultValue="OPEN"/>
+                <Property Name="OriginalAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+                <Property Name="CurrentBalance" Type="Edm.Decimal" Precision="15" Scale="2"/>
+                <Property Name="PaidAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+                <NavigationProperty Name="Currency" Type="ExpenseManager.Currencies">
+                    <ReferentialConstraint Property="Currency_code" ReferencedProperty="code"/>
+                </NavigationProperty>
+                <Property Name="Currency_code" Type="Edm.String" MaxLength="3"/>
+                <Property Name="InterestMode" Type="Edm.String" DefaultValue="MANUAL"/>
+                <Property Name="InterestRate" Type="Edm.Decimal" Precision="9" Scale="4"/>
+                <Property Name="Installments" Type="Edm.Int32" DefaultValue="1"/>
+                <Property Name="InstallmentAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+                <Property Name="StartDate" Type="Edm.Date"/>
+                <Property Name="FirstDueDate" Type="Edm.Date"/>
+                <Property Name="EndDate" Type="Edm.Date"/>
+                <Property Name="LastPaymentDate" Type="Edm.Date"/>
+                <Property Name="ExternalReference" Type="Edm.String" MaxLength="80"/>
+                <Property Name="RemainingAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+                <Property Name="ProgressPercent" Type="Edm.Decimal" Precision="9" Scale="2"/>
+                <Property Name="PaidInstallments" Type="Edm.Int32"/>
+                <Property Name="RemainingInstallments" Type="Edm.Int32"/>
+                <Property Name="NextDueDate" Type="Edm.Date"/>
+                <Property Name="IsOverdue" Type="Edm.Boolean"/>
+                <Property Name="HealthScore" Type="Edm.Int32"/>
+                <NavigationProperty Name="Transactions" Type="Collection(ExpenseManager.LiabilityTransactions)" Partner="Liability">
+                    <OnDelete Action="Cascade"/>
+                </NavigationProperty>
+            </EntityType>
+            <EntityType Name="LiabilityTransactions">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                </Key>
+                <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+                <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+                <NavigationProperty Name="Liability" Type="ExpenseManager.Liabilities" Partner="Transactions">
+                    <ReferentialConstraint Property="Liability_ID" ReferencedProperty="ID"/>
+                </NavigationProperty>
+                <Property Name="Liability_ID" Type="Edm.Guid"/>
+                <Property Name="Type" Type="Edm.String"/>
+                <Property Name="Description" Type="Edm.String" MaxLength="250"/>
+                <Property Name="MovementDate" Type="Edm.Date"/>
+                <Property Name="Installment" Type="Edm.Int32"/>
+                <Property Name="TotalInstallments" Type="Edm.Int32"/>
+                <Property Name="Amount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+                <NavigationProperty Name="Currency" Type="ExpenseManager.Currencies">
+                    <ReferentialConstraint Property="Currency_code" ReferencedProperty="code"/>
+                </NavigationProperty>
+                <Property Name="Currency_code" Type="Edm.String" MaxLength="3"/>
+                <Property Name="BalanceAfter" Type="Edm.Decimal" Precision="15" Scale="2"/>
+                <Property Name="IsAutomatic" Type="Edm.Boolean" DefaultValue="false"/>
+                <Property Name="ExternalReference" Type="Edm.String" MaxLength="80"/>
+            </EntityType>
+            <EntityType Name="Currencies">
+                <Key>
+                    <PropertyRef Name="code"/>
+                </Key>
+                <Property Name="name" Type="Edm.String" MaxLength="255"/>
+                <Property Name="descr" Type="Edm.String" MaxLength="1000"/>
+                <Property Name="code" Type="Edm.String" MaxLength="3" Nullable="false"/>
+                <Property Name="symbol" Type="Edm.String" MaxLength="5"/>
+                <Property Name="minorUnit" Type="Edm.Int16"/>
+                <NavigationProperty Name="texts" Type="Collection(ExpenseManager.Currencies_texts)">
+                    <OnDelete Action="Cascade"/>
+                </NavigationProperty>
+                <NavigationProperty Name="localized" Type="ExpenseManager.Currencies_texts">
+                    <ReferentialConstraint Property="code" ReferencedProperty="code"/>
+                </NavigationProperty>
+            </EntityType>
+            <EntityType Name="DraftAdministrativeData">
+                <Key>
+                    <PropertyRef Name="DraftUUID"/>
+                </Key>
+                <Property Name="DraftUUID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="CreationDateTime" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="CreatedByUser" Type="Edm.String" MaxLength="256"/>
+                <Property Name="DraftIsCreatedByMe" Type="Edm.Boolean"/>
+                <Property Name="LastChangeDateTime" Type="Edm.DateTimeOffset" Precision="7"/>
+                <Property Name="LastChangedByUser" Type="Edm.String" MaxLength="256"/>
+                <Property Name="InProcessByUser" Type="Edm.String" MaxLength="256"/>
+                <Property Name="DraftIsProcessedByMe" Type="Edm.Boolean"/>
+            </EntityType>
+            <EntityType Name="Currencies_texts">
+                <Key>
+                    <PropertyRef Name="locale"/>
+                    <PropertyRef Name="code"/>
+                </Key>
+                <Property Name="locale" Type="Edm.String" MaxLength="14" Nullable="false"/>
+                <Property Name="name" Type="Edm.String" MaxLength="255"/>
+                <Property Name="descr" Type="Edm.String" MaxLength="1000"/>
+                <Property Name="code" Type="Edm.String" MaxLength="3" Nullable="false"/>
+            </EntityType>
+            <ComplexType Name="DRAFT_DraftAdministrativeData_DraftMessage">
+                <Property Name="code" Type="Edm.String"/>
+                <Property Name="message" Type="Edm.String"/>
+                <Property Name="target" Type="Edm.String"/>
+                <Property Name="additionalTargets" Type="Collection(Edm.String)" Nullable="true"/>
+                <Property Name="transition" Type="Edm.Boolean"/>
+                <Property Name="numericSeverity" Type="Edm.Byte"/>
+                <Property Name="longtextUrl" Type="Edm.String"/>
+            </ComplexType>
+            <ComplexType Name="apps_dflc_expensemanager_entities_ActionResult">
+                <Property Name="success" Type="Edm.Boolean"/>
+                <Property Name="data" Type="Edm.String"/>
+            </ComplexType>
+            <ComplexType Name="apps_dflc_expensemanager_entities_CategoriesReturn">
+                <Property Name="Amount" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="Currency" Type="Edm.String" MaxLength="3"/>
+                <Property Name="Category" Type="Collection(ExpenseManager.apps_dflc_expensemanager_entities_recoverCategories)" Nullable="true"/>
+            </ComplexType>
+            <ComplexType Name="apps_dflc_expensemanager_entities_recoverCategories">
+                <Property Name="Person" Type="Edm.Guid"/>
+                <Property Name="Card" Type="Edm.Guid"/>
+                <Property Name="Invoice" Type="Edm.Guid"/>
+                <Property Name="Month" Type="Edm.Int32"/>
+                <Property Name="Year" Type="Edm.Int32"/>
+            </ComplexType>
+            <ComplexType Name="apps_dflc_expensemanager_entities_TransactionsReturn">
+                <Property Name="ID" Type="Edm.Guid"/>
+                <Property Name="Currency" Type="Edm.String"/>
+                <Property Name="Cards" Type="Collection(ExpenseManager.apps_dflc_expensemanager_entities_CardsType)" Nullable="true"/>
+            </ComplexType>
+            <ComplexType Name="apps_dflc_expensemanager_entities_CardsType">
+                <Property Name="ID" Type="Edm.Guid"/>
+                <Property Name="Name" Type="Edm.String"/>
+                <Property Name="Image" Type="Edm.Binary"/>
+                <Property Name="Invoices" Type="Collection(ExpenseManager.apps_dflc_expensemanager_entities_InvoicesType)" Nullable="true"/>
+            </ComplexType>
+            <ComplexType Name="apps_dflc_expensemanager_entities_InvoicesType">
+                <Property Name="ID" Type="Edm.Guid"/>
+                <Property Name="Year" Type="Edm.Int32"/>
+                <Property Name="Month" Type="Edm.Int32"/>
+                <Property Name="Description" Type="Edm.String" MaxLength="255"/>
+                <Property Name="TotalAmount" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="Transactions" Type="Collection(ExpenseManager.apps_dflc_expensemanager_entities_Transactionsype)" Nullable="true"/>
+            </ComplexType>
+            <ComplexType Name="apps_dflc_expensemanager_entities_Transactionsype">
+                <Property Name="ID" Type="Edm.Guid"/>
+                <Property Name="Date" Type="Edm.Date"/>
+                <Property Name="TotalAmount" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="Amount" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="TotalInstallments" Type="Edm.Int32"/>
+                <Property Name="Installment" Type="Edm.Int32"/>
+                <Property Name="Description" Type="Edm.String" MaxLength="255"/>
+            </ComplexType>
+            <ComplexType Name="apps_dflc_expensemanager_entities_CompleteInvoiceReturn">
+                <Property Name="Year" Type="Edm.Int32"/>
+                <Property Name="Month" Type="Edm.Int32"/>
+                <Property Name="InvoiceDescription" Type="Edm.String"/>
+                <Property Name="TotalAmount" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="CurrencyCode" Type="Edm.String"/>
+                <Property Name="Transactions" Type="Collection(ExpenseManager.apps_dflc_expensemanager_entities_TrasactionsCompleteInvoice)" Nullable="true"/>
+            </ComplexType>
+            <ComplexType Name="apps_dflc_expensemanager_entities_TrasactionsCompleteInvoice">
+                <Property Name="ID" Type="Edm.Guid"/>
+                <Property Name="CardID" Type="Edm.Guid"/>
+                <Property Name="CardName" Type="Edm.String" MaxLength="50"/>
+                <Property Name="Date" Type="Edm.Date"/>
+                <Property Name="Amount" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="TotalAmount" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="CurrencyCode" Type="Edm.String"/>
+                <Property Name="Installment" Type="Edm.Int32"/>
+                <Property Name="TotalInstallments" Type="Edm.Int32"/>
+                <Property Name="Description" Type="Edm.String" MaxLength="255"/>
+            </ComplexType>
+            <Action Name="draftPrepare" IsBound="true" EntitySetPath="in">
+                <Parameter Name="in" Type="ExpenseManager.Persons"/>
+                <Parameter Name="SideEffectsQualifier" Type="Edm.String"/>
+                <ReturnType Type="ExpenseManager.Persons"/>
+            </Action>
+            <Action Name="draftPrepare" IsBound="true" EntitySetPath="in">
+                <Parameter Name="in" Type="ExpenseManager.Shares"/>
+                <Parameter Name="SideEffectsQualifier" Type="Edm.String"/>
+                <ReturnType Type="ExpenseManager.Shares"/>
+            </Action>
+            <Action Name="draftPrepare" IsBound="true" EntitySetPath="in">
+                <Parameter Name="in" Type="ExpenseManager.Entities"/>
+                <Parameter Name="SideEffectsQualifier" Type="Edm.String"/>
+                <ReturnType Type="ExpenseManager.Entities"/>
+            </Action>
+            <Action Name="draftPrepare" IsBound="true" EntitySetPath="in">
+                <Parameter Name="in" Type="ExpenseManager.Categories"/>
+                <Parameter Name="SideEffectsQualifier" Type="Edm.String"/>
+                <ReturnType Type="ExpenseManager.Categories"/>
+            </Action>
+            <Action Name="draftPrepare" IsBound="true" EntitySetPath="in">
+                <Parameter Name="in" Type="ExpenseManager.Cards"/>
+                <Parameter Name="SideEffectsQualifier" Type="Edm.String"/>
+                <ReturnType Type="ExpenseManager.Cards"/>
+            </Action>
+            <Action Name="draftPrepare" IsBound="true" EntitySetPath="in">
+                <Parameter Name="in" Type="ExpenseManager.Invoices"/>
+                <Parameter Name="SideEffectsQualifier" Type="Edm.String"/>
+                <ReturnType Type="ExpenseManager.Invoices"/>
+            </Action>
+            <Action Name="draftPrepare" IsBound="true" EntitySetPath="in">
+                <Parameter Name="in" Type="ExpenseManager.Transactions"/>
+                <Parameter Name="SideEffectsQualifier" Type="Edm.String"/>
+                <ReturnType Type="ExpenseManager.Transactions"/>
+            </Action>
+            <Action Name="draftActivate" IsBound="true" EntitySetPath="in">
+                <Parameter Name="in" Type="ExpenseManager.Persons"/>
+                <ReturnType Type="ExpenseManager.Persons"/>
+            </Action>
+            <Action Name="draftEdit" IsBound="true" EntitySetPath="in">
+                <Parameter Name="in" Type="ExpenseManager.Persons"/>
+                <Parameter Name="PreserveChanges" Type="Edm.Boolean"/>
+                <ReturnType Type="ExpenseManager.Persons"/>
+            </Action>
+            <Action Name="AddCardExpense" IsBound="false">
+                <Parameter Name="CardId" Type="Edm.Guid"/>
+                <Parameter Name="CategoryId" Type="Edm.Guid"/>
+                <Parameter Name="Description" Type="Edm.String"/>
+                <Parameter Name="Value" Type="Edm.Decimal" Scale="variable"/>
+                <Parameter Name="Currency" Type="Edm.String"/>
+                <Parameter Name="TransactionDate" Type="Edm.Date"/>
+                <Parameter Name="Installments" Type="Edm.Int32"/>
+                <Parameter Name="FixedExpense" Type="Edm.Boolean"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Action>
+            <Action Name="ExportBackup" IsBound="false">
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Action>
+            <Action Name="SendInvoices" IsBound="false">
+                <Parameter Name="Year" Type="Edm.Int32"/>
+                <Parameter Name="Month" Type="Edm.Int32"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Action>
+            <Action Name="SimulateExpenses" IsBound="false">
+                <Parameter Name="PersonId" Type="Edm.Guid"/>
+                <Parameter Name="Year" Type="Edm.Int32"/>
+                <Parameter Name="Month" Type="Edm.Int32"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Action>
+            <Action Name="SimulateFinancialFuture" IsBound="false">
+                <Parameter Name="PersonId" Type="Edm.Guid"/>
+                <Parameter Name="Year" Type="Edm.Int32"/>
+                <Parameter Name="Month" Type="Edm.Int32"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Action>
+            <Action Name="CreateLiability" IsBound="false">
+                <Parameter Name="PersonId" Type="Edm.Guid"/>
+                <Parameter Name="Name" Type="Edm.String"/>
+                <Parameter Name="OriginalAmount" Type="Edm.Decimal" Scale="variable"/>
+                <Parameter Name="Currency" Type="Edm.String"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Action>
+            <Action Name="PayLiability" IsBound="false">
+                <Parameter Name="LiabilityId" Type="Edm.Guid"/>
+                <Parameter Name="Amount" Type="Edm.Decimal" Scale="variable"/>
+                <Parameter Name="Notes" Type="Edm.String"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Action>
+            <Action Name="CloseLiability" IsBound="false">
+                <Parameter Name="LiabilityId" Type="Edm.Guid"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Action>
+            <Action Name="RenegotiateLiability" IsBound="false">
+                <Parameter Name="LiabilityId" Type="Edm.Guid"/>
+                <Parameter Name="NewBalance" Type="Edm.Decimal" Scale="variable"/>
+                <Parameter Name="NewInstallments" Type="Edm.Int32"/>
+                <Parameter Name="NewInterestRate" Type="Edm.Decimal" Scale="variable"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Action>
+            <Action Name="ReverseTransaction" IsBound="false">
+                <Parameter Name="TransactionId" Type="Edm.Guid"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Action>
+            <Action Name="RecalculateLiability" IsBound="false">
+                <Parameter Name="LiabilityId" Type="Edm.Guid"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Action>
+            <Function Name="CardExpensesByCategories" IsBound="false" IsComposable="false">
+                <Parameter Name="PersonId" Type="Edm.Guid"/>
+                <Parameter Name="CardId" Type="Edm.Guid"/>
+                <Parameter Name="InvoiceId" Type="Edm.Guid"/>
+                <Parameter Name="Year" Type="Edm.Int32"/>
+                <Parameter Name="Month" Type="Edm.Int32"/>
+                <Parameter Name="TotalOnwards" Type="Edm.Boolean"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_CategoriesReturn"/>
+            </Function>
+            <Function Name="RetrieveTransactionsByCategory" IsBound="false" IsComposable="false">
+                <Parameter Name="PersonId" Type="Edm.Guid"/>
+                <Parameter Name="CategoryId" Type="Edm.Guid"/>
+                <Parameter Name="Total" Type="Edm.Boolean"/>
+                <Parameter Name="Year" Type="Edm.Int32"/>
+                <Parameter Name="Month" Type="Edm.Int32"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_TransactionsReturn"/>
+            </Function>
+            <Function Name="RetrieveCompleteInvoice" IsBound="false" IsComposable="false">
+                <Parameter Name="PersonId" Type="Edm.Guid"/>
+                <Parameter Name="Year" Type="Edm.Int32"/>
+                <Parameter Name="Month" Type="Edm.Int32"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_CompleteInvoiceReturn"/>
+            </Function>
+            <Function Name="Dashboard" IsBound="false" IsComposable="false">
+                <Parameter Name="PersonId" Type="Edm.Guid"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Function>
+            <Function Name="Analytics" IsBound="false" IsComposable="false">
+                <Parameter Name="PersonId" Type="Edm.Guid"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Function>
+            <Function Name="PaymentSchedule" IsBound="false" IsComposable="false">
+                <Parameter Name="LiabilityId" Type="Edm.Guid"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Function>
+            <Function Name="FutureImpact" IsBound="false" IsComposable="false">
+                <Parameter Name="PersonId" Type="Edm.Guid"/>
+                <ReturnType Type="ExpenseManager.apps_dflc_expensemanager_entities_ActionResult"/>
+            </Function>
+            <Annotations Target="ExpenseManager.EntityContainer">
+                <Annotation Term="Common.AddressViaNavigationPath" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons">
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.Messages" Path="DraftMessages"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.EntityContainer/Persons">
+                <Annotation Term="Common.DraftRoot">
+                    <Record Type="Common.DraftRootType">
+                        <PropertyValue Property="ActivationAction" String="ExpenseManager.draftActivate"/>
+                        <PropertyValue Property="EditAction" String="ExpenseManager.draftEdit"/>
+                        <PropertyValue Property="PreparationAction" String="ExpenseManager.draftPrepare"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/ID">
+                <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/createdAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Criado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/createdBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Criado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/modifiedAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Modificado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/modifiedBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Modificado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/Name">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/Image">
+                <Annotation Term="Core.MediaType" Path="ImageType"/>
+                <Annotation Term="UI.IsImage" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/ImageType">
+                <Annotation Term="Core.IsMediaType" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/Income">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/Currency">
+                <Annotation Term="Common.Label" String="Moeda"/>
+                <Annotation Term="Core.Description" String="Código de moeda como especificado pelo ISO 4217"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/Currency_code">
+                <Annotation Term="Common.Label" String="Moeda"/>
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+                <Annotation Term="Common.ValueList">
+                    <Record Type="Common.ValueListType">
+                        <PropertyValue Property="Label" String="Moeda"/>
+                        <PropertyValue Property="CollectionPath" String="Currencies"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="Currency_code"/>
+                                    <PropertyValue Property="ValueListProperty" String="code"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="name"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Core.Description" String="Código de moeda como especificado pelo ISO 4217"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/Email">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/ExpenseTarget">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/AmountToSave">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/TotalExpenses">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/TotalExpensesMonth">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/TotalExpensesPayed">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/TotalExpensesToPay">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/TotalExpensesClosed">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/MonthCriticallity">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/CriticallityToPay">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/IsActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/HasActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/HasDraftEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/DraftAdministrativeData">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Persons/DraftMessages">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Shares">
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.Messages" Path="DraftMessages"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.EntityContainer/Shares">
+                <Annotation Term="Common.DraftNode">
+                    <Record Type="Common.DraftNodeType">
+                        <PropertyValue Property="PreparationAction" String="ExpenseManager.draftPrepare"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Shares/ID">
+                <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Shares/createdAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Criado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Shares/createdBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Criado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Shares/modifiedAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Modificado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Shares/modifiedBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Modificado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Shares/User">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Shares/Person_ID">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Shares/IsActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Shares/HasActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Shares/HasDraftEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Shares/DraftAdministrativeData">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Shares/DraftMessages">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities">
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.Messages" Path="DraftMessages"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.EntityContainer/Entities">
+                <Annotation Term="Common.DraftNode">
+                    <Record Type="Common.DraftNodeType">
+                        <PropertyValue Property="PreparationAction" String="ExpenseManager.draftPrepare"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities/ID">
+                <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities/createdAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Criado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities/createdBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Criado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities/modifiedAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Modificado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities/modifiedBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Modificado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities/Share_ID">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities/Entity">
+                <Annotation Term="Validation.AllowedValues">
+                    <Collection>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Persons"/>
+                            <PropertyValue Property="Value" Int="1"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Shares"/>
+                            <PropertyValue Property="Value" Int="2"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Entities"/>
+                            <PropertyValue Property="Value" Int="3"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Categories"/>
+                            <PropertyValue Property="Value" Int="4"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Cards"/>
+                            <PropertyValue Property="Value" Int="5"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Invoices"/>
+                            <PropertyValue Property="Value" Int="6"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Transactions"/>
+                            <PropertyValue Property="Value" Int="7"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Backups"/>
+                            <PropertyValue Property="Value" Int="8"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Liabilities"/>
+                            <PropertyValue Property="Value" Int="9"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="LiabilityTransactions"/>
+                            <PropertyValue Property="Value" Int="10"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Financings"/>
+                            <PropertyValue Property="Value" Int="11"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="FinancingInstallments"/>
+                            <PropertyValue Property="Value" Int="12"/>
+                        </Record>
+                    </Collection>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities/Permission">
+                <Annotation Term="Validation.AllowedValues">
+                    <Collection>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Viewer"/>
+                            <PropertyValue Property="Value" Int="1"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Creator"/>
+                            <PropertyValue Property="Value" Int="2"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Modifier"/>
+                            <PropertyValue Property="Value" Int="3"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="Deleter"/>
+                            <PropertyValue Property="Value" Int="4"/>
+                        </Record>
+                    </Collection>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities/IsActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities/HasActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities/HasDraftEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities/DraftAdministrativeData">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Entities/DraftMessages">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories">
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.Messages" Path="DraftMessages"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.EntityContainer/Categories">
+                <Annotation Term="Common.DraftNode">
+                    <Record Type="Common.DraftNodeType">
+                        <PropertyValue Property="PreparationAction" String="ExpenseManager.draftPrepare"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/ID">
+                <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/createdAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Criado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/createdBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Criado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/modifiedAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Modificado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/modifiedBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Modificado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/Name">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/Image">
+                <Annotation Term="Core.MediaType" Path="ImageType"/>
+                <Annotation Term="UI.IsImage" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/ImageType">
+                <Annotation Term="Core.IsMediaType" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/Person_ID">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/IsActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/HasActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/HasDraftEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/DraftAdministrativeData">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Categories/DraftMessages">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards">
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.Messages" Path="DraftMessages"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.EntityContainer/Cards">
+                <Annotation Term="Common.DraftNode">
+                    <Record Type="Common.DraftNodeType">
+                        <PropertyValue Property="PreparationAction" String="ExpenseManager.draftPrepare"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/ID">
+                <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/createdAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Criado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/createdBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Criado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/modifiedAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Modificado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/modifiedBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Modificado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/Name">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/Image">
+                <Annotation Term="Core.MediaType" Path="ImageType"/>
+                <Annotation Term="UI.IsImage" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/ImageType">
+                <Annotation Term="Core.IsMediaType" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/Limit">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/Currency">
+                <Annotation Term="Common.Label" String="Moeda"/>
+                <Annotation Term="Core.Description" String="Código de moeda como especificado pelo ISO 4217"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/Currency_code">
+                <Annotation Term="Common.Label" String="Moeda"/>
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+                <Annotation Term="Common.ValueList">
+                    <Record Type="Common.ValueListType">
+                        <PropertyValue Property="Label" String="Moeda"/>
+                        <PropertyValue Property="CollectionPath" String="Currencies"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="Currency_code"/>
+                                    <PropertyValue Property="ValueListProperty" String="code"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="name"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Core.Description" String="Código de moeda como especificado pelo ISO 4217"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/AvailableLimit">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/DueDay">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/ClosingDay">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/InvoiceAmountForPayment">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/InvoiceAmountToPay">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/Person_ID">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/IsActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/HasActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/HasDraftEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/DraftAdministrativeData">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Cards/DraftMessages">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices">
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.Messages" Path="DraftMessages"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.EntityContainer/Invoices">
+                <Annotation Term="Common.DraftNode">
+                    <Record Type="Common.DraftNodeType">
+                        <PropertyValue Property="PreparationAction" String="ExpenseManager.draftPrepare"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Capabilities.DeleteRestrictions">
+                    <Record Type="Capabilities.DeleteRestrictionsType">
+                        <PropertyValue Property="Deletable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Capabilities.InsertRestrictions">
+                    <Record Type="Capabilities.InsertRestrictionsType">
+                        <PropertyValue Property="Insertable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Capabilities.UpdateRestrictions">
+                    <Record Type="Capabilities.UpdateRestrictionsType">
+                        <PropertyValue Property="Updatable" Bool="false"/>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices/ID">
+                <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices/createdAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Criado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices/createdBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Criado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices/modifiedAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Modificado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices/modifiedBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Modificado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices/Currency">
+                <Annotation Term="Common.Label" String="Moeda"/>
+                <Annotation Term="Core.Description" String="Código de moeda como especificado pelo ISO 4217"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices/Currency_code">
+                <Annotation Term="Common.Label" String="Moeda"/>
+                <Annotation Term="Common.ValueList">
+                    <Record Type="Common.ValueListType">
+                        <PropertyValue Property="Label" String="Moeda"/>
+                        <PropertyValue Property="CollectionPath" String="Currencies"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="Currency_code"/>
+                                    <PropertyValue Property="ValueListProperty" String="code"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="name"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Core.Description" String="Código de moeda como especificado pelo ISO 4217"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices/Card_ID">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices/IsActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices/HasActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices/HasDraftEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices/DraftAdministrativeData">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Invoices/DraftMessages">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions">
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.Messages" Path="DraftMessages"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.EntityContainer/Transactions">
+                <Annotation Term="Common.DraftNode">
+                    <Record Type="Common.DraftNodeType">
+                        <PropertyValue Property="PreparationAction" String="ExpenseManager.draftPrepare"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Common.SideEffects" Qualifier="alwaysFetchMessages">
+                    <Record Type="Common.SideEffectsType">
+                        <PropertyValue Property="SourceEntities">
+                            <Collection>
+                                <NavigationPropertyPath/>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="TargetProperties">
+                            <Collection>
+                                <String>DraftMessages</String>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/ID">
+                <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/createdAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Criado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/createdBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Criado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/modifiedAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Modificado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/modifiedBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Modificado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/Currency">
+                <Annotation Term="Common.Label" String="Moeda"/>
+                <Annotation Term="Core.Description" String="Código de moeda como especificado pelo ISO 4217"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/Currency_code">
+                <Annotation Term="Common.Label" String="Moeda"/>
+                <Annotation Term="Common.ValueList">
+                    <Record Type="Common.ValueListType">
+                        <PropertyValue Property="Label" String="Moeda"/>
+                        <PropertyValue Property="CollectionPath" String="Currencies"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="Currency_code"/>
+                                    <PropertyValue Property="ValueListProperty" String="code"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="name"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Core.Description" String="Código de moeda como especificado pelo ISO 4217"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/Invoice_ID">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/Category_ID">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/IsActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/HasActiveEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/HasDraftEntity">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/DraftAdministrativeData">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Transactions/DraftMessages">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Backups/ID">
+                <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Backups/createdAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Criado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Backups/createdBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Criado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Backups/modifiedAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Modificado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Backups/modifiedBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Modificado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Backups/Backup">
+                <Annotation Term="Core.MediaType" Path="BackupType"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Backups/BackupType">
+                <Annotation Term="Core.IsMediaType" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/ID">
+                <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/createdAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Criado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/createdBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Criado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/modifiedAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Modificado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/modifiedBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Modificado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/Person_ID">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/Name">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/Type">
+                <Annotation Term="Validation.AllowedValues">
+                    <Collection>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="GENERAL"/>
+                            <PropertyValue Property="Value" String="GENERAL"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="PERSONAL_LOAN"/>
+                            <PropertyValue Property="Value" String="PERSONAL_LOAN"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="FAMILY"/>
+                            <PropertyValue Property="Value" String="FAMILY"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="BANK"/>
+                            <PropertyValue Property="Value" String="BANK"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="STORE"/>
+                            <PropertyValue Property="Value" String="STORE"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="TAX"/>
+                            <PropertyValue Property="Value" String="TAX"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="LEGAL"/>
+                            <PropertyValue Property="Value" String="LEGAL"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="CREDIT_LINE"/>
+                            <PropertyValue Property="Value" String="CREDIT_LINE"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="OTHER"/>
+                            <PropertyValue Property="Value" String="OTHER"/>
+                        </Record>
+                    </Collection>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/Status">
+                <Annotation Term="Validation.AllowedValues">
+                    <Collection>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="OPEN"/>
+                            <PropertyValue Property="Value" String="OPEN"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="PAID"/>
+                            <PropertyValue Property="Value" String="PAID"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="CANCELLED"/>
+                            <PropertyValue Property="Value" String="CANCELLED"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="RENEGOTIATED"/>
+                            <PropertyValue Property="Value" String="RENEGOTIATED"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="OVERDUE"/>
+                            <PropertyValue Property="Value" String="OVERDUE"/>
+                        </Record>
+                    </Collection>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/OriginalAmount">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/Currency">
+                <Annotation Term="Common.Label" String="Moeda"/>
+                <Annotation Term="Core.Description" String="Código de moeda como especificado pelo ISO 4217"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/Currency_code">
+                <Annotation Term="Common.Label" String="Moeda"/>
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+                <Annotation Term="Common.ValueList">
+                    <Record Type="Common.ValueListType">
+                        <PropertyValue Property="Label" String="Moeda"/>
+                        <PropertyValue Property="CollectionPath" String="Currencies"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="Currency_code"/>
+                                    <PropertyValue Property="ValueListProperty" String="code"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="name"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Core.Description" String="Código de moeda como especificado pelo ISO 4217"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/InterestMode">
+                <Annotation Term="Validation.AllowedValues">
+                    <Collection>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="MANUAL"/>
+                            <PropertyValue Property="Value" String="MANUAL"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="SIMPLE"/>
+                            <PropertyValue Property="Value" String="SIMPLE"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="COMPOUND"/>
+                            <PropertyValue Property="Value" String="COMPOUND"/>
+                        </Record>
+                    </Collection>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/StartDate">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/RemainingAmount">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/ProgressPercent">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/PaidInstallments">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/RemainingInstallments">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/NextDueDate">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/IsOverdue">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Liabilities/HealthScore">
+                <Annotation Term="Core.Computed" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.LiabilityTransactions/ID">
+                <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.LiabilityTransactions/createdAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Criado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.LiabilityTransactions/createdBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Immutable" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Criado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.LiabilityTransactions/modifiedAt">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Common.Label" String="Modificado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.LiabilityTransactions/modifiedBy">
+                <Annotation Term="UI.HiddenFilter" Bool="true"/>
+                <Annotation Term="UI.ExcludeFromNavigationContext" Bool="true"/>
+                <Annotation Term="Core.Computed" Bool="true"/>
+                <Annotation Term="Core.Description" String="ID exclusivo do usuário"/>
+                <Annotation Term="Common.Label" String="Modificado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.LiabilityTransactions/Liability_ID">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.LiabilityTransactions/Type">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+                <Annotation Term="Validation.AllowedValues">
+                    <Collection>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="OPENING"/>
+                            <PropertyValue Property="Value" String="OPENING"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="PAYMENT"/>
+                            <PropertyValue Property="Value" String="PAYMENT"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="INTEREST"/>
+                            <PropertyValue Property="Value" String="INTEREST"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="FEE"/>
+                            <PropertyValue Property="Value" String="FEE"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="DISCOUNT"/>
+                            <PropertyValue Property="Value" String="DISCOUNT"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="AMORTIZATION"/>
+                            <PropertyValue Property="Value" String="AMORTIZATION"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="RENEGOTIATION"/>
+                            <PropertyValue Property="Value" String="RENEGOTIATION"/>
+                        </Record>
+                        <Record Type="Validation.AllowedValue">
+                            <Annotation Term="Core.SymbolicName" String="REVERSAL"/>
+                            <PropertyValue Property="Value" String="REVERSAL"/>
+                        </Record>
+                    </Collection>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.LiabilityTransactions/MovementDate">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.LiabilityTransactions/Amount">
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.LiabilityTransactions/Currency">
+                <Annotation Term="Common.Label" String="Moeda"/>
+                <Annotation Term="Core.Description" String="Código de moeda como especificado pelo ISO 4217"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.LiabilityTransactions/Currency_code">
+                <Annotation Term="Common.Label" String="Moeda"/>
+                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
+                <Annotation Term="Common.ValueList">
+                    <Record Type="Common.ValueListType">
+                        <PropertyValue Property="Label" String="Moeda"/>
+                        <PropertyValue Property="CollectionPath" String="Currencies"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="Currency_code"/>
+                                    <PropertyValue Property="ValueListProperty" String="code"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="name"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="Core.Description" String="Código de moeda como especificado pelo ISO 4217"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.CardExpensesByCategories(Edm.Guid,Edm.Guid,Edm.Guid,Edm.Int32,Edm.Int32,Edm.Boolean)/PersonId">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.CardExpensesByCategories(Edm.Guid,Edm.Guid,Edm.Guid,Edm.Int32,Edm.Int32,Edm.Boolean)/CardId">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.CardExpensesByCategories(Edm.Guid,Edm.Guid,Edm.Guid,Edm.Int32,Edm.Int32,Edm.Boolean)/InvoiceId">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.CardExpensesByCategories(Edm.Guid,Edm.Guid,Edm.Guid,Edm.Int32,Edm.Int32,Edm.Boolean)/Year">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.CardExpensesByCategories(Edm.Guid,Edm.Guid,Edm.Guid,Edm.Int32,Edm.Int32,Edm.Boolean)/Month">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.CardExpensesByCategories(Edm.Guid,Edm.Guid,Edm.Guid,Edm.Int32,Edm.Int32,Edm.Boolean)/TotalOnwards">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.RetrieveTransactionsByCategory(Edm.Guid,Edm.Guid,Edm.Boolean,Edm.Int32,Edm.Int32)/PersonId">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.RetrieveTransactionsByCategory(Edm.Guid,Edm.Guid,Edm.Boolean,Edm.Int32,Edm.Int32)/CategoryId">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.RetrieveTransactionsByCategory(Edm.Guid,Edm.Guid,Edm.Boolean,Edm.Int32,Edm.Int32)/Total">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.RetrieveTransactionsByCategory(Edm.Guid,Edm.Guid,Edm.Boolean,Edm.Int32,Edm.Int32)/Year">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.RetrieveTransactionsByCategory(Edm.Guid,Edm.Guid,Edm.Boolean,Edm.Int32,Edm.Int32)/Month">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.RetrieveCompleteInvoice(Edm.Guid,Edm.Int32,Edm.Int32)/PersonId">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.RetrieveCompleteInvoice(Edm.Guid,Edm.Int32,Edm.Int32)/Year">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.RetrieveCompleteInvoice(Edm.Guid,Edm.Int32,Edm.Int32)/Month">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Dashboard(Edm.Guid)/PersonId">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Analytics(Edm.Guid)/PersonId">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.PaymentSchedule(Edm.Guid)/LiabilityId">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.FutureImpact(Edm.Guid)/PersonId">
+                <Annotation Term="Core.OptionalParameter">
+                    <Record Type="Core.OptionalParameterType"/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Currencies">
+                <Annotation Term="UI.Identification">
+                    <Collection>
+                        <Record Type="UI.DataField">
+                            <PropertyValue Property="Value" Path="name"/>
+                        </Record>
+                    </Collection>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Currencies/name">
+                <Annotation Term="Common.Label" String="Nome"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Currencies/descr">
+                <Annotation Term="Common.Label" String="Descrição"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Currencies/code">
+                <Annotation Term="Common.Text" Path="name"/>
+                <Annotation Term="Common.Label" String="Código de moeda"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Currencies/symbol">
+                <Annotation Term="Common.Label" String="Símbolo da moeda"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Currencies/minorUnit">
+                <Annotation Term="Common.Label" String="Frações de unidade auxiliar de moeda"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.DraftAdministrativeData">
+                <Annotation Term="Common.Label" String="Dados administrativos de rascunho"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.DraftAdministrativeData/DraftUUID">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+                <Annotation Term="Common.Label" String="Rascunho (ID técnico)"/>
+                <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.DraftAdministrativeData/CreationDateTime">
+                <Annotation Term="Common.Label" String="Rascunho criado em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.DraftAdministrativeData/CreatedByUser">
+                <Annotation Term="Common.Label" String="Rascunho criado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.DraftAdministrativeData/DraftIsCreatedByMe">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+                <Annotation Term="Common.Label" String="Rascunho criado por mim"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.DraftAdministrativeData/LastChangeDateTime">
+                <Annotation Term="Common.Label" String="Última modificação do rascunho em"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.DraftAdministrativeData/LastChangedByUser">
+                <Annotation Term="Common.Label" String="Última modificação do rascunho por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.DraftAdministrativeData/InProcessByUser">
+                <Annotation Term="Common.Label" String="Rascunho sendo processado por"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.DraftAdministrativeData/DraftIsProcessedByMe">
+                <Annotation Term="UI.Hidden" Bool="true"/>
+                <Annotation Term="Common.Label" String="Rascunho sendo processado por mim"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Currencies_texts/locale">
+                <Annotation Term="Common.Label" String="Código de idioma"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Currencies_texts/name">
+                <Annotation Term="Common.Label" String="Nome"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Currencies_texts/descr">
+                <Annotation Term="Common.Label" String="Descrição"/>
+            </Annotations>
+            <Annotations Target="ExpenseManager.Currencies_texts/code">
+                <Annotation Term="Common.Text" Path="name"/>
+                <Annotation Term="Common.Label" String="Código de moeda"/>
+            </Annotations>
+        </Schema>
+    </edmx:DataServices>
+</edmx:Edmx>

@@ -1,0 +1,53 @@
+{
+  "name": "expensemanager",
+  "version": "0.0.1",
+  "description": "Expense Manager",
+  "keywords": [
+    "ui5",
+    "openui5",
+    "sapui5"
+  ],
+  "main": "webapp/index.html",
+  "dependencies": {
+    "@cap-js/mcp-server": "^0.0.5"
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "7.14.7",
+    "@sap-ux/eslint-plugin-fiori-tools": "^0.4.0",
+    "@sap-ux/fiori-mcp-server": "^1.11.4",
+    "@sap-ux/ui5-middleware-fe-mockserver": "2",
+    "@sap/ux-ui5-tooling": "1",
+    "@sapui5/types": "~1.150.0",
+    "@typescript-eslint/eslint-plugin": "^7.1.1",
+    "@typescript-eslint/parser": "^7.1.1",
+    "@ui5/cli": "^4.0.16",
+    "@ui5/mcp-server": "^0.2.17",
+    "eslint": "8.57.0",
+    "eslint-plugin-fiori-custom": "2.6.7",
+    "mbt": "^1.2.29",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.1.6",
+    "ui5-task-zipper": "^3.4.x",
+    "ui5-tooling-transpile": "^3.3.7"
+  },
+  "scripts": {
+    "start": "echo \\\"This application was generated with a local metadata file and does not reference a live server. Please add the required server configuration or start this application with mock data using the target: `npm run start-mock`.\\\"",
+    "start-local": "fiori run --config ./ui5-local.yaml --open \"test/flp.html#app-preview\"",
+    "build": "ui5 build --config=ui5.yaml --clean-dest --dest dist",
+    "lint": "eslint ./",
+    "ts-typecheck": "tsc --noEmit",
+    "prestart": "npm run ts-typecheck",
+    "prebuild": "npm run ts-typecheck",
+    "deploy": "fiori cfDeploy",
+    "deploy-config": "fiori add deploy-config",
+    "start-noflp": "echo \\\"This application was generated with a local metadata file and does not reference a live server. Please add the required server configuration or start this application with mock data using the target: `npm run start-mock`.\\\"",
+    "start-mock": "fiori run --config ./ui5-mock.yaml --open \"test/flp.html#app-preview\"",
+    "int-test": "fiori run --config ./ui5-mock.yaml --open \"test/integration/opaTests.qunit.html\"",
+    "start-variants-management": "echo \\\"This application was generated with a local metadata file and does not reference a live server. Please add the required server configuration or start this application with mock data using the target: `npm run start-mock`.\\\"",
+    "unit-test": "fiori run --config ./ui5-mock.yaml --open \"test/unit/unitTests.qunit.html\"",
+    "build:cf": "ui5 build preload --clean-dest --config ui5-deploy.yaml --include-task=generateCachebusterInfo",
+    "build:mta": "rimraf resources mta_archives && mbt build",
+    "undeploy": "cf undeploy appsdflcexpensemanager --delete-services --delete-service-keys --delete-service-brokers"
+  },
+  "sapuxLayer": "CUSTOMER_BASE"
+}
