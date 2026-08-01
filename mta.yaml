@@ -86,7 +86,7 @@ resources:
 - name: appsdflcexpensemanager-uaa
   type: org.cloudfoundry.existing-service
   parameters:
-    service-name: ExpenseManager-uaa-${space}
+    service-name: ExpenseManager-uaa
 - name: appsdflcexpensemanager-repo-host
   type: org.cloudfoundry.managed-service
   parameters:

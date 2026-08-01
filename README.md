@@ -35,7 +35,7 @@ Para usar dados reais no GitHub Pages, é necessário um componente de servidor 
 
 ## Publicação no BTP
 
-Os dois projetos devem ser publicados no mesmo space. Primeiro publique o CAP, pois ele cria a instância XSUAA compartilhada; depois publique este projeto UI5.
+Os dois projetos devem ser publicados no mesmo space. Primeiro publique o CAP, pois ele cria a instância XSUAA compartilhada; depois publique este projeto UI5. O MTA UI5 referencia a instância existente `ExpenseManager-uaa`.
 
 ```sh
 # no projeto CAP
