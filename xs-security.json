@@ -1,7 +1,20 @@
 {
   "xsappname": "appsdflcexpensemanager",
   "tenant-mode": "dedicated",
-  "description": "Security profile of called application",
-  "scopes": [],
-  "role-templates": []
+  "description": "Security profile for Expense Manager UI5 app",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.User",
+      "description": "Access the Expense Manager application"
+    }
+  ],
+  "role-templates": [
+    {
+      "name": "Viewer",
+      "description": "Viewer role for Expense Manager",
+      "scope-references": [
+        "$XSAPPNAME.User"
+      ]
+    }
+  ]
 }

@@ -1,0 +1,36 @@
+<mvc:View
+    controllerName="apps.dflc.expensemanager.controller.Login"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+>
+    <Page id="loginPage" showHeader="false">
+        <content>
+            <VBox
+                id="loginVBox"
+                width="100%"
+                justifyContent="Center"
+                alignItems="Center"
+                class="sapUiLargeMarginTop sapUiMediumMarginBottom"
+            >
+                <Title id="loginTitle" text="{i18n>loginTitle}" />
+
+                <Text id="loginSubtitle" text="{i18n>loginSubtitle}" class="sapUiSmallMarginBottom" />
+
+                <Button
+                    id="loginButton"
+                    text="{i18n>loginButton}"
+                    press=".onLogin"
+                    type="Emphasized"
+                    class="sapUiSmallMarginBottom"
+                />
+
+                <Button
+                    id="secondaryLoginButton"
+                    text="{i18n>secondaryButton}"
+                    press=".onSecondaryAction"
+                    type="Transparent"
+                />
+            </VBox>
+        </content>
+    </Page>
+</mvc:View>

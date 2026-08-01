@@ -1,0 +1,2 @@
+sap.ui.define(["sap/ui/core/mvc/Controller","sap/ui/core/UIComponent"],function(e,t){"use strict";class r extends e{getRouter(){return t.getRouterFor(this)}navTo(e,t){this.getRouter().navTo(e,t)}getResourceBundle(){return this.getOwnerComponent().getModel("i18n").getResourceBundle()}}var o={__esModule:true};o.BaseController=r;return o});
+//# sourceMappingURL=BaseController.js.map

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="0; url=./index.html" />
+  <script>
+    const path = window.location.pathname.replace(/\/+$/, "");
+    const search = window.location.search || "";
+    const hash = window.location.hash || "";
+    const target = `./index.html${search}${hash}`;
+    window.location.replace(target);
+  </script>
+  <title>Redirecting...</title>
+</head>
+<body>
+  <p>Redirecting to the application...</p>
+</body>
+</html>

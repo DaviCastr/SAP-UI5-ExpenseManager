@@ -1,0 +1,2 @@
+sap.ui.define(["../AuthenticationService","../storage/SessionStorage"],function(e,t){"use strict";const s=e["AuthenticationService"];const n=t["SessionStorage"];class i{async login(){const e={accessToken:"github-pages-demo-token",expiresAt:Date.now()+36e5,userName:"Visitante GitHub Pages"};n.save(e);return e}async logout(){n.clear()}async isAuthenticated(){const e=s.getSession();return!!e&&e.expiresAt>Date.now()}}var o={__esModule:true};o.GithubPagesAuthenticationProvider=i;return o});
+//# sourceMappingURL=GithubPagesAuthenticationProvider.js.map

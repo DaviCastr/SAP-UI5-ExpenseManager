@@ -1,0 +1,2 @@
+window.__EXPENSE_MANAGER_CONFIG__={btpHost:"https://orgname-dev-expensemanager.cfapps.us10-003.hana.ondemand.com",odataService:"https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com"};
+//# sourceMappingURL=runtime-config.js.map

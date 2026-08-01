@@ -19,6 +19,8 @@ builder:
         relativePaths: true
         additionalFiles:
           - xs-app.json
+          - xs-security.json
+          - mta.yaml
   resources:
     excludes:
       - /test/**

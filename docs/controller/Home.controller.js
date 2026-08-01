@@ -1,0 +1,2 @@
+sap.ui.define(["./BaseController","sap/m/MessageToast"],function(s,e){"use strict";const t=s["BaseController"];class n extends t{onOpenInsights(){const s=this.getResourceBundle().getText("insightsMessage")??"Insights ready";e.show(s)}}return n});
+//# sourceMappingURL=Home.controller.js.map

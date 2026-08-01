@@ -1,0 +1,2 @@
+BTP_HOST=https://orgname-dev-expensemanager.cfapps.us10-003.hana.ondemand.com
+BTP_OData_SERVICE=https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com

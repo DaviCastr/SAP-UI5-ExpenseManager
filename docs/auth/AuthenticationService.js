@@ -1,0 +1,2 @@
+sap.ui.define(["./storage/SessionStorage"],function(t){"use strict";const i=t["SessionStorage"];class e{static initialize(t){this.provider=t}static async login(){const t=await this.provider.login();i.save(t)}static async logout(){i.clear();await this.provider.logout()}static getSession(){return i.load()}static async isAuthenticated(){return this.provider.isAuthenticated()}}var s={__esModule:true};s.AuthenticationService=e;return s});
+//# sourceMappingURL=AuthenticationService.js.map

@@ -42,3 +42,13 @@ Expense Manager
 
 # SAP-UI5-ExpenseManager
 Expensa Manager UI5 Freestyle
+
+## Publicação
+
+- Desenvolvimento local com mock do OData: `npm run start-mock`
+- Build para GitHub Pages: `npm run build:github-pages`
+- Build padrão: `npm run build`
+- Deploy no BTP via MTA: `mbt build` e `cf deploy mta_archives/*.mtar`
+- Deploy no GitHub Pages: o workflow em `.github/workflows/deploy-github-pages.yml` faz a publicação automaticamente após push para `main`
+
+A aplicação foi preparada para funcionar com o mock local do serviço OData, com autenticação de visitante no GitHub Pages e com integração de roteamento e autenticação no BTP via XSUAA/approuter.

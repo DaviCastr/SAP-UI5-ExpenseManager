@@ -1,0 +1,1 @@
+{"version":3,"file":"UserSession-dbg.js","names":[],"sources":["UserSession.ts"],"sourcesContent":["export interface UserSession {\n\n    accessToken: string;\n\n    expiresAt: number;\n\n    userName: string;\n\n}"],"mappings":"","ignoreList":[]}

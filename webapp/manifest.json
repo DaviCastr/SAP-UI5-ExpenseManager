@@ -63,7 +63,8 @@
       "minUI5Version": "1.150.1",
       "libs": {
         "sap.m": {},
-        "sap.ui.core": {}
+        "sap.ui.core": {},
+        "sap.ui.layout": {}
       }
     },
     "contentDensities": {
@@ -108,14 +109,14 @@
       },
       "routes": [
         {
-          "name": "Login",
+          "name": "Home",
           "pattern": "",
-          "target": "Login"
+          "target": "Home"
         },
         {
-          "name": "Home",
-          "pattern": "home",
-          "target": "Home"
+          "name": "Login",
+          "pattern": "login",
+          "target": "Login"
         }
       ],
       "targets": {
