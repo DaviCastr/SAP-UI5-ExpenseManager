@@ -30,13 +30,6 @@ modules:
           ServiceInstanceName: ExpenseManager-uaa
           ServiceKeyName: appsdflcexpensemanager-uaa-key
           sap.cloud.service: appsdflcexpensemanager
-        - Authentication: NoAuthentication
-          Name: ExpenseManager
-          Type: HTTP
-          URL: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
-          ProxyType: Internet
-          HTML5.ForwardAuthToken: true
-          HTML5.DynamicDestination: true
         existing_destinations_policy: update
   build-parameters:
     no-source: true
@@ -78,6 +71,13 @@ resources:
             ProxyType: Internet
             Type: HTTP
             URL: https://ui5.sap.com
+          - Authentication: NoAuthentication
+            Name: ExpenseManager
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
+            HTML5.ForwardAuthToken: true
+            HTML5.DynamicDestination: true
           existing_destinations_policy: update
       version: 1.0.0
     service: destination
