@@ -27,7 +27,7 @@ modules:
           sap.cloud.service: appsdflcexpensemanager
         - Authentication: OAuth2UserTokenExchange
           Name: appsdflcexpensemanager_uaa
-          ServiceInstanceName: appsdflcexpensemanager-xsuaa-service
+          ServiceInstanceName: ExpenseManager-uaa
           ServiceKeyName: appsdflcexpensemanager-uaa-key
           sap.cloud.service: appsdflcexpensemanager
         - Authentication: NoAuthentication
