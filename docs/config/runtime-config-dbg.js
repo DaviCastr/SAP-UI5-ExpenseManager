@@ -4,7 +4,7 @@ window.__EXPENSE_MANAGER_CONFIG__ = {
   auth: {
     authDomain: "https://6v1gtwf6slgjhkbs.authentication.us10.hana.ondemand.com",
     clientId: "sb-ExpenseManager-uaa-dev!t684376",
-    scope: "openid sb-ExpenseManager-uaa-dev!t684376.ExpenseManagerUser",
+    scope: "openid ExpenseManager-uaa-dev!t684376.ExpenseManagerUser",
     redirectUri: "https://davicastr.github.io/SAP-UI5-ExpenseManager/",
     tokenEndpoint: "https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com/auth/login",
     refreshEndpoint: "https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com/auth/refresh"
