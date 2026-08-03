@@ -5,14 +5,14 @@ import FilterOperator from "sap/ui/model/FilterOperator";
 import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import Dialog from "sap/m/Dialog";
-import Event from "sap/ui/base/Event";
+import Control from "sap/ui/core/Control";
+import Fragment from "sap/ui/core/Fragment";
+import XMLView from "sap/ui/core/mvc/XMLView";
 import { BaseController } from "./BaseController";
 import { AuthenticationService } from "../auth/AuthenticationService";
 import Environment, { EnvironmentType } from "../util/Environment";
 import { formatCurrency } from "../util/format";
 import {
-    createBackupRow,
-    uploadBackupStream,
     requestExportBackup,
     fetchBackupStream,
     deleteBackupRow,
@@ -52,7 +52,11 @@ const EMPTY_SUMMARY: Summary = {
 };
 
 export default class Home extends BaseController {
-    private backupFile: File | null = null;
+    private _expenseDialog?: Promise<Dialog>;
+    private _backupDialog?: Promise<Dialog>;
+    private _personDialog?: Promise<Dialog>;
+    private _cardDialog?: Promise<Dialog>;
+    private _categoryDialog?: Promise<Dialog>;
 
     private get uiModel(): JSONModel {
         return this.getOwnerComponent()?.getModel("ui") as JSONModel;
@@ -62,7 +66,7 @@ export default class Home extends BaseController {
         void this.bootstrap();
     }
 
-    private async bootstrap(): Promise<void> {
+    public async bootstrap(): Promise<void> {
         const model = await this.waitForServiceModel();
 
         if (!model) {
@@ -93,112 +97,72 @@ export default class Home extends BaseController {
     }
 
     public onOpenExpenseDialog(): void {
+        const oView = this.getView() as XMLView;
         this.uiModel.setProperty("/newExpense", { description: "", amount: "", cardId: "", categoryId: "" });
-        (this.byId("expenseDialog") as Dialog).open();
-    }
 
-    public onCloseExpenseDialog(): void {
-        (this.byId("expenseDialog") as Dialog).close();
-    }
-
-    public async onCreateExpense(): Promise<void> {
-        const expense = this.uiModel.getProperty("/newExpense") as { description: string; amount: string; cardId: string; categoryId: string };
-        if (!expense.description || !expense.amount || !expense.cardId || !expense.categoryId) {
-            MessageBox.warning("Preencha descrição, valor, cartão e categoria para continuar.");
-            return;
+        if (!this._expenseDialog) {
+            this._expenseDialog = this.loadFragmentDialog(oView, "AddExpense");
         }
 
-        const model = this.getServiceModel();
-        const action = model.bindContext("/AddCardExpense(...)");
-        action.setParameter("CardId", expense.cardId);
-        action.setParameter("CategoryId", expense.categoryId);
-        action.setParameter("Description", expense.description);
-        action.setParameter("Value", Number(expense.amount.replace(",", ".")));
-        action.setParameter("Currency", "BRL");
-        action.setParameter("TransactionDate", new Date().toISOString().slice(0, 10));
-        action.setParameter("Installments", 1);
-        action.setParameter("FixedExpense", false);
+        void this._expenseDialog.then((dialog) => dialog.open());
+    }
 
-        try {
-            await action.invoke();
-            (this.byId("expenseDialog") as Dialog).close();
-            MessageToast.show("Gasto registrado com sucesso.");
-        } catch (error) {
-            MessageBox.error("Não foi possível registrar o gasto. Verifique sua conexão e tente novamente.");
+    public onOpenPersonDialog(): void {
+        const oView = this.getView() as XMLView;
+        this.uiModel.setProperty("/newPerson", { name: "", email: "", phone: "", income: "", currency: "BRL", target: "" });
+
+        if (!this._personDialog) {
+            this._personDialog = this.loadFragmentDialog(oView, "AddPerson");
         }
+
+        void this._personDialog.then((dialog) => dialog.open());
     }
 
     public onOpenCardDialog(): void {
+        const oView = this.getView() as XMLView;
         this.uiModel.setProperty("/newCard", { name: "", limit: "", currency: "BRL" });
-        (this.byId("cardDialog") as Dialog).open();
-    }
 
-    public onCloseCardDialog(): void {
-        (this.byId("cardDialog") as Dialog).close();
-    }
-
-    public async onCreateCardDraft(): Promise<void> {
-        const card = this.uiModel.getProperty("/newCard") as { name: string; limit: string; currency: string };
-        if (!card.name || !card.limit) {
-            MessageBox.warning("Informe o nome e o limite do cartão.");
-            return;
+        if (!this._cardDialog) {
+            this._cardDialog = this.loadFragmentDialog(oView, "AddCard");
         }
 
+        void this._cardDialog.then((dialog) => dialog.open());
+    }
+
+    public onOpenCategoryDialog(): void {
+        const oView = this.getView() as XMLView;
+        this.uiModel.setProperty("/newCategory", { name: "" });
+
+        if (!this._categoryDialog) {
+            this._categoryDialog = this.loadFragmentDialog(oView, "AddCategory");
+        }
+
+        void this._categoryDialog.then((dialog) => dialog.open());
+    }
+
+    public async refresh(): Promise<void> {
         const model = this.getServiceModel();
-        const binding = model.bindList("/Cards", undefined, undefined, undefined, { $$updateGroupId: "draft" });
-        binding.create({
-            Name: card.name,
-            Limit: Number(card.limit.replace(",", ".")),
-            AvailableLimit: Number(card.limit.replace(",", ".")),
-            Currency_code: card.currency,
-            DueDay: 10,
-            ClosingDay: 3
-        });
+        const ui = this.uiModel;
 
         try {
-            await model.submitBatch("draft");
-            (this.byId("cardDialog") as Dialog).close();
-            MessageToast.show("Cartão salvo como rascunho. Revise-o antes de publicar.");
+            model.refresh();
+            const person = ui.getProperty("/selectedPerson") as Person | undefined;
+            if (person?.ID) {
+                await this.loadPersonData(model, person);
+            }
         } catch (error) {
-            MessageBox.error("Não foi possível salvar o rascunho do cartão.");
+            MessageBox.error("Não foi possível atualizar os dados.");
         }
-    }
-
-    public onBackupFileChange(event: Event): void {
-        const parameters = event.getParameters() as { files?: File[] };
-        const files = parameters.files;
-        this.backupFile = files && files.length > 0 ? files[0] : null;
     }
 
     public onRestoreBackup(): void {
-        this.backupFile = null;
-        (this.byId("backupDialog") as Dialog).open();
-    }
+        const oView = this.getView() as XMLView;
 
-    public onCloseBackupDialog(): void {
-        (this.byId("backupDialog") as Dialog).close();
-    }
-
-    public async onImportBackup(): Promise<void> {
-        if (!this.backupFile) {
-            MessageBox.warning("Selecione um arquivo .zip de backup para continuar.");
-            return;
+        if (!this._backupDialog) {
+            this._backupDialog = this.loadFragmentDialog(oView, "Backup");
         }
 
-        const ui = this.uiModel;
-        ui.setProperty("/busy", true);
-
-        try {
-            const row = await createBackupRow();
-            await uploadBackupStream(row.ID, this.backupFile);
-            (this.byId("backupDialog") as Dialog).close();
-            MessageToast.show("Backup restaurado com sucesso.");
-            await this.bootstrap();
-        } catch (error) {
-            MessageBox.error("Não foi possível restaurar o backup. Verifique se o arquivo é um backup válido.");
-        } finally {
-            ui.setProperty("/busy", false);
-        }
+        void this._backupDialog.then((dialog) => dialog.open());
     }
 
     public async onExportBackup(): Promise<void> {
@@ -356,6 +320,15 @@ export default class Home extends BaseController {
     private currentMonthLabel(): string {
         const label = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
         return `Visão geral • ${label}`;
+    }
+
+    private loadFragmentDialog(oView: XMLView, fragmentName: string): Promise<Dialog> {
+        return Fragment.load({
+            name: `apps.dflc.expensemanager.ext.fragment.${fragmentName}`
+        }).then((dialog) => {
+            oView.addDependent(dialog as Control);
+            return dialog as Dialog;
+        });
     }
 
     private getServiceModel(): ODataModel {
