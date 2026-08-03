@@ -1,11 +1,18 @@
 import { UserSession } from "../models/UserSession";
 
+interface AuthConfig {
+    authDomain: string;
+    clientId: string;
+    scope: string;
+    redirectUri: string;
+    tokenEndpoint: string;
+    refreshEndpoint: string;
+}
+
 interface RuntimeConfig {
     btpHost: string;
     odataService: string;
-    authDomain?: string;
-    clientId?: string;
-    scope?: string;
+    auth?: AuthConfig;
 }
 
 interface TokenResponse {
@@ -14,6 +21,7 @@ interface TokenResponse {
     token_type?: string;
     refresh_token?: string;
     id_token?: string;
+    user_name?: string;
     error?: string;
     error_description?: string;
 }
@@ -28,49 +36,74 @@ export class XsuaaAuthHelper {
         };
     }
 
-    public static async createAuthorizationFlow(): Promise<{ authorizeUrl: string; state: string; codeVerifier: string }> {
-        const config = this.getConfig();
-        const codeVerifier = this.generateRandomString(64);
+    public static createAuthorizationFlow(): { authorizeUrl: string; state: string } {
+        const config = this.getConfig().auth;
+
+        if (!config || !config.clientId || !config.authDomain) {
+            throw new Error("XSUAA client configuration is missing in runtime-config.js");
+        }
+
         const state = this.generateRandomString(32);
-        const codeChallenge = await this.createCodeChallenge(codeVerifier);
-        const redirectUri = this.getRedirectUri();
         const params = new URLSearchParams({
             response_type: "code",
-            client_id: config.clientId ?? "",
-            redirect_uri: redirectUri,
-            scope: config.scope ?? "openid",
-            state,
-            code_challenge: codeChallenge,
-            code_challenge_method: "S256"
+            client_id: config.clientId,
+            redirect_uri: this.getRedirectUri(),
+            scope: config.scope || "openid",
+            state
         });
 
         const authorizeUrl = `${config.authDomain}/oauth/authorize?${params.toString()}`;
-        return { authorizeUrl, state, codeVerifier };
+        return { authorizeUrl, state };
     }
 
-    public static async exchangeAuthorizationCode(code: string, codeVerifier: string): Promise<TokenResponse> {
-        const config = this.getConfig();
-        const redirectUri = this.getRedirectUri();
-        const body = new URLSearchParams({
-            grant_type: "authorization_code",
-            code,
-            redirect_uri: redirectUri,
-            client_id: config.clientId ?? "",
-            code_verifier: codeVerifier
-        });
+    public static async exchangeAuthorizationCode(code: string): Promise<TokenResponse> {
+        const config = this.getConfig().auth;
 
-        const response = await fetch(`${config.authDomain}/oauth/token`, {
+        if (!config || !config.tokenEndpoint) {
+            throw new Error("Token endpoint is not configured");
+        }
+
+        const response = await fetch(config.tokenEndpoint, {
             method: "POST",
             headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
+                "Content-Type": "application/json"
             },
-            body: body.toString()
+            body: JSON.stringify({
+                code,
+                redirect_uri: this.getRedirectUri()
+            })
         });
 
         const payload = await response.json() as TokenResponse;
 
         if (!response.ok || payload.error) {
-            throw new Error(payload.error_description ?? payload.error ?? "Authentication request failed");
+            throw new Error(payload.error_description ?? payload.error ?? "Token exchange failed");
+        }
+
+        return payload;
+    }
+
+    public static async refresh(refreshToken: string): Promise<TokenResponse> {
+        const config = this.getConfig().auth;
+
+        if (!config || !config.refreshEndpoint) {
+            throw new Error("Refresh endpoint is not configured");
+        }
+
+        const response = await fetch(config.refreshEndpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                refresh_token: refreshToken
+            })
+        });
+
+        const payload = await response.json() as TokenResponse;
+
+        if (!response.ok || payload.error) {
+            throw new Error(payload.error_description ?? payload.error ?? "Token refresh failed");
         }
 
         return payload;
@@ -78,16 +111,25 @@ export class XsuaaAuthHelper {
 
     public static createSession(tokenResponse: TokenResponse): UserSession {
         const expiresIn = Math.max(tokenResponse.expires_in ?? 3600, 60);
-        const userName = this.extractUserName(tokenResponse.id_token) ?? "Usuário XSUAA";
+        const userName = tokenResponse.user_name
+            ?? this.extractUserName(tokenResponse.id_token)
+            ?? "Usuário XSUAA";
 
         return {
             accessToken: tokenResponse.access_token,
+            refreshToken: tokenResponse.refresh_token,
             expiresAt: Date.now() + (expiresIn * 1000),
             userName
         };
     }
 
     public static getRedirectUri(): string {
+        const configured = this.getConfig().auth?.redirectUri;
+
+        if (configured) {
+            return configured;
+        }
+
         if (typeof window === "undefined") {
             return "";
         }
@@ -105,18 +147,6 @@ export class XsuaaAuthHelper {
         crypto.getRandomValues(values);
 
         return Array.from(values, (value) => possible[value % possible.length]).join("");
-    }
-
-    private static async createCodeChallenge(codeVerifier: string): Promise<string> {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(codeVerifier);
-        const digest = await crypto.subtle.digest("SHA-256", data);
-        return this.base64UrlEncode(new Uint8Array(digest));
-    }
-
-    private static base64UrlEncode(value: Uint8Array): string {
-        const base64 = btoa(String.fromCharCode(...value));
-        return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
     }
 
     private static extractUserName(token?: string): string | null {

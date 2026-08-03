@@ -6,13 +6,11 @@ sap.ui.define(["../AuthenticationService", "../storage/SessionStorage", "./Xsuaa
   const XsuaaAuthHelper = ___XsuaaAuthHelper["XsuaaAuthHelper"];
   class GithubPagesAuthenticationProvider {
     async login() {
-      const config = XsuaaAuthHelper.getConfig();
-      if (config.clientId && config.authDomain) {
+      try {
         const {
           authorizeUrl,
-          state,
-          codeVerifier
-        } = await XsuaaAuthHelper.createAuthorizationFlow();
+          state
+        } = XsuaaAuthHelper.createAuthorizationFlow();
         SessionStorage.save({
           accessToken: "",
           expiresAt: 0,
@@ -20,7 +18,6 @@ sap.ui.define(["../AuthenticationService", "../storage/SessionStorage", "./Xsuaa
         });
         if (typeof window !== "undefined") {
           sessionStorage.setItem("expensemanager.state", state);
-          sessionStorage.setItem("expensemanager.codeVerifier", codeVerifier);
           window.location.assign(authorizeUrl);
         }
         return {
@@ -28,14 +25,15 @@ sap.ui.define(["../AuthenticationService", "../storage/SessionStorage", "./Xsuaa
           expiresAt: 0,
           userName: "Pending"
         };
+      } catch (error) {
+        const session = {
+          accessToken: "github-pages-demo-token",
+          expiresAt: Date.now() + 3600000,
+          userName: "Visitante GitHub Pages"
+        };
+        SessionStorage.save(session);
+        return session;
       }
-      const session = {
-        accessToken: "github-pages-demo-token",
-        expiresAt: Date.now() + 3600000,
-        userName: "Visitante GitHub Pages"
-      };
-      SessionStorage.save(session);
-      return session;
     }
     async logout() {
       SessionStorage.clear();
@@ -53,8 +51,12 @@ sap.ui.define(["../AuthenticationService", "../storage/SessionStorage", "./Xsuaa
       if (!authCode) {
         return false;
       }
-      const codeVerifier = sessionStorage.getItem("expensemanager.codeVerifier") ?? "";
-      const tokenResponse = await XsuaaAuthHelper.exchangeAuthorizationCode(authCode, codeVerifier);
+      const savedState = sessionStorage.getItem("expensemanager.state");
+      const state = searchParams.get("state");
+      if (savedState && state && savedState !== state) {
+        return false;
+      }
+      const tokenResponse = await XsuaaAuthHelper.exchangeAuthorizationCode(authCode);
       const sessionData = XsuaaAuthHelper.createSession(tokenResponse);
       SessionStorage.save(sessionData);
       return true;

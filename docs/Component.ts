@@ -1,7 +1,10 @@
 import BaseComponent from "sap/ui/core/UIComponent";
+import ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import { createDeviceModel } from "./model/models";
 import { AuthenticationService } from "./auth/AuthenticationService";
 import { AuthenticatedProviderFactory } from "./auth/providers/AuthenticatedProviderFactory";
+import { XsuaaAuthHelper } from "./auth/providers/XsuaaAuthHelper";
+import Environment, { EnvironmentType } from "./util/Environment";
 import JSONModel from "sap/ui/model/json/JSONModel";
 
 /**
@@ -41,5 +44,44 @@ export default class Component extends BaseComponent {
 
         // enable routing
         this.getRouter().initialize();
+
+        if (Environment.current() === EnvironmentType.GITHUB) {
+            void this.prepareGithubServiceModel();
+        }
+    }
+
+    private async prepareGithubServiceModel(): Promise<void> {
+        const session = AuthenticationService.getSession();
+
+        if (session && session.expiresAt > Date.now()) {
+            this.setGithubServiceModel(session.accessToken);
+            return;
+        }
+
+        try {
+            const authenticated = await AuthenticationService.isAuthenticated();
+            const updated = AuthenticationService.getSession();
+
+            if (authenticated && updated && updated.accessToken) {
+                this.setGithubServiceModel(updated.accessToken);
+            }
+        } catch (error) {
+            // keeps the manifest model; the Login view handles the flow
+        }
+    }
+
+    private setGithubServiceModel(accessToken: string): void {
+        const config = XsuaaAuthHelper.getConfig();
+        const model = new ODataModel({
+            serviceUrl: config.odataService,
+            httpHeaders: {
+                Authorization: `Bearer ${accessToken}`
+            },
+            operationMode: "Server",
+            autoExpandSelect: true,
+            earlyRequests: true
+        });
+
+        this.setModel(model);
     }
 }

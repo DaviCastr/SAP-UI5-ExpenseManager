@@ -9,61 +9,81 @@ sap.ui.define([], function () {
         odataService: ""
       };
     }
-    static async createAuthorizationFlow() {
-      const config = this.getConfig();
-      const codeVerifier = this.generateRandomString(64);
+    static createAuthorizationFlow() {
+      const config = this.getConfig().auth;
+      if (!config || !config.clientId || !config.authDomain) {
+        throw new Error("XSUAA client configuration is missing in runtime-config.js");
+      }
       const state = this.generateRandomString(32);
-      const codeChallenge = await this.createCodeChallenge(codeVerifier);
-      const redirectUri = this.getRedirectUri();
       const params = new URLSearchParams({
         response_type: "code",
-        client_id: config.clientId ?? "",
-        redirect_uri: redirectUri,
-        scope: config.scope ?? "openid",
-        state,
-        code_challenge: codeChallenge,
-        code_challenge_method: "S256"
+        client_id: config.clientId,
+        redirect_uri: this.getRedirectUri(),
+        scope: config.scope || "openid",
+        state
       });
       const authorizeUrl = `${config.authDomain}/oauth/authorize?${params.toString()}`;
       return {
         authorizeUrl,
-        state,
-        codeVerifier
+        state
       };
     }
-    static async exchangeAuthorizationCode(code, codeVerifier) {
-      const config = this.getConfig();
-      const redirectUri = this.getRedirectUri();
-      const body = new URLSearchParams({
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: redirectUri,
-        client_id: config.clientId ?? "",
-        code_verifier: codeVerifier
-      });
-      const response = await fetch(`${config.authDomain}/oauth/token`, {
+    static async exchangeAuthorizationCode(code) {
+      const config = this.getConfig().auth;
+      if (!config || !config.tokenEndpoint) {
+        throw new Error("Token endpoint is not configured");
+      }
+      const response = await fetch(config.tokenEndpoint, {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
+          "Content-Type": "application/json"
         },
-        body: body.toString()
+        body: JSON.stringify({
+          code,
+          redirect_uri: this.getRedirectUri()
+        })
       });
       const payload = await response.json();
       if (!response.ok || payload.error) {
-        throw new Error(payload.error_description ?? payload.error ?? "Authentication request failed");
+        throw new Error(payload.error_description ?? payload.error ?? "Token exchange failed");
+      }
+      return payload;
+    }
+    static async refresh(refreshToken) {
+      const config = this.getConfig().auth;
+      if (!config || !config.refreshEndpoint) {
+        throw new Error("Refresh endpoint is not configured");
+      }
+      const response = await fetch(config.refreshEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          refresh_token: refreshToken
+        })
+      });
+      const payload = await response.json();
+      if (!response.ok || payload.error) {
+        throw new Error(payload.error_description ?? payload.error ?? "Token refresh failed");
       }
       return payload;
     }
     static createSession(tokenResponse) {
       const expiresIn = Math.max(tokenResponse.expires_in ?? 3600, 60);
-      const userName = this.extractUserName(tokenResponse.id_token) ?? "Usuário XSUAA";
+      const userName = tokenResponse.user_name ?? this.extractUserName(tokenResponse.id_token) ?? "Usuário XSUAA";
       return {
         accessToken: tokenResponse.access_token,
+        refreshToken: tokenResponse.refresh_token,
         expiresAt: Date.now() + expiresIn * 1000,
         userName
       };
     }
     static getRedirectUri() {
+      const configured = this.getConfig().auth?.redirectUri;
+      if (configured) {
+        return configured;
+      }
       if (typeof window === "undefined") {
         return "";
       }
@@ -77,16 +97,6 @@ sap.ui.define([], function () {
       const values = new Uint8Array(length);
       crypto.getRandomValues(values);
       return Array.from(values, value => possible[value % possible.length]).join("");
-    }
-    static async createCodeChallenge(codeVerifier) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(codeVerifier);
-      const digest = await crypto.subtle.digest("SHA-256", data);
-      return this.base64UrlEncode(new Uint8Array(digest));
-    }
-    static base64UrlEncode(value) {
-      const base64 = btoa(String.fromCharCode(...value));
-      return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
     }
     static extractUserName(token) {
       if (!token) {
