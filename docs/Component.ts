@@ -64,9 +64,11 @@ export default class Component extends BaseComponent {
 
             if (authenticated && updated && updated.accessToken) {
                 this.setGithubServiceModel(updated.accessToken);
+            } else {
+                this.getRouter().navTo("Login");
             }
         } catch (error) {
-            // keeps the manifest model; the Login view handles the flow
+            this.getRouter().navTo("Login");
         }
     }
 
