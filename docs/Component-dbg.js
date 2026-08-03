@@ -27,13 +27,22 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", ".
       this.setModel(createDeviceModel(), "device");
       this.setModel(new JSONModel({
         summary: {
-          available: "5.420,00",
-          income: "8.400,00",
-          expenses: "2.980,00",
-          savings: "1.250,00",
-          trend: "12% melhor que no mês passado",
-          expenseHint: "35% da receita planejada"
+          available: "",
+          income: "",
+          expenses: "",
+          savings: "",
+          target: "",
+          expenseHint: "",
+          targetHint: "",
+          trendText: "",
+          trendIcon: "sap-icon://trend-up"
         },
+        monthLabel: "",
+        persons: [],
+        selectedPerson: {
+          ID: ""
+        },
+        busy: false,
         newExpense: {},
         newCard: {}
       }), "ui");

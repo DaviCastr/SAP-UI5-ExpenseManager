@@ -1,6 +1,82 @@
 html, body, .sapUiBody { background: #f4f7f8; font-family: "72", "Segoe UI", sans-serif; }
+
 .financePage, .financePage .sapMPageBgStandard { background: radial-gradient(circle at 83% -10%, #d8fff0 0, transparent 30rem), #f4f7f8; }
+
 .financeShell { max-width: 76rem; margin: 0 auto; padding: 1.5rem 2rem 3rem; gap: 1.25rem; }
 .topBar { min-height: 3.5rem; }
-.brandGroup { gap: .75rem; }.brandMark { color: #057a63; font-size: 2rem; background: #d8f7ed; border-radius: .85rem; padding: .55rem; }.brandTitle { color: #102a2b; font-weight: 700; }.brandCaption, .sectionHint, .metricHint, .transactionDate, .dialogIntro { color: #687b7c; font-size: .8rem; }.topActions, .heroActions { gap: .5rem; }.primaryAction .sapMBtnInner { border-radius: .7rem; background: #087c67; border-color: #087c67; }.iconAction .sapMBtnInner, .linkAction .sapMBtnInner { border-radius: .7rem; }.balanceHero { gap: 1.5rem; border-radius: 1.5rem; padding: 2.2rem; background: linear-gradient(125deg, #073d3a, #087c67 65%, #14a582); box-shadow: 0 18px 36px rgba(5, 70, 60, .2); }.balanceCopy { max-width: 36rem; gap: .45rem; }.eyebrow, .balanceLabel, .metricLabel { font-weight: 700; letter-spacing: .12em; font-size: .68rem; }.eyebrow, .balanceLabel { color: #a7f4d7; }.heroTitle, .heroSubtitle, .balanceNumber .sapMObjectNumberText, .balanceNumber .sapMObjectNumberUnit, .balanceTrend { color: #fff !important; }.heroTitle { font-size: 2rem; line-height: 1.15; }.heroSubtitle { max-width: 31rem; opacity: .88; }.secondaryAction .sapMBtnInner { color: #fff; border-color: rgba(255,255,255,.5); border-radius: .65rem; }.linkAction .sapMBtnInner { color: #c6f8e7; }.balanceCard { min-width: 16rem; justify-content: center; padding: 1.2rem 1.45rem; background: rgba(0,0,0,.13); border: 1px solid rgba(255,255,255,.16); border-radius: 1rem; }.balanceNumber { margin: .25rem 0; }.balanceNumber .sapMObjectNumberText { font-size: 2rem; }.balanceTrend { gap: .35rem; font-size: .8rem; }.metricGrid, .dashboardGrid { gap: 1rem; }.metricCard { flex: 1 1 12rem; min-width: 0; padding: 1.15rem; border-radius: 1rem; background: #fff; box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid #e7eeee; }.metricCard .sapUiIcon { padding: .5rem; border-radius: .6rem; }.incomeMetric .sapUiIcon { background: #d9f8ec; color: #087c67; }.expenseMetric .sapUiIcon { background: #fff0e5; color: #d05c18; }.saveMetric .sapUiIcon { background: #e8eaff; color: #5956b3; }.metricLabel { color: #728383; }.metricNumber { margin: .7rem 0 .25rem; }.metricNumber .sapMObjectNumberText { color: #163c3a; font-size: 1.35rem; }.surfaceCard { flex: 1 1 25rem; min-width: 0; padding: 1.3rem; border-radius: 1rem; background: #fff; box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid #e7eeee; }.transactionsPanel { flex-grow: 1.45; }.sectionHeader { margin-bottom: .65rem; }.transactionList .sapMListUl, .cardList .sapMListUl { background: transparent; }.transactionList .sapMLIB, .cardList .sapMLIB { background: transparent; border: 0; }.transactionItem { padding: .75rem .1rem; border-bottom: 1px solid #edf1f1; }.transactionIcon { width: 2.4rem; height: 2.4rem; margin-right: .75rem; display: flex; align-items: center; justify-content: center; background: #e8f8f2; border-radius: .7rem; color: #087c67; }.transactionTitle { color: #254241; font-weight: 600; }.transactionAmount .sapMObjectNumberText { color: #254241; }.creditCardItem { gap: .25rem; margin-bottom: .7rem; padding: 1rem; border-radius: .9rem; color: #fff; background: linear-gradient(135deg, #243b55, #141e30); }.creditCardItem .sapMText, .creditCardItem .sapUiIcon, .creditCardValue .sapMObjectNumberText, .creditCardValue .sapMObjectNumberUnit { color: #fff !important; }.creditCardName { font-weight: 700; }.creditCardLabel, .creditCardFoot { font-size: .75rem; opacity: .72; }.creditCardValue { margin: .2rem 0 .7rem; }.financeDialog .sapMDialogSection { background: #fff; }.dialogContent { padding: 1rem 1.4rem .5rem; gap: .35rem; }.dialogContent .sapMLabel { margin-top: .55rem; color: #405c5a; font-weight: 600; }
-@media (max-width: 600px) { .financeShell { padding: 1rem; }.topBar { align-items: flex-start; }.topActions .iconAction { display: none; }.primaryAction .sapMBtnContent { font-size: .78rem; }.balanceHero { padding: 1.4rem; }.heroTitle { font-size: 1.55rem; }.balanceCard { min-width: 100%; }.surfaceCard { flex-basis: 100%; }.financePage .sapMPageEnableScrolling { overflow-x: hidden; } }
+.brandGroup { gap: .75rem; }
+.brandMark { color: #057a63; font-size: 2rem; background: #d8f7ed; border-radius: .85rem; padding: .55rem; }
+.brandTitle { color: #102a2b; font-weight: 700; }
+.brandCaption, .sectionHint, .metricHint, .transactionDate, .dialogIntro { color: #687b7c; font-size: .8rem; }
+.topActions, .heroActions { gap: .5rem; align-items: center; }
+.personLabel { color: #687b7c; font-size: .8rem; }
+.personSelect .sapMSltInner { border-radius: .7rem; border-color: #d5e3e1; }
+.primaryAction .sapMBtnInner { border-radius: .7rem; background: #087c67; border-color: #087c67; }
+.iconAction .sapMBtnInner, .linkAction .sapMBtnInner { border-radius: .7rem; }
+
+.balanceHero { gap: 1.5rem; border-radius: 1.5rem; padding: 2.2rem; background: linear-gradient(125deg, #073d3a, #087c67 65%, #14a582); box-shadow: 0 18px 36px rgba(5, 70, 60, .2); }
+.balanceCopy { max-width: 36rem; gap: .45rem; }
+.eyebrow, .balanceLabel, .metricLabel { font-weight: 700; letter-spacing: .12em; font-size: .68rem; }
+.eyebrow, .balanceLabel { color: #a7f4d7; }
+.heroTitle, .heroSubtitle, .balanceNumber .sapMObjectNumberText, .balanceNumber .sapMObjectNumberUnit, .balanceTrend { color: #fff !important; }
+.heroTitle { font-size: 2rem; line-height: 1.15; }
+.heroSubtitle { max-width: 31rem; opacity: .88; }
+.secondaryAction .sapMBtnInner { color: #fff; border-color: rgba(255,255,255,.5); border-radius: .65rem; }
+.balanceCard { min-width: 16rem; justify-content: center; padding: 1.2rem 1.45rem; background: rgba(0,0,0,.13); border: 1px solid rgba(255,255,255,.16); border-radius: 1rem; }
+.balanceNumber { margin: .25rem 0; }
+.balanceNumber .sapMObjectNumberText { font-size: 2rem; }
+.balanceTrend { gap: .35rem; font-size: .8rem; }
+
+.metricGrid, .dashboardGrid { gap: 1rem; }
+.metricCard { flex: 1 1 12rem; min-width: 0; padding: 1.15rem; border-radius: 1rem; background: #fff; box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid #e7eeee; }
+.metricCard .sapUiIcon { padding: .5rem; border-radius: .6rem; }
+.incomeMetric .sapUiIcon { background: #d9f8ec; color: #087c67; }
+.expenseMetric .sapUiIcon { background: #fff0e5; color: #d98e3d; }
+.saveMetric .sapUiIcon { background: #e6eefb; color: #3d6ad9; }
+.targetMetric .sapUiIcon { background: #efe8fd; color: #7a3dd9; }
+.metricCard .sapMObjectNumberText { font-size: 1.35rem; font-weight: 700; color: #102a2b; }
+
+.surfaceCard { flex: 1 1 22rem; min-width: 0; padding: 1.4rem; border-radius: 1.2rem; background: #fff; box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid #e7eeee; }
+.sectionHeader { margin-bottom: .4rem; }
+.transactionList, .cardList { background: transparent; }
+.transactionItem { padding: .7rem 0; }
+.transactionIcon { background: #eafaf4; color: #087c67; border-radius: .7rem; padding: .6rem; margin-right: .8rem; }
+.transactionTitle { font-weight: 600; color: #102a2b; }
+.transactionAmount .sapMObjectNumberText { font-weight: 700; color: #102a2b; }
+.creditCardItem { padding: .6rem 0; }
+.creditCardName { font-weight: 700; color: #102a2b; }
+.creditCardLabel { color: #687b7c; font-size: .75rem; }
+.creditCardValue .sapMObjectNumberText { font-size: 1.4rem; font-weight: 700; color: #102a2b; }
+.creditCardFoot { color: #687b7c; font-size: .78rem; }
+
+.financeDialog { border-radius: 1rem; }
+.dialogContent { gap: .3rem; }
+
+.loginPage, .loginPage .sapMPageBgStandard { background: linear-gradient(135deg, #062e2c 0%, #0b5d52 55%, #12856e 100%); }
+.loginShell { width: 100%; min-height: 100vh; align-items: center; justify-content: center; padding: 1.5rem; box-sizing: border-box; }
+.loginCard { max-width: 26rem; width: 100%; background: #fff; border-radius: 1.6rem; padding: 2.5rem 2.2rem; box-shadow: 0 30px 60px rgba(3, 32, 30, .35); gap: 1rem; box-sizing: border-box; }
+.loginBrand { gap: .7rem; }
+.loginBrandIcon { color: #087c67; font-size: 1.8rem; background: #d8f7ed; border-radius: .9rem; padding: .6rem; }
+.loginBrandTitle { color: #102a2b; font-weight: 700; }
+.loginHeadline { color: #102a2b; line-height: 1.2; }
+.loginSubtitle { color: #5b6f70; }
+.loginPrimary { width: 100%; }
+.loginPrimary .sapMBtnInner { border-radius: .8rem; background: #087c67; border-color: #087c67; height: 2.75rem; }
+.loginOr { color: #9aabab; text-align: center; font-size: .8rem; }
+.loginSecondary { width: 100%; }
+.loginSecondary .sapMBtnInner { border-radius: .8rem; border-color: #d5e3e1; color: #087c67; height: 2.75rem; }
+.loginNote { color: #9aabab; font-size: .78rem; text-align: center; }
+
+@media (max-width: 600px) {
+    .financeShell { padding: 1rem; }
+    .topBar { align-items: flex-start; }
+    .personLabel { display: none; }
+    .primaryAction .sapMBtnContent { font-size: .78rem; }
+    .balanceHero { padding: 1.4rem; }
+    .heroTitle { font-size: 1.55rem; }
+    .balanceCard { min-width: 100%; }
+    .surfaceCard { flex-basis: 100%; }
+    .financePage .sapMPageEnableScrolling { overflow-x: hidden; }
+    .loginCard { padding: 2rem 1.4rem; }
+    .loginShell { padding: 1rem; }
+}

@@ -2,34 +2,47 @@
     controllerName="apps.dflc.expensemanager.controller.Login"
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
+    xmlns:core="sap.ui.core"
 >
-    <Page id="loginPage" showHeader="false">
+    <Page id="loginPage" showHeader="false" class="loginPage">
         <content>
             <VBox
-                id="loginVBox"
-                width="100%"
+                id="loginShell"
+                class="loginShell"
                 justifyContent="Center"
                 alignItems="Center"
-                class="sapUiLargeMarginTop sapUiMediumMarginBottom"
             >
-                <Title id="loginTitle" text="{i18n>loginTitle}" />
+                <VBox id="loginCard" class="loginCard">
+                    <HBox alignItems="Center" class="loginBrand">
+                        <core:Icon src="sap-icon://wallet" class="loginBrandIcon" />
+                        <Title text="{i18n>brandTitle}" level="H2" class="loginBrandTitle" />
+                    </HBox>
 
-                <Text id="loginSubtitle" text="{i18n>loginSubtitle}" class="sapUiSmallMarginBottom" />
+                    <Title text="{i18n>loginHeadline}" level="H1" class="loginHeadline" />
 
-                <Button
-                    id="loginButton"
-                    text="{i18n>loginButton}"
-                    press=".onLogin"
-                    type="Emphasized"
-                    class="sapUiSmallMarginBottom"
-                />
+                    <Text text="{i18n>loginSubtitle}" class="loginSubtitle" />
 
-                <Button
-                    id="secondaryLoginButton"
-                    text="{i18n>secondaryButton}"
-                    press=".onSecondaryAction"
-                    type="Transparent"
-                />
+                    <Button
+                        id="loginButton"
+                        text="{i18n>loginButton}"
+                        icon="sap-icon://begin"
+                        press=".onLogin"
+                        type="Emphasized"
+                        class="loginPrimary"
+                    />
+
+                    <Text text="{i18n>loginOr}" class="loginOr" />
+
+                    <Button
+                        id="secondaryLoginButton"
+                        text="{i18n>secondaryButton}"
+                        press=".onSecondaryAction"
+                        type="Transparent"
+                        class="loginSecondary"
+                    />
+
+                    <Text text="{i18n>loginNote}" class="loginNote" />
+                </VBox>
             </VBox>
         </content>
     </Page>

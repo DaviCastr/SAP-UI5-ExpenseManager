@@ -1,0 +1,2 @@
+sap.ui.define([],function(){"use strict";function t(t,r){const e=Number(t)||0;const n=r||"BRL";return e.toLocaleString("pt-BR",{style:"currency",currency:n})}function r(t){if(!t){return""}const r=new Date(t);if(isNaN(r.getTime())){return String(t)}return r.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"})}var e={__esModule:true};e.formatCurrency=t;e.formatDate=r;return e});
+//# sourceMappingURL=format.js.map

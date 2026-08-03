@@ -3,6 +3,9 @@
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
     xmlns:core="sap.ui.core"
+    core:require="{
+        formatter: 'apps/dflc/expensemanager/util/format'
+    }"
 >
     <Page id="homePage" showHeader="false" enableScrolling="true" class="financePage">
         <content>
@@ -12,31 +15,47 @@
                         <core:Icon src="sap-icon://wallet" class="brandMark" />
                         <VBox>
                             <Title text="meu fluxo" level="H2" class="brandTitle" />
-                            <Text text="Visão geral • agosto" class="brandCaption" />
+                            <Text text="{ui>/monthLabel}" class="brandCaption" />
                         </VBox>
                     </HBox>
                     <HBox alignItems="Center" class="topActions">
-                        <Button icon="sap-icon://bell" type="Transparent" tooltip="Notificações" class="iconAction" />
-                        <Button text="Registrar gasto" icon="sap-icon://add" type="Emphasized" press=".onOpenExpenseDialog" class="primaryAction" />
+                        <Label text="Gerenciando" class="personLabel" />
+                        <Select
+                            id="personSelect"
+                            selectedKey="{ui>/selectedPerson/ID}"
+                            items="{ui>/persons}"
+                            change=".onPersonChange"
+                            class="personSelect"
+                            width="12rem"
+                        >
+                            <core:Item key="{ID}" text="{Name}" />
+                        </Select>
+                        <Button
+                            icon="sap-icon://log"
+                            type="Transparent"
+                            tooltip="Sair"
+                            press=".onLogout"
+                            class="iconAction"
+                        />
                     </HBox>
                 </HBox>
 
-                <HBox class="balanceHero" justifyContent="SpaceBetween" alignItems="Stretch" wrap="Wrap">
+                <HBox class="balanceHero" justifyContent="SpaceBetween" alignItems="Stretch" wrap="Wrap" busy="{ui>/busy}">
                     <VBox class="balanceCopy">
                         <Text text="SEU DINHEIRO, COM CLAREZA" class="eyebrow" />
-                        <Title text="Olá! Vamos cuidar do seu mês." level="H1" class="heroTitle" />
-                        <Text text="Acompanhe o que entra, o que sai e tome decisões sem planilhas complicadas." class="heroSubtitle" />
+                        <Title text="Olá, {ui>/selectedPerson/Name}!" level="H1" class="heroTitle" />
+                        <Text text="Aqui está o panorama financeiro deste mês." class="heroSubtitle" />
                         <HBox class="heroActions" wrap="Wrap">
+                            <Button text="Registrar gasto" icon="sap-icon://add" type="Emphasized" press=".onOpenExpenseDialog" class="primaryAction" />
                             <Button text="Adicionar cartão" icon="sap-icon://credit-card" type="Transparent" press=".onOpenCardDialog" class="secondaryAction" />
-                            <Button text="Ver planejamento" icon="sap-icon://line-chart" type="Transparent" press=".onOpenInsights" class="linkAction" />
                         </HBox>
                     </VBox>
                     <VBox class="balanceCard">
                         <Text text="DISPONÍVEL ESTE MÊS" class="balanceLabel" />
-                        <ObjectNumber number="{ui>/summary/available}" unit="R$" class="balanceNumber" />
+                        <ObjectNumber number="{ui>/summary/available}" class="balanceNumber" />
                         <HBox alignItems="Center" class="balanceTrend">
-                            <core:Icon src="sap-icon://trend-up" />
-                            <Text text="{ui>/summary/trend}" />
+                            <core:Icon src="{ui>/summary/trendIcon}" />
+                            <Text text="{ui>/summary/trendText}" />
                         </HBox>
                     </VBox>
                 </HBox>
@@ -44,35 +63,66 @@
                 <HBox class="metricGrid" wrap="Wrap">
                     <VBox class="metricCard incomeMetric">
                         <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="RECEITAS" class="metricLabel" /><core:Icon src="sap-icon://trend-up" /></HBox>
-                        <ObjectNumber number="{ui>/summary/income}" unit="R$" class="metricNumber" />
+                        <ObjectNumber number="{ui>/summary/income}" class="metricNumber" />
                         <Text text="Entradas previstas no mês" class="metricHint" />
                     </VBox>
                     <VBox class="metricCard expenseMetric">
-                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="GASTOS" class="metricLabel" /><core:Icon src="sap-icon://cart" /></HBox>
-                        <ObjectNumber number="{ui>/summary/expenses}" unit="R$" class="metricNumber" />
+                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="GASTOS DO MÊS" class="metricLabel" /><core:Icon src="sap-icon://cart" /></HBox>
+                        <ObjectNumber number="{ui>/summary/expenses}" class="metricNumber" />
                         <Text text="{ui>/summary/expenseHint}" class="metricHint" />
                     </VBox>
                     <VBox class="metricCard saveMetric">
-                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="PARA GUARDAR" class="metricLabel" /><core:Icon src="sap-icon://savings" /></HBox>
-                        <ObjectNumber number="{ui>/summary/savings}" unit="R$" class="metricNumber" />
-                        <Text text="Meta mensal de reserva" class="metricHint" />
+                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="RESERVA DO MÊS" class="metricLabel" /><core:Icon src="sap-icon://savings" /></HBox>
+                        <ObjectNumber number="{ui>/summary/savings}" class="metricNumber" />
+                        <Text text="O que sobra após os gastos do mês" class="metricHint" />
+                    </VBox>
+                    <VBox class="metricCard targetMetric">
+                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="META DE GASTO" class="metricLabel" /><core:Icon src="sap-icon://target" /></HBox>
+                        <ObjectNumber number="{ui>/summary/target}" class="metricNumber" />
+                        <Text text="{ui>/summary/targetHint}" class="metricHint" />
                     </VBox>
                 </HBox>
 
                 <HBox class="dashboardGrid" wrap="Wrap">
                     <VBox class="surfaceCard transactionsPanel">
                         <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
-                            <VBox><Title text="Movimentações recentes" level="H3" /><Text text="Tudo o que aconteceu por aqui" class="sectionHint" /></VBox>
-                            <Button text="Ver todas" type="Transparent" press=".onOpenInsights" />
+                            <VBox><Title text="Movimentações recentes" level="H3" /><Text text="Últimos lançamentos desta pessoa" class="sectionHint" /></VBox>
                         </HBox>
-                        <List items="{/Transactions}" showSeparators="None" class="transactionList" noDataText="Ainda não há movimentações.">
+                        <List
+                            items="{
+                                path: '/Transactions',
+                                parameters: {
+                                    $orderby: 'Date desc',
+                                    $top: 10,
+                                    $expand: 'Category'
+                                },
+                                filters: [
+                                    { path: 'Invoice/Card/Person/ID', operator: 'EQ', value: '{ui>/selectedPerson/ID}' }
+                                ]
+                            }"
+                            showSeparators="None"
+                            class="transactionList"
+                            noDataText="Ainda não há movimentações para esta pessoa."
+                        >
                             <CustomListItem>
                                 <HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="transactionItem">
                                     <HBox alignItems="Center">
                                         <VBox class="transactionIcon"><core:Icon src="sap-icon://receipt" /></VBox>
-                                        <VBox><Text text="{Description}" class="transactionTitle" /><Text text="{Date}" class="transactionDate" /></VBox>
+                                        <VBox>
+                                            <Text text="{Description}" class="transactionTitle" />
+                                            <Text text="{Category/Name} • { formatter: 'formatter.formatDate', path: 'Date' }" class="transactionDate" />
+                                        </VBox>
                                     </HBox>
-                                    <ObjectNumber number="{Amount}" unit="{Currency_code}" class="transactionAmount" />
+                                    <ObjectNumber
+                                        number="{
+                                            parts: [
+                                                { path: 'Amount' },
+                                                { path: 'Currency' }
+                                            ],
+                                            formatter: 'formatter.formatCurrency'
+                                        }"
+                                        class="transactionAmount"
+                                    />
                                 </HBox>
                             </CustomListItem>
                         </List>
@@ -80,15 +130,37 @@
 
                     <VBox class="surfaceCard cardsPanel">
                         <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
-                            <VBox><Title text="Seus cartões" level="H3" /><Text text="Limites e próximos vencimentos" class="sectionHint" /></VBox>
+                            <VBox><Title text="Seus cartões" level="H3" /><Text text="Limites e datas de vencimento" class="sectionHint" /></VBox>
                             <Button icon="sap-icon://add" type="Transparent" press=".onOpenCardDialog" tooltip="Adicionar cartão" />
                         </HBox>
-                        <List items="{/Cards}" showSeparators="None" class="cardList" noDataText="Adicione seu primeiro cartão.">
+                        <List
+                            items="{
+                                path: '/Cards',
+                                filters: [
+                                    { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPerson/ID}' }
+                                ]
+                            }"
+                            showSeparators="None"
+                            class="cardList"
+                            noDataText="Adicione o primeiro cartão desta pessoa."
+                        >
                             <CustomListItem>
                                 <VBox class="creditCardItem">
-                                    <HBox justifyContent="SpaceBetween" alignItems="Center"><Text text="{Name}" class="creditCardName" /><core:Icon src="sap-icon://credit-card" /></HBox>
-                                    <Text text="Limite disponível" class="creditCardLabel" />
-                                    <ObjectNumber number="{AvailableLimit}" unit="{Currency_code}" class="creditCardValue" />
+                                    <HBox justifyContent="SpaceBetween" alignItems="Center">
+                                        <Text text="{Name}" class="creditCardName" />
+                                        <core:Icon src="sap-icon://credit-card" />
+                                    </HBox>
+                                    <Text text="Limite" class="creditCardLabel" />
+                                    <ObjectNumber
+                                        number="{
+                                            parts: [
+                                                { path: 'Limit' },
+                                                { path: 'Currency' }
+                                            ],
+                                            formatter: 'formatter.formatCurrency'
+                                        }"
+                                        class="creditCardValue"
+                                    />
                                     <HBox justifyContent="SpaceBetween"><Text text="Fecha dia {ClosingDay}" class="creditCardFoot" /><Text text="Vence dia {DueDay}" class="creditCardFoot" /></HBox>
                                 </VBox>
                             </CustomListItem>
@@ -96,29 +168,50 @@
                     </VBox>
                 </HBox>
             </VBox>
+
+            <Dialog id="expenseDialog" title="Registrar um gasto" class="financeDialog" contentWidth="28rem">
+                <VBox class="dialogContent">
+                    <Text text="Registre agora e acompanhe o impacto no seu próximo fechamento." class="dialogIntro" />
+                    <Label text="Descrição" labelFor="expenseDescription" /><Input id="expenseDescription" value="{ui>/newExpense/description}" placeholder="Ex.: Mercado da semana" />
+                    <Label text="Valor" labelFor="expenseAmount" /><Input id="expenseAmount" value="{ui>/newExpense/amount}" type="Number" placeholder="0,00" />
+                    <Label text="Cartão" labelFor="expenseCard" />
+                    <Select
+                        id="expenseCard"
+                        selectedKey="{ui>/newExpense/cardId}"
+                        items="{
+                            path: '/Cards',
+                            filters: [
+                                { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPerson/ID}' }
+                            ]
+                        }"
+                    ><core:Item key="{ID}" text="{Name}" /></Select>
+                    <Label text="Categoria" labelFor="expenseCategory" />
+                    <Select
+                        id="expenseCategory"
+                        selectedKey="{ui>/newExpense/categoryId}"
+                        items="{
+                            path: '/Categories',
+                            filters: [
+                                { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPerson/ID}' }
+                            ]
+                        }"
+                    ><core:Item key="{ID}" text="{Name}" /></Select>
+                </VBox>
+                <beginButton><Button text="Registrar" type="Emphasized" press=".onCreateExpense" /></beginButton>
+                <endButton><Button text="Cancelar" press=".onCloseExpenseDialog" /></endButton>
+            </Dialog>
+
+            <Dialog id="cardDialog" title="Novo cartão" class="financeDialog" contentWidth="28rem">
+                <VBox class="dialogContent">
+                    <Text text="O cartão será criado como rascunho. Você poderá revisá-lo antes de publicar." class="dialogIntro" />
+                    <Label text="Nome do cartão" labelFor="cardName" /><Input id="cardName" value="{ui>/newCard/name}" placeholder="Ex.: Cartão principal" />
+                    <Label text="Limite" labelFor="cardLimit" /><Input id="cardLimit" value="{ui>/newCard/limit}" type="Number" placeholder="0,00" />
+                    <Label text="Moeda" labelFor="cardCurrency" />
+                    <Select id="cardCurrency" selectedKey="{ui>/newCard/currency}"><core:Item key="BRL" text="Real brasileiro (BRL)" /><core:Item key="USD" text="Dólar americano (USD)" /></Select>
+                </VBox>
+                <beginButton><Button text="Salvar rascunho" type="Emphasized" press=".onCreateCardDraft" /></beginButton>
+                <endButton><Button text="Cancelar" press=".onCloseCardDialog" /></endButton>
+            </Dialog>
         </content>
-
-        <Dialog id="expenseDialog" title="Registrar um gasto" class="financeDialog" contentWidth="28rem">
-            <VBox class="dialogContent">
-                <Text text="Registre agora e acompanhe o impacto no seu próximo fechamento." class="dialogIntro" />
-                <Label text="Descrição" labelFor="expenseDescription" /><Input id="expenseDescription" value="{ui>/newExpense/description}" placeholder="Ex.: Mercado da semana" />
-                <Label text="Valor" labelFor="expenseAmount" /><Input id="expenseAmount" value="{ui>/newExpense/amount}" type="Number" placeholder="0,00" />
-                <Label text="Cartão" labelFor="expenseCard" /><Select id="expenseCard" selectedKey="{ui>/newExpense/cardId}" items="{/Cards}"><core:Item key="{ID}" text="{Name}" /></Select>
-                <Label text="Categoria" labelFor="expenseCategory" /><Select id="expenseCategory" selectedKey="{ui>/newExpense/categoryId}" items="{/Categories}"><core:Item key="{ID}" text="{Name}" /></Select>
-            </VBox>
-            <beginButton><Button text="Registrar" type="Emphasized" press=".onCreateExpense" /></beginButton>
-            <endButton><Button text="Cancelar" press=".onCloseExpenseDialog" /></endButton>
-        </Dialog>
-
-        <Dialog id="cardDialog" title="Novo cartão" class="financeDialog" contentWidth="28rem">
-            <VBox class="dialogContent">
-                <Text text="O cartão será criado como rascunho. Você poderá revisá-lo antes de publicar." class="dialogIntro" />
-                <Label text="Nome do cartão" labelFor="cardName" /><Input id="cardName" value="{ui>/newCard/name}" placeholder="Ex.: Cartão principal" />
-                <Label text="Limite" labelFor="cardLimit" /><Input id="cardLimit" value="{ui>/newCard/limit}" type="Number" placeholder="0,00" />
-                <Label text="Moeda" labelFor="cardCurrency" /><Select id="cardCurrency" selectedKey="{ui>/newCard/currency}"><core:Item key="BRL" text="Real brasileiro (BRL)" /><core:Item key="USD" text="Dólar americano (USD)" /></Select>
-            </VBox>
-            <beginButton><Button text="Salvar rascunho" type="Emphasized" press=".onCreateCardDraft" /></beginButton>
-            <endButton><Button text="Cancelar" press=".onCloseCardDialog" /></endButton>
-        </Dialog>
     </Page>
 </mvc:View>
