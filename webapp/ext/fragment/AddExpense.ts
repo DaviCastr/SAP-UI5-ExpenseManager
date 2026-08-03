@@ -13,12 +13,12 @@ interface NewExpense {
     categoryId: string;
 }
 
-const AdicionarGasto = {
+const AddExpense = {
     onCancelarGasto: function (this: Control): void {
         (this.getParent() as Dialog).close();
     },
 
-    onAdicionarGasto: async function (this: Control): Promise<void> {
+    onAddExpense: async function (this: Control): Promise<void> {
         const dialog = this.getParent() as Dialog;
         const view = dialog.getParent() as XMLView;
         const uiModel = view.getModel("ui") as JSONModel;
@@ -51,4 +51,4 @@ const AdicionarGasto = {
     }
 };
 
-export default AdicionarGasto;
+export default AddExpense;

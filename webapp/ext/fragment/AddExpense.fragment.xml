@@ -1,14 +1,14 @@
 <core:FragmentDefinition
     xmlns:core="sap.ui.core"
     xmlns="sap.m"
-    id="AdicionarGasto"
+    id="AddExpense"
 >
     <Dialog
         id="expenseDialog"
         title="{i18n>expenseDialogTitle}"
         class="financeDialog"
         contentWidth="28rem"
-        core:require="{ handler: 'apps/dflc/expensemanager/ext/fragment/AdicionarGasto' }"
+        core:require="{ handler: 'apps/dflc/expensemanager/ext/fragment/AddExpense' }"
     >
         <content>
             <VBox class="dialogContent">
@@ -41,7 +41,7 @@
                 ><core:Item key="{ID}" text="{Name}" /></Select>
             </VBox>
         </content>
-        <beginButton><Button text="{i18n>expenseSaveButton}" type="Emphasized" press="handler.onAdicionarGasto" /></beginButton>
+        <beginButton><Button text="{i18n>expenseSaveButton}" type="Emphasized" press="handler.onAddExpense" /></beginButton>
         <endButton><Button text="{i18n>expenseCancelButton}" press="handler.onCancelarGasto" /></endButton>
     </Dialog>
 </core:FragmentDefinition>
