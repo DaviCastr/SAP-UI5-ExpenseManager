@@ -60,12 +60,11 @@ html, body, .sapUiBody { background: #f4f7f8; font-family: "72", "Segoe UI", san
 .loginBrandTitle { color: #102a2b; font-weight: 700; }
 .loginHeadline { color: #102a2b; line-height: 1.2; }
 .loginSubtitle { color: #5b6f70; }
-.loginPrimary { width: 100%; }
-.loginPrimary .sapMBtnInner { border-radius: .8rem; background: #087c67; border-color: #087c67; height: 2.75rem; }
-.loginOr { color: #9aabab; text-align: center; font-size: .8rem; }
-.loginSecondary { width: 100%; }
-.loginSecondary .sapMBtnInner { border-radius: .8rem; border-color: #d5e3e1; color: #087c67; height: 2.75rem; }
-.loginNote { color: #9aabab; font-size: .78rem; text-align: center; }
+.loginPrimary { width: 100%; margin-top: .35rem; }
+.loginPrimary .sapMBtnInner { border-radius: .9rem; background: #087c67; border-color: #087c67; height: 3rem; }
+.loginPrimary .sapMBtnInner:active, .loginPrimary .sapMBtnInner:hover { background: #0a6b5c; border-color: #0a6b5c; }
+.loginPrimary .sapMBtnContent { font-weight: 600; letter-spacing: .01rem; }
+.loginNote { color: #9aabab; font-size: .78rem; text-align: center; margin-top: .35rem; }
 
 @media (max-width: 600px) {
     .financeShell { padding: 1rem; }

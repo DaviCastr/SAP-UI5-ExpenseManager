@@ -24,8 +24,4 @@ export default class Login extends BaseController {
         MessageToast.show("Aguarde a autenticação do BTP");
     }
 
-    public onSecondaryAction(): void {
-        this.navTo("Home");
-    }
-
 }

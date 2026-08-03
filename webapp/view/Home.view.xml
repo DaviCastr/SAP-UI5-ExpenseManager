@@ -93,13 +93,14 @@
                                 path: '/Transactions',
                                 parameters: {
                                     $orderby: 'Date desc',
-                                    $top: 10,
                                     $expand: 'Category'
                                 },
                                 filters: [
                                     { path: 'Invoice/Card/Person/ID', operator: 'EQ', value: '{ui>/selectedPerson/ID}' }
                                 ]
                             }"
+                            growing="true"
+                            growingThreshold="10"
                             showSeparators="None"
                             class="transactionList"
                             noDataText="Ainda não há movimentações para esta pessoa."

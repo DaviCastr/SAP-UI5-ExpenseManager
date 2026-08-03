@@ -24,9 +24,6 @@ sap.ui.define(["./BaseController", "../auth/AuthenticationService", "../util/Env
       }
       MessageToast.show("Aguarde a autenticação do BTP");
     }
-    onSecondaryAction() {
-      this.navTo("Home");
-    }
   }
   return Login;
 });

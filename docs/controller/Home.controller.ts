@@ -31,7 +31,9 @@ export default class Home extends BaseController {
         const model = await this.waitForServiceModel();
 
         if (!model) {
-            MessageBox.error("Não foi possível conectar ao serviço financeiro.");
+            if (Environment.current() !== EnvironmentType.GITHUB) {
+                MessageBox.error("Não foi possível conectar ao serviço financeiro.");
+            }
             return;
         }
 

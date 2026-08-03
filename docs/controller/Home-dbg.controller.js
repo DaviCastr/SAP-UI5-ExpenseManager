@@ -19,7 +19,9 @@ sap.ui.define(["sap/ui/model/Filter", "sap/ui/model/FilterOperator", "sap/m/Mess
     async bootstrap() {
       const model = await this.waitForServiceModel();
       if (!model) {
-        MessageBox.error("Não foi possível conectar ao serviço financeiro.");
+        if (Environment.current() !== EnvironmentType.GITHUB) {
+          MessageBox.error("Não foi possível conectar ao serviço financeiro.");
+        }
         return;
       }
       await this.loadPersons(model);
