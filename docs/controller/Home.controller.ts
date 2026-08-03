@@ -5,10 +5,19 @@ import FilterOperator from "sap/ui/model/FilterOperator";
 import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import Dialog from "sap/m/Dialog";
+import Event from "sap/ui/base/Event";
 import { BaseController } from "./BaseController";
 import { AuthenticationService } from "../auth/AuthenticationService";
 import Environment, { EnvironmentType } from "../util/Environment";
 import { formatCurrency } from "../util/format";
+import {
+    createBackupRow,
+    uploadBackupStream,
+    requestExportBackup,
+    fetchBackupStream,
+    deleteBackupRow,
+    downloadBlob
+} from "../util/backupApi";
 
 interface Person {
     ID: string;
@@ -18,7 +27,33 @@ interface Person {
     Currency: string;
 }
 
+interface Summary {
+    available: string;
+    income: string;
+    expenses: string;
+    savings: string;
+    target: string;
+    expenseHint: string;
+    targetHint: string;
+    trendText: string;
+    trendIcon: string;
+}
+
+const EMPTY_SUMMARY: Summary = {
+    available: "",
+    income: "",
+    expenses: "",
+    savings: "",
+    target: "",
+    expenseHint: "",
+    targetHint: "",
+    trendText: "",
+    trendIcon: "sap-icon://trend-up"
+};
+
 export default class Home extends BaseController {
+    private backupFile: File | null = null;
+
     private get uiModel(): JSONModel {
         return this.getOwnerComponent()?.getModel("ui") as JSONModel;
     }
@@ -129,6 +164,60 @@ export default class Home extends BaseController {
         }
     }
 
+    public onBackupFileChange(event: Event): void {
+        const parameters = event.getParameters() as { files?: File[] };
+        const files = parameters.files;
+        this.backupFile = files && files.length > 0 ? files[0] : null;
+    }
+
+    public onRestoreBackup(): void {
+        this.backupFile = null;
+        (this.byId("backupDialog") as Dialog).open();
+    }
+
+    public onCloseBackupDialog(): void {
+        (this.byId("backupDialog") as Dialog).close();
+    }
+
+    public async onImportBackup(): Promise<void> {
+        if (!this.backupFile) {
+            MessageBox.warning("Selecione um arquivo .zip de backup para continuar.");
+            return;
+        }
+
+        const ui = this.uiModel;
+        ui.setProperty("/busy", true);
+
+        try {
+            const row = await createBackupRow();
+            await uploadBackupStream(row.ID, this.backupFile);
+            (this.byId("backupDialog") as Dialog).close();
+            MessageToast.show("Backup restaurado com sucesso.");
+            await this.bootstrap();
+        } catch (error) {
+            MessageBox.error("Não foi possível restaurar o backup. Verifique se o arquivo é um backup válido.");
+        } finally {
+            ui.setProperty("/busy", false);
+        }
+    }
+
+    public async onExportBackup(): Promise<void> {
+        const ui = this.uiModel;
+        ui.setProperty("/busy", true);
+
+        try {
+            const guid = await requestExportBackup();
+            const blob = await fetchBackupStream(guid);
+            downloadBlob(blob, `meu-fluxo-backup-${new Date().toISOString().slice(0, 10)}.zip`);
+            await deleteBackupRow(guid);
+            MessageToast.show("Backup exportado com sucesso.");
+        } catch (error) {
+            MessageBox.error("Não foi possível exportar o backup. Verifique sua conexão.");
+        } finally {
+            ui.setProperty("/busy", false);
+        }
+    }
+
     private async waitForServiceModel(): Promise<ODataModel | null> {
         const environment = Environment.current();
 
@@ -165,6 +254,16 @@ export default class Home extends BaseController {
 
             const ui = this.uiModel;
             ui.setProperty("/persons", persons);
+
+            if (!persons.length) {
+                ui.setProperty("/personsEmpty", true);
+                ui.setProperty("/selectedPerson", { ID: "" });
+                ui.setProperty("/summary", { ...EMPTY_SUMMARY });
+                ui.setProperty("/monthLabel", "Nenhuma pessoa para gerenciar");
+                return;
+            }
+
+            ui.setProperty("/personsEmpty", false);
 
             const currentId = ui.getProperty("/selectedPerson/ID") as string;
             const selected = persons.find((person) => person.ID === currentId) || persons[0];

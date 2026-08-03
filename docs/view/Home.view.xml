@@ -3,6 +3,7 @@
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
     xmlns:core="sap.ui.core"
+    xmlns:u="sap.ui.unified"
     core:require="{
         formatter: 'apps/dflc/expensemanager/util/format'
     }"
@@ -48,6 +49,8 @@
                         <HBox class="heroActions" wrap="Wrap">
                             <Button text="Registrar gasto" icon="sap-icon://add" type="Emphasized" press=".onOpenExpenseDialog" class="primaryAction" />
                             <Button text="Adicionar cartão" icon="sap-icon://credit-card" type="Transparent" press=".onOpenCardDialog" class="secondaryAction" />
+                            <Button text="Restaurar backup" icon="sap-icon://upload-to-cloud" type="Transparent" press=".onRestoreBackup" class="secondaryAction" />
+                            <Button text="Exportar backup" icon="sap-icon://download-to-cloud" type="Transparent" press=".onExportBackup" class="secondaryAction" />
                         </HBox>
                     </VBox>
                     <VBox class="balanceCard">
@@ -60,7 +63,14 @@
                     </VBox>
                 </HBox>
 
-                <HBox class="metricGrid" wrap="Wrap">
+                <VBox class="emptyState" visible="{ui>/personsEmpty}" alignItems="Center" justifyContent="Center">
+                    <core:Icon src="sap-icon://inbox" class="emptyStateIcon" />
+                    <Title text="Nenhuma pessoa para gerenciar" level="H2" class="emptyStateTitle" />
+                    <Text text="Ainda não existem dados no seu serviço financeiro. Restaure um backup para começar." class="emptyStateText" />
+                    <Button text="Restaurar backup" icon="sap-icon://upload-to-cloud" type="Emphasized" press=".onRestoreBackup" class="emptyStateButton" />
+                </VBox>
+
+                <HBox class="metricGrid" wrap="Wrap" visible="{= !${ui>/personsEmpty} }">
                     <VBox class="metricCard incomeMetric">
                         <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="RECEITAS" class="metricLabel" /><core:Icon src="sap-icon://trend-up" /></HBox>
                         <ObjectNumber number="{ui>/summary/income}" class="metricNumber" />
@@ -83,7 +93,7 @@
                     </VBox>
                 </HBox>
 
-                <HBox class="dashboardGrid" wrap="Wrap">
+                <HBox class="dashboardGrid" wrap="Wrap" visible="{= !${ui>/personsEmpty} }">
                     <VBox class="surfaceCard transactionsPanel">
                         <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
                             <VBox><Title text="Movimentações recentes" level="H3" /><Text text="Últimos lançamentos desta pessoa" class="sectionHint" /></VBox>
@@ -212,6 +222,23 @@
                 </VBox>
                 <beginButton><Button text="Salvar rascunho" type="Emphasized" press=".onCreateCardDraft" /></beginButton>
                 <endButton><Button text="Cancelar" press=".onCloseCardDialog" /></endButton>
+            </Dialog>
+
+            <Dialog id="backupDialog" title="Restaurar backup" class="financeDialog" contentWidth="30rem">
+                <VBox class="dialogContent">
+                    <Text text="Selecione o arquivo .zip exportado para importar seus dados. As informações serão restauradas no serviço." class="dialogIntro" />
+                    <Label text="Arquivo de backup" labelFor="backupFileUploader" />
+                    <u:FileUploader
+                        id="backupFileUploader"
+                        buttonText="Escolher arquivo"
+                        placeholder="Nenhum arquivo selecionado"
+                        fileType="zip"
+                        change=".onBackupFileChange"
+                        width="100%"
+                    />
+                </VBox>
+                <beginButton><Button text="Restaurar" type="Emphasized" press=".onImportBackup" /></beginButton>
+                <endButton><Button text="Cancelar" press=".onCloseBackupDialog" /></endButton>
             </Dialog>
         </content>
     </Page>

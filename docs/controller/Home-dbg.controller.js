@@ -1,4 +1,4 @@
-sap.ui.define(["sap/ui/model/Filter", "sap/ui/model/FilterOperator", "sap/m/MessageBox", "sap/m/MessageToast", "./BaseController", "../auth/AuthenticationService", "../util/Environment", "../util/format"], function (Filter, FilterOperator, MessageBox, MessageToast, ___BaseController, ___auth_AuthenticationService, __Environment, ___util_format) {
+sap.ui.define(["sap/ui/model/Filter", "sap/ui/model/FilterOperator", "sap/m/MessageBox", "sap/m/MessageToast", "./BaseController", "../auth/AuthenticationService", "../util/Environment", "../util/format", "../util/backupApi"], function (Filter, FilterOperator, MessageBox, MessageToast, ___BaseController, ___auth_AuthenticationService, __Environment, ___util_format, ___util_backupApi) {
   "use strict";
 
   function _interopRequireDefault(obj) {
@@ -9,7 +9,25 @@ sap.ui.define(["sap/ui/model/Filter", "sap/ui/model/FilterOperator", "sap/m/Mess
   const Environment = _interopRequireDefault(__Environment);
   const EnvironmentType = __Environment["EnvironmentType"];
   const formatCurrency = ___util_format["formatCurrency"];
+  const createBackupRow = ___util_backupApi["createBackupRow"];
+  const uploadBackupStream = ___util_backupApi["uploadBackupStream"];
+  const requestExportBackup = ___util_backupApi["requestExportBackup"];
+  const fetchBackupStream = ___util_backupApi["fetchBackupStream"];
+  const deleteBackupRow = ___util_backupApi["deleteBackupRow"];
+  const downloadBlob = ___util_backupApi["downloadBlob"];
+  const EMPTY_SUMMARY = {
+    available: "",
+    income: "",
+    expenses: "",
+    savings: "",
+    target: "",
+    expenseHint: "",
+    targetHint: "",
+    trendText: "",
+    trendIcon: "sap-icon://trend-up"
+  };
   class Home extends BaseController {
+    backupFile = null;
     get uiModel() {
       return this.getOwnerComponent()?.getModel("ui");
     }
@@ -113,6 +131,52 @@ sap.ui.define(["sap/ui/model/Filter", "sap/ui/model/FilterOperator", "sap/m/Mess
         MessageBox.error("Não foi possível salvar o rascunho do cartão.");
       }
     }
+    onBackupFileChange(event) {
+      const parameters = event.getParameters();
+      const files = parameters.files;
+      this.backupFile = files && files.length > 0 ? files[0] : null;
+    }
+    onRestoreBackup() {
+      this.backupFile = null;
+      this.byId("backupDialog").open();
+    }
+    onCloseBackupDialog() {
+      this.byId("backupDialog").close();
+    }
+    async onImportBackup() {
+      if (!this.backupFile) {
+        MessageBox.warning("Selecione um arquivo .zip de backup para continuar.");
+        return;
+      }
+      const ui = this.uiModel;
+      ui.setProperty("/busy", true);
+      try {
+        const row = await createBackupRow();
+        await uploadBackupStream(row.ID, this.backupFile);
+        this.byId("backupDialog").close();
+        MessageToast.show("Backup restaurado com sucesso.");
+        await this.bootstrap();
+      } catch (error) {
+        MessageBox.error("Não foi possível restaurar o backup. Verifique se o arquivo é um backup válido.");
+      } finally {
+        ui.setProperty("/busy", false);
+      }
+    }
+    async onExportBackup() {
+      const ui = this.uiModel;
+      ui.setProperty("/busy", true);
+      try {
+        const guid = await requestExportBackup();
+        const blob = await fetchBackupStream(guid);
+        downloadBlob(blob, `meu-fluxo-backup-${new Date().toISOString().slice(0, 10)}.zip`);
+        await deleteBackupRow(guid);
+        MessageToast.show("Backup exportado com sucesso.");
+      } catch (error) {
+        MessageBox.error("Não foi possível exportar o backup. Verifique sua conexão.");
+      } finally {
+        ui.setProperty("/busy", false);
+      }
+    }
     async waitForServiceModel() {
       const environment = Environment.current();
       for (let attempt = 0; attempt < 40; attempt++) {
@@ -140,6 +204,18 @@ sap.ui.define(["sap/ui/model/Filter", "sap/ui/model/FilterOperator", "sap/m/Mess
         const persons = contexts.map(context => context.getObject());
         const ui = this.uiModel;
         ui.setProperty("/persons", persons);
+        if (!persons.length) {
+          ui.setProperty("/personsEmpty", true);
+          ui.setProperty("/selectedPerson", {
+            ID: ""
+          });
+          ui.setProperty("/summary", {
+            ...EMPTY_SUMMARY
+          });
+          ui.setProperty("/monthLabel", "Nenhuma pessoa para gerenciar");
+          return;
+        }
+        ui.setProperty("/personsEmpty", false);
         const currentId = ui.getProperty("/selectedPerson/ID");
         const selected = persons.find(person => person.ID === currentId) || persons[0];
         ui.setProperty("/selectedPerson", selected || {

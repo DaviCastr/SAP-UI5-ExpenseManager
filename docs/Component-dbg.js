@@ -39,6 +39,7 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", ".
         },
         monthLabel: "",
         persons: [],
+        personsEmpty: false,
         selectedPerson: {
           ID: ""
         },
