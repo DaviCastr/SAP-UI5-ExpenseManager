@@ -44,6 +44,20 @@ export class XsuaaAuthHelper {
         globalWindow.__EXPENSE_MANAGER_CONFIG__.odataService = url;
     }
 
+    public static setLocalOverrides(): void {
+        const globalWindow = window as Window & typeof globalThis & { __EXPENSE_MANAGER_CONFIG__?: RuntimeConfig };
+        const config = globalWindow.__EXPENSE_MANAGER_CONFIG__ ?? { btpHost: "", odataService: "" };
+        globalWindow.__EXPENSE_MANAGER_CONFIG__ = config;
+
+        config.odataService = "/api/service/ExpenseManager/";
+
+        if (config.auth) {
+            config.auth.tokenEndpoint = "/auth/login";
+            config.auth.refreshEndpoint = "/auth/refresh";
+            config.auth.redirectUri = "";
+        }
+    }
+
     public static createAuthorizationFlow(): { authorizeUrl: string; state: string } {
         const config = this.getConfig().auth;
 

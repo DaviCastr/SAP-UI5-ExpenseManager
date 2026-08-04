@@ -26,7 +26,7 @@ export default class Login extends BaseController {
             return;
         }
 
-        if (Environment.current() === EnvironmentType.GITHUB) {
+        if (Environment.current() === EnvironmentType.GITHUB || Environment.current() === EnvironmentType.LOCAL) {
             MessageToast.show(this.getText("loginRedirecting"));
             return;
         }

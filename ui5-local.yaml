@@ -40,16 +40,8 @@ server:
         backend:
           - path: /api
             url: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
-    - name: sap-fe-mockserver
-      beforeMiddleware: csp
-      configuration:
-        mountPath: /
-        services:
-          - urlPath: /api/service/ExpenseManager
-            metadataPath: ./webapp/localService/mainService/metadata.xml
-            mockdataPath: ./webapp/localService/mainService/data
-            generateMockData: true
-        annotations: []
+          - path: /auth
+            url: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
 builder:
   customTasks:
     - name: ui5-tooling-transpile-task

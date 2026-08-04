@@ -24,6 +24,15 @@ export default class Component extends BaseComponent {
     };
 
     private _sessionExpiredShown = false;
+    private _serviceModelReady: Promise<boolean>;
+    private _resolveServiceModelReady?: (value: boolean) => void;
+
+    public constructor() {
+        super();
+        this._serviceModelReady = new Promise((resolve) => {
+            this._resolveServiceModelReady = resolve;
+        });
+    }
 
     public init(): void {
         // call the base component's init function
@@ -61,11 +70,23 @@ export default class Component extends BaseComponent {
         // enable routing
         this.getRouter().initialize();
 
-        if (Environment.current() === EnvironmentType.GITHUB) {
+        const environment = Environment.current();
+
+        if (environment === EnvironmentType.GITHUB) {
+            void this.prepareGithubServiceModel();
+        } else if (environment === EnvironmentType.LOCAL && XsuaaAuthHelper.getConfig().auth) {
+            XsuaaAuthHelper.setLocalOverrides();
             void this.prepareGithubServiceModel();
         } else if (!XsuaaAuthHelper.getConfig().odataService) {
             this.applyManifestServiceUrl();
+            this._resolveServiceModelReady?.(true);
+        } else {
+            this._resolveServiceModelReady?.(true);
         }
+    }
+
+    public getServiceModelReady(): Promise<boolean> {
+        return this._serviceModelReady;
     }
 
     private applyManifestServiceUrl(): void {
@@ -92,9 +113,11 @@ export default class Component extends BaseComponent {
             if (authenticated && updated && updated.accessToken) {
                 this.setGithubServiceModel(updated.accessToken);
             } else {
+                this._resolveServiceModelReady?.(false);
                 this.getRouter().navTo("Login");
             }
         } catch (error) {
+            this._resolveServiceModelReady?.(false);
             this.getRouter().navTo("Login");
         }
     }
@@ -113,6 +136,7 @@ export default class Component extends BaseComponent {
 
         this.attachODataModelSessionGuard(model);
         this.setModel(model);
+        this._resolveServiceModelReady?.(true);
     }
 
     private attachODataModelSessionGuard(model: ODataModel): void {

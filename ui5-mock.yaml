@@ -18,6 +18,8 @@ server:
         backend:
           - path: /api
             url: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
+          - path: /auth
+            url: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
     - name: fiori-tools-appreload
       afterMiddleware: compression
       configuration:

@@ -92,16 +92,19 @@ export default class Home extends BaseController {
     }
 
     public async bootstrap(): Promise<void> {
-        const model = await this.waitForServiceModel();
+        const ready = await this.waitForServiceModel();
 
-        if (!model) {
-            if (Environment.current() !== EnvironmentType.GITHUB) {
-                MessageBox.error(this.getText("backendUnavailable"));
-            }
+        if (!ready) {
             return;
         }
 
-        await this.loadPersons(model);
+        try {
+            await this.loadPersons(this.getServiceModel());
+        } catch (error) {
+            if (Environment.current() !== EnvironmentType.GITHUB) {
+                MessageBox.error(this.getText("backendUnavailable"));
+            }
+        }
     }
 
     public onPersonChange(): void {
@@ -269,7 +272,21 @@ export default class Home extends BaseController {
         await this.loadPeriodData();
     }
 
-    private async waitForServiceModel(): Promise<ODataModel | null> {
+    private async waitForServiceModel(): Promise<boolean> {
+        const component = this.getOwnerComponent() as unknown as {
+            getServiceModelReady?: () => Promise<boolean>;
+        };
+
+        if (typeof component.getServiceModelReady === "function") {
+            const ready = await component.getServiceModelReady();
+
+            if (ready) {
+                return true;
+            }
+
+            return false;
+        }
+
         const environment = Environment.current();
 
         for (let attempt = 0; attempt < 40; attempt++) {
@@ -280,17 +297,17 @@ export default class Home extends BaseController {
 
                 if (environment === EnvironmentType.GITHUB) {
                     if (serviceUrl && serviceUrl.indexOf("/api/") !== 0) {
-                        return model;
+                        return true;
                     }
                 } else {
-                    return model;
+                    return true;
                 }
             }
 
             await new Promise((resolve) => setTimeout(resolve, 200));
         }
 
-        return null;
+        return false;
     }
 
     private getServiceUrl(model: ODataModel): string {

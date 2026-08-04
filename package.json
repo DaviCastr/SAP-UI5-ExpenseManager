@@ -32,7 +32,7 @@
   },
   "scripts": {
     "start": "echo \\\"This application was generated with a local metadata file and does not reference a live server. Please add the required server configuration or start this application with mock data using the target: `npm run start-mock`.\\\"",
-    "start-local": "fiori run --config ./ui5-local.yaml --open \"test/flp.html#app-preview\"",
+    "start-local": "fiori run --config ./ui5-local.yaml --open \"index.html\"",
     "build": "ui5 build --config=ui5.yaml --clean-dest --dest dist",
     "build:github-pages": "ui5 build --config=ui5.yaml --clean-dest --dest docs",
     "lint": "eslint ./",
