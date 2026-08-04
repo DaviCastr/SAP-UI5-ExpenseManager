@@ -38,11 +38,41 @@ html, body, .sapUiBody { background: #f4f7f8; font-family: "72", "Segoe UI", san
 
 .surfaceCard { flex: 1 1 22rem; min-width: 0; padding: 1.4rem; border-radius: 1.2rem; background: #fff; box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid #e7eeee; }
 .sectionHeader { margin-bottom: .4rem; }
-.transactionList, .cardList { background: transparent; }
+.transactionList, .cardList, .categoryList { background: transparent; }
 .transactionItem { padding: .7rem 0; }
 .transactionIcon { background: #eafaf4; color: #087c67; border-radius: .7rem; padding: .6rem; margin-right: .8rem; }
 .transactionTitle { font-weight: 600; color: #102a2b; }
 .transactionAmount .sapMObjectNumberText { font-weight: 700; color: #102a2b; }
+
+.periodNav { gap: 1rem; padding: 1rem 1.15rem; border-radius: 1rem; background: #fff; box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid #e7eeee; }
+.periodNavActions { gap: .35rem; }
+.periodNavLabel .sapMBtnInner { font-weight: 700; color: #102a2b; border-radius: .7rem; }
+
+.categoryItem { padding: .55rem 0; }
+.categoryItemMain { gap: .85rem; }
+.categoryItemAvatar .sapMAvatar { background: #eafaf4; color: #087c67; }
+.categoryProgress { margin-top: .3rem; }
+.categoryProgress .sapMProgressIndicator { background: #eafaf4; border-radius: .5rem; height: .45rem; }
+.categoryProgress .sapMProgressIndicator .sapMProgressBar { background: #087c67; border-radius: .5rem; }
+
+.categoryDetailHeader { gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #eef3f3; }
+.categoryDetailAvatar .sapMAvatar { background: #eafaf4; color: #087c67; }
+.categoryDetailTotal .sapMObjectNumberText { font-size: 1.35rem; font-weight: 700; color: #102a2b; margin-left: auto; }
+.categoryInvoiceList { gap: .5rem; padding: .35rem 0; }
+.categoryInvoiceItem { padding: .5rem 0; }
+.categoryEmpty { gap: .4rem; align-items: center; padding: 1.5rem; }
+.categoryEmptyIcon { font-size: 1.8rem; color: #9fbbb7; }
+
+.simulationInputs { gap: 1rem; }
+.simulationField { flex: 1 1 9rem; }
+.simulationResult { gap: .5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eef3f3; }
+.simulationMetricRow { padding: .35rem 0; }
+.simulationMetricLabel { color: #687b7c; font-size: .85rem; }
+.simulationMetricValue .sapMObjectNumberText { font-weight: 700; color: #102a2b; }
+.simulationBreakdown { gap: .4rem; margin-top: .4rem; }
+.simulationBarRow { gap: .75rem; }
+.simulationBarLabel { min-width: 8rem; }
+.simulationBar .sapMProgressIndicator { height: .6rem; border-radius: .5rem; }
 .creditCardItem { padding: .6rem 0; }
 .creditCardName { font-weight: 700; color: #102a2b; }
 .creditCardLabel { color: #687b7c; font-size: .75rem; }

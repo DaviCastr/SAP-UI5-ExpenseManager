@@ -10,7 +10,7 @@
         class="financeDialog"
         contentWidth="30rem"
         beforeOpen="handler.onDialogBeforeOpen"
-        core:require="{ handler: 'apps/dflc/expensemanager/ext/fragment/AddPerson' }"
+        core:require="{ handler: 'apps/dflc/expensemanager/controller/fragments/AddPerson' }"
     >
         <content>
             <ScrollContainer height="30rem" vertical="true">

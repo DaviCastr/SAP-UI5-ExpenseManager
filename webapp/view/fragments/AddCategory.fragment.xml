@@ -10,7 +10,7 @@
         class="financeDialog"
         contentWidth="28rem"
         beforeOpen="handler.onDialogBeforeOpen"
-        core:require="{ handler: 'apps/dflc/expensemanager/ext/fragment/AddCategory' }"
+        core:require="{ handler: 'apps/dflc/expensemanager/controller/fragments/AddCategory' }"
     >
         <content>
             <VBox class="dialogContent">

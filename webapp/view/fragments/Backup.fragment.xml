@@ -10,7 +10,7 @@
         class="financeDialog"
         contentWidth="30rem"
         beforeOpen="handler.onDialogBeforeOpen"
-        core:require="{ handler: 'apps/dflc/expensemanager/ext/fragment/Backup' }"
+        core:require="{ handler: 'apps/dflc/expensemanager/controller/fragments/Backup' }"
     >
         <content>
             <VBox class="dialogContent">

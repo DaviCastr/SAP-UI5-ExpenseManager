@@ -53,10 +53,11 @@
                         <Title text="Olá, {ui>/selectedPerson/Name}!" level="H1" class="heroTitle" />
                         <Text text="Aqui está o panorama financeiro deste mês." class="heroSubtitle" />
                         <HBox class="heroActions" wrap="Wrap">
-                            <Button text="Registrar gasto" icon="sap-icon://add" type="Emphasized" press=".onOpenExpenseDialog" class="primaryAction" />
-                            <Button text="Adicionar cartão" icon="sap-icon://credit-card" type="Transparent" press=".onOpenCardDialog" class="secondaryAction" />
-                            <Button text="Restaurar backup" icon="sap-icon://upload-to-cloud" type="Transparent" press=".onRestoreBackup" class="secondaryAction" />
-                            <Button text="Exportar backup" icon="sap-icon://download-to-cloud" type="Transparent" press=".onExportBackup" class="secondaryAction" />
+                        <Button text="Registrar gasto" icon="sap-icon://add" type="Emphasized" press=".onOpenExpenseDialog" class="primaryAction" />
+                        <Button text="Adicionar cartão" icon="sap-icon://credit-card" type="Transparent" press=".onOpenCardDialog" class="secondaryAction" />
+                        <Button text="Simular gastos" icon="sap-icon://customer-view" type="Transparent" press=".onOpenSimulationDialog" class="secondaryAction" />
+                        <Button text="Restaurar backup" icon="sap-icon://upload-to-cloud" type="Transparent" press=".onRestoreBackup" class="secondaryAction" />
+                        <Button text="Exportar backup" icon="sap-icon://download-to-cloud" type="Transparent" press=".onExportBackup" class="secondaryAction" />
                         </HBox>
                     </VBox>
                     <VBox class="balanceCard">
@@ -67,6 +68,18 @@
                             <Text text="{ui>/summary/trendText}" />
                         </HBox>
                     </VBox>
+                </HBox>
+
+                <HBox class="periodNav" justifyContent="SpaceBetween" alignItems="Center" wrap="Wrap" visible="{= !${ui>/personsEmpty} }">
+                    <VBox>
+                        <Title text="Visão geral do período" level="H3" />
+                        <Text text="{ui>/monthLabel}" class="sectionHint" />
+                    </VBox>
+                    <HBox alignItems="Center" class="periodNavActions">
+                        <Button icon="sap-icon://slim-arrow-left" type="Transparent" press=".onPreviousMonth" tooltip="Mês anterior" class="iconAction" />
+                        <Button text="{ui>/monthLabel}" type="Transparent" press=".onThisMonth" class="periodNavLabel" />
+                        <Button icon="sap-icon://slim-arrow-right" type="Transparent" press=".onNextMonth" tooltip="Próximo mês" class="iconAction" />
+                    </HBox>
                 </HBox>
 
                 <VBox class="emptyState" visible="{ui>/personsEmpty}" alignItems="Center" justifyContent="Center">
@@ -109,21 +122,10 @@
                             <Button icon="sap-icon://add" type="Transparent" press=".onOpenCategoryDialog" tooltip="{i18n>categoryAddButton}" />
                         </HBox>
                         <List
-                            items="{
-                                path: '/Transactions',
-                                parameters: {
-                                    $orderby: 'Date desc',
-                                    $expand: 'Category'
-                                },
-                                filters: [
-                                    { path: 'Invoice/Card/Person/ID', operator: 'EQ', value: '{ui>/selectedPerson/ID}' }
-                                ]
-                            }"
-                            growing="true"
-                            growingThreshold="10"
+                            items="{ path: 'ui>/invoice/Transactions' }"
                             showSeparators="None"
                             class="transactionList"
-                            noDataText="Ainda não há movimentações para esta pessoa."
+                            noDataText="Ainda não há movimentações para este período."
                         >
                             <CustomListItem>
                                 <HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="transactionItem">
@@ -138,7 +140,58 @@
                                         number="{
                                             parts: [
                                                 { path: 'Amount' },
-                                                { path: 'Currency' }
+                                                { path: '$ui>/invoice/Currency/code' }
+                                            ],
+                                            formatter: 'formatter.formatCurrency'
+                                        }"
+                                        class="transactionAmount"
+                                    />
+                                </HBox>
+                            </CustomListItem>
+                        </List>
+                    </VBox>
+
+                    <VBox class="surfaceCard categoriesPanel">
+                        <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
+                            <VBox><Title text="Gastos por categoria" level="H3" /><Text text="Distribuição do período" class="sectionHint" /></VBox>
+                            <Button icon="sap-icon://add" type="Transparent" press=".onOpenCategoryDialog" tooltip="{i18n>categoryAddButton}" />
+                        </HBox>
+                        <List
+                            items="{ path: 'ui>/categories' }"
+                            showSeparators="None"
+                            class="categoryList"
+                            noDataText="Nenhuma categoria com gastos neste período."
+                        >
+                            <CustomListItem press=".onCategoryPress">
+                                <HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="categoryItem">
+                                    <HBox alignItems="Center" class="categoryItemMain">
+                                        <Avatar
+                                            src="{
+                                                parts: [ { path: 'CategoryImagePath' } ],
+                                                formatter: 'formatter.imageUrl'
+                                            }"
+                                            displaySize="Custom"
+                                            customDisplaySize="2.75rem"
+                                            displayShape="Circle"
+                                            initials="{Name}"
+                                            class="categoryItemAvatar"
+                                        />
+                                        <VBox>
+                                            <Text text="{Name}" class="transactionTitle" />
+                                            <ProgressIndicator
+                                                percentValue="{Percent}"
+                                                displayValue="{Percent}%"
+                                                state="None"
+                                                width="12rem"
+                                                class="categoryProgress"
+                                            />
+                                        </VBox>
+                                    </HBox>
+                                    <ObjectNumber
+                                        number="{
+                                            parts: [
+                                                { path: 'Total' },
+                                                { path: 'CurrencyCode' }
                                             ],
                                             formatter: 'formatter.formatCurrency'
                                         }"

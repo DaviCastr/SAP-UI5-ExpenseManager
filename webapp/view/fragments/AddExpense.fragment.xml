@@ -8,7 +8,7 @@
         title="{i18n>expenseDialogTitle}"
         class="financeDialog"
         contentWidth="28rem"
-        core:require="{ handler: 'apps/dflc/expensemanager/ext/fragment/AddExpense' }"
+        core:require="{ handler: 'apps/dflc/expensemanager/controller/fragments/AddExpense' }"
     >
         <content>
             <VBox class="dialogContent">
