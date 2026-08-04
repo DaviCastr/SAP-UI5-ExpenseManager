@@ -3,7 +3,6 @@ import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import Dialog from "sap/m/Dialog";
 import Select from "sap/m/Select";
-import Item from "sap/ui/core/Item";
 import Control from "sap/ui/core/Control";
 import Event from "sap/ui/base/Event";
 import Context from "sap/ui/model/Context";
@@ -307,7 +306,7 @@ export default class Home extends BaseController {
         const ui = this.uiModel;
 
         ui.setProperty("/persons", persons);
-        ui.setProperty("/personItems", persons.map((person) => new Item({ key: person.ID, text: person.Name || person.ID })));
+        ui.setProperty("/personOptions", persons.map((person) => ({ key: person.ID, text: person.Name || person.ID })));
 
         if (!persons.length) {
             ui.setProperty("/personsEmpty", true);

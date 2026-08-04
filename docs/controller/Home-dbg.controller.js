@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Item", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../util/Environment", "../util/format", "../service/ODataService", "../service/PersonService", "../service/InvoiceService", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageBox, MessageToast, Item, Fragment, ___BaseController, ___auth_AuthenticationService, __Environment, ___util_format, ___service_ODataService, ___service_PersonService, ___service_InvoiceService, ___util_expenseApi, ___util_backupApi, ___util_http) {
+sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../util/Environment", "../util/format", "../service/ODataService", "../service/PersonService", "../service/InvoiceService", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageBox, MessageToast, Fragment, ___BaseController, ___auth_AuthenticationService, __Environment, ___util_format, ___service_ODataService, ___service_PersonService, ___service_InvoiceService, ___util_expenseApi, ___util_backupApi, ___util_http) {
   "use strict";
 
   function _interopRequireDefault(obj) {
@@ -251,7 +251,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Item", "sa
       const persons = await this._personService.fetchAll();
       const ui = this.uiModel;
       ui.setProperty("/persons", persons);
-      ui.setProperty("/personItems", persons.map(person => new Item({
+      ui.setProperty("/personOptions", persons.map(person => ({
         key: person.ID,
         text: person.Name || person.ID
       })));
