@@ -22,7 +22,7 @@ sap.ui.define([], function () {
       if (parameters?.select?.length) {
         bindingParameters.$select = parameters.select.join(",");
       }
-      const binding = this.model.bindList(`/${entitySet}`, undefined, undefined, undefined, bindingParameters);
+      const binding = this.model.bindList(`/${entitySet}`, undefined, undefined, parameters?.filters, bindingParameters);
       const contexts = await binding.requestContexts();
       return contexts.map(context => context.getObject());
     }

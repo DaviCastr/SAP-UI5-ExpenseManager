@@ -3,7 +3,6 @@ import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import Dialog from "sap/m/Dialog";
 import Select from "sap/m/Select";
-import List from "sap/m/List";
 import Control from "sap/ui/core/Control";
 import Event from "sap/ui/base/Event";
 import Context from "sap/ui/model/Context";
@@ -14,8 +13,10 @@ import { AuthenticationService } from "../auth/AuthenticationService";
 import Environment, { EnvironmentType } from "../util/Environment";
 import { formatCurrency } from "../util/format";
 import { ODataService } from "../service/ODataService";
-import { InvoiceService, type Period } from "../service/InvoiceService";
+import { InvoiceService, type CompleteInvoice, type Period } from "../service/InvoiceService";
 import type ListBinding from "sap/ui/model/ListBinding";
+import Filter from "sap/ui/model/Filter";
+import FilterOperator from "sap/ui/model/FilterOperator";
 import {
     getTransactionsByCategory,
     type CategoryTransactionsProperties,
@@ -44,10 +45,30 @@ interface TransactionRow {
     Description?: string;
     Date?: string;
     Amount?: number;
-    Category?: { ID: string; Name: string };
+    Currency?: string;
+    Category?: { ID: string; Name: string; ImagePath?: string };
+}
+
+interface CardRow {
+    ID: string;
+    Name: string;
+    Limit: number;
+    Currency: string;
+    DueDay: number;
+    ClosingDay: number;
+}
+
+interface UiPerson {
+    ID: string;
+    Name: string;
+    Income?: number;
+    ExpenseTarget?: number;
+    Currency?: string | { code?: string };
+    ImageType?: string;
 }
 
 export default class Home extends BaseController {
+    private _odata?: ODataService;
     private _invoiceService?: InvoiceService;
     private _expenseDialog?: Promise<Dialog>;
     private _backupDialog?: Promise<Dialog>;
@@ -73,8 +94,8 @@ export default class Home extends BaseController {
             return;
         }
 
-        const odata = new ODataService(model);
-        this._invoiceService = new InvoiceService(odata);
+        this._odata = new ODataService(model);
+        this._invoiceService = new InvoiceService(this._odata);
 
         try {
             this.setupPersonSelector();
@@ -251,32 +272,20 @@ export default class Home extends BaseController {
     }
 
     public refresh(): void {
-        try {
-            this.getServiceModel().refresh();
-        } catch {
-            // The OData model refresh re-triggers the period binding and its dataReceived handler.
-        }
-
-        this.refreshDerived();
+        void this.loadDashboard();
     }
 
     /**
-     * Reloads persons and period data. Used by the create/restore dialogs after a successful operation.
+     * Reloads persons and refreshes the current dashboard. Used by the create/restore dialogs.
      */
     public reload(): void {
         try {
-            try {
-                this.getServiceModel().refresh();
-            } catch {
-                // The /Persons binding re-fires dataReceived and re-picks the selection.
-            }
-            this.refreshDerived();
-        } catch (error) {
-            if (isSessionExpiredError(error)) {
-                return;
-            }
-            MessageBox.error(this.getText("backendUnavailable"));
+            this.getServiceModel().refresh();
+        } catch {
+            // The /Persons binding re-fires dataReceived and re-picks the selection.
         }
+
+        this.applyPersonSelection(this.getSelectedPersonId());
     }
 
     private getSelectedPersonId(): string {
@@ -288,8 +297,8 @@ export default class Home extends BaseController {
         const binding = select.getBinding("items") as ListBinding;
 
         const applyLoaded = () => {
-            const contexts = binding.getContexts(0, 50);
-            const empty = contexts.length === 0;
+            const persons = this.getPersonsFromBinding();
+            const empty = persons.length === 0;
 
             if (empty) {
                 this.uiModel.setProperty("/personsEmpty", true);
@@ -300,13 +309,11 @@ export default class Home extends BaseController {
             this.uiModel.setProperty("/personsEmpty", false);
 
             const current = this.getSelectedPersonId();
+            const currentExists = persons.some((person) => person.ID === current);
 
-            if (!current) {
-                const first = contexts[0]?.getProperty("ID") as string | undefined;
-                if (first) {
-                    this.applyPersonSelection(first);
-                }
-            } else if (!(this.byId("personSection") as Control).getBindingContext()) {
+            if (!current || !currentExists) {
+                this.applyPersonSelection(persons[0].ID);
+            } else if (!(this.uiModel.getProperty("/selectedPerson") as UiPerson)?.ID) {
                 this.applyPersonSelection(current);
             }
         };
@@ -316,76 +323,111 @@ export default class Home extends BaseController {
         applyLoaded();
     }
 
+    private getPersonsFromBinding(): UiPerson[] {
+        const select = this.byId("personSelect") as Select;
+        const binding = select.getBinding("items") as ListBinding;
+
+        if (!binding) {
+            return [];
+        }
+
+        return binding
+            .getContexts(0, 100)
+            .map((context) => context.getObject() as UiPerson)
+            .filter((person) => !!person?.ID);
+    }
+
     private applyPersonSelection(id: string): void {
         const ui = this.uiModel;
 
         if (!id) {
             ui.setProperty("/selectedPersonId", "");
+            ui.setProperty("/selectedPerson", {});
             return;
         }
 
         ui.setProperty("/selectedPersonId", id);
 
-        const section = this.byId("personSection") as Control;
-        section.bindElement({
-            path: `/Persons(ID='${encodeURIComponent(id)}',IsActiveEntity=true)`
-        });
+        const person = this.getPersonsFromBinding().find((candidate) => candidate.ID === id);
+        if (person) {
+            ui.setProperty("/selectedPerson", {
+                ID: person.ID,
+                Name: person.Name,
+                Income: person.Income,
+                ExpenseTarget: person.ExpenseTarget,
+                Currency: person.Currency,
+                ImageType: person.ImageType
+            });
+        }
 
         this.applyPeriodData();
     }
 
     private applyPeriodData(): void {
         const ui = this.uiModel;
+        const period = (ui.getProperty("/period") as Period) || this.currentPeriod();
+        ui.setProperty("/period", period);
+        ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
+        void this.loadDashboard();
+    }
+
+    private async loadDashboard(): Promise<void> {
+        const ui = this.uiModel;
         const personId = this.getSelectedPersonId();
+        const period = (ui.getProperty("/period") as Period) || this.currentPeriod();
 
         if (!personId) {
             return;
         }
 
-        const period = (ui.getProperty("/period") as Period) || this.currentPeriod();
-        ui.setProperty("/period", period);
-        ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
-
-        // The /Transactions list binding re-applies its filters (person + period) and
-        // recomputes the summary via onTransactionsDataReceived.
         ui.setProperty("/busy", true);
+
+        try {
+            if (!this._invoiceService || !this._odata) {
+                return;
+            }
+
+            const invoice = await this._invoiceService.getCompleteInvoice(personId, period);
+            this.renderInvoice(invoice);
+
+            const cards = await this._odata.requestEntitySet<CardRow>("Cards", {
+                select: ["ID", "Name", "Limit", "Currency", "DueDay", "ClosingDay"],
+                filters: [new Filter({ path: "Person/ID", operator: FilterOperator.EQ, value1: personId })]
+            });
+            ui.setProperty("/cards", cards);
+        } catch (error) {
+            if (isSessionExpiredError(error)) {
+                return;
+            }
+            if (Environment.current() !== EnvironmentType.GITHUB) {
+                MessageBox.error(this.getText("backendUnavailable"));
+            }
+        } finally {
+            ui.setProperty("/busy", false);
+        }
     }
 
-    public onTransactionsDataReceived(): void {
-        this.refreshDerived();
-    }
-
-    private refreshDerived(): void {
+    private renderInvoice(invoice: CompleteInvoice): void {
         const ui = this.uiModel;
-        const personContext = (this.byId("personSection") as Control).getBindingContext();
-        const person = personContext?.getObject() as {
-            ID: string;
-            Name?: string;
-            Income?: number;
-            ExpenseTarget?: number;
-            Currency?: string | { code?: string };
-        } | undefined;
+        const person = (ui.getProperty("/selectedPerson") as UiPerson) || {};
 
-        const list = this.byId("transactionsList") as List;
-        const binding = list.getBinding("items") as ListBinding;
-        const transactions = binding
-            ? binding.getContexts(0, 500).map((ctx) => ctx.getObject() as TransactionRow)
-            : [];
-
-        const period = (ui.getProperty("/period") as Period) || this.currentPeriod();
-        const currency = person ? resolveCurrency(person.Currency) || "BRL" : "BRL";
-        const income = Number(person?.Income) || 0;
-        const target = Number(person?.ExpenseTarget) || 0;
-        const expenses = transactions.reduce((sum, tx) => sum + (Number(tx.Amount) || 0), 0);
+        const expenses = Number(invoice.TotalAmount) || 0;
+        const income = Number(person.Income) || 0;
+        const target = Number(person.ExpenseTarget) || 0;
+        const currency = resolveCurrency(invoice.Currency?.code, resolveCurrency(person.Currency)) || "BRL";
         const available = income - expenses;
-        const savings = income - expenses;
         const targetPercent = target > 0 ? Math.round((expenses / target) * 100) : 0;
+
+        const transactions = (invoice.Transactions || []).map((transaction) => ({
+            ...transaction,
+            Currency: currency
+        }));
 
         ui.setProperty("/summary", {
             available: formatCurrency(available, currency),
             income: formatCurrency(income, currency),
             expenses: formatCurrency(expenses, currency),
-            savings: formatCurrency(savings, currency),
+            savings: formatCurrency(available, currency),
             target: formatCurrency(target, currency),
             expenseHint: target > 0
                 ? this.getText("summaryExpenseHintMeta", [String(targetPercent)])
@@ -396,14 +438,11 @@ export default class Home extends BaseController {
             trendText: this.getText("trendCalculating"),
             trendIcon: "sap-icon://trend-up"
         });
-        ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
+        ui.setProperty("/transactions", transactions);
 
         this.buildCategories(transactions, expenses, currency);
-        ui.setProperty("/busy", false);
 
-        if (person?.ID) {
-            void this.loadTrend(person.ID, period, expenses);
-        }
+        void this.loadTrend(this.getSelectedPersonId(), this.currentPeriodDefault(), expenses);
     }
 
     private async loadTrend(personId: string, period: Period, expenses: number): Promise<void> {
@@ -443,6 +482,10 @@ export default class Home extends BaseController {
         }
     }
 
+    private currentPeriodDefault(): Period {
+        return (this.uiModel.getProperty("/period") as Period) || this.currentPeriod();
+    }
+
     private buildCategories(transactions: TransactionRow[], expenses: number, currency: string): void {
         const map = new Map<string, { ID: string; Name: string; CategoryImagePath?: string; Total: number }>();
 
@@ -454,6 +497,7 @@ export default class Home extends BaseController {
             const entry = map.get(category.ID) || {
                 ID: category.ID,
                 Name: category.Name,
+                CategoryImagePath: category.ImagePath,
                 Total: 0
             };
             entry.Total += Number(transaction.Amount) || 0;
@@ -475,9 +519,9 @@ export default class Home extends BaseController {
     }
 
     private navigateMonth(delta: number): void {
-        const period = (this.uiModel.getProperty("/period") as Period) || this.currentPeriod();
+        const period = this.currentPeriodDefault();
         this.uiModel.setProperty("/period", this.shiftMonth(period.year, period.month, delta));
-        this.applyPeriodData();
+        void this.loadDashboard();
     }
 
     private shiftMonth(year: number, month: number, delta: number): Period {

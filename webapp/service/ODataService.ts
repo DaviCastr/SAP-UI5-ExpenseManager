@@ -1,4 +1,5 @@
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
+import type Filter from "sap/ui/model/Filter";
 
 /**
  * Thin, typed wrapper around the shared OData V4 model.
@@ -22,14 +23,14 @@ export class ODataService {
         return this.model.getServiceUrl();
     }
 
-    public async requestEntitySet<T>(entitySet: string, parameters?: { select?: string[] }): Promise<T[]> {
+    public async requestEntitySet<T>(entitySet: string, parameters?: { select?: string[]; filters?: Filter[] }): Promise<T[]> {
         const bindingParameters: Record<string, string> = {};
 
         if (parameters?.select?.length) {
             bindingParameters.$select = parameters.select.join(",");
         }
 
-        const binding = this.model.bindList(`/${entitySet}`, undefined, undefined, undefined, bindingParameters);
+        const binding = this.model.bindList(`/${entitySet}`, undefined, undefined, parameters?.filters, bindingParameters);
         const contexts = await binding.requestContexts();
 
         return contexts.map((context) => context.getObject() as T);

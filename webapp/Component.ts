@@ -166,7 +166,17 @@ export default class Component extends BaseComponent {
     }
 
     private createUiModel(): JSONModel {
+        const now = new Date();
+
         return new JSONModel({
+            period: { year: now.getFullYear(), month: now.getMonth() + 1 },
+            monthLabel: "",
+            selectedPerson: {},
+            selectedPersonId: "",
+            personsEmpty: false,
+            busy: false,
+            transactions: [],
+            cards: [],
             summary: {
                 available: "",
                 income: "",
@@ -178,11 +188,7 @@ export default class Component extends BaseComponent {
                 trendText: "",
                 trendIcon: "sap-icon://trend-up"
             },
-            monthLabel: "",
             categories: [],
-            personsEmpty: false,
-            selectedPersonId: "",
-            busy: false,
             newExpense: {},
             newCard: {}
         });

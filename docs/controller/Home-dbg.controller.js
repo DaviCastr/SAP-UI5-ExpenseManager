@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../util/Environment", "../util/format", "../service/ODataService", "../service/InvoiceService", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageBox, MessageToast, Fragment, ___BaseController, ___auth_AuthenticationService, __Environment, ___util_format, ___service_ODataService, ___service_InvoiceService, ___util_expenseApi, ___util_backupApi, ___util_http) {
+sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../util/Environment", "../util/format", "../service/ODataService", "../service/InvoiceService", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageBox, MessageToast, Fragment, ___BaseController, ___auth_AuthenticationService, __Environment, ___util_format, ___service_ODataService, ___service_InvoiceService, Filter, FilterOperator, ___util_expenseApi, ___util_backupApi, ___util_http) {
   "use strict";
 
   function _interopRequireDefault(obj) {
@@ -39,8 +39,8 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         this.navTo("Login");
         return;
       }
-      const odata = new ODataService(model);
-      this._invoiceService = new InvoiceService(odata);
+      this._odata = new ODataService(model);
+      this._invoiceService = new InvoiceService(this._odata);
       try {
         this.setupPersonSelector();
         this.applyPersonSelection(this.getSelectedPersonId());
@@ -205,31 +205,19 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       }
     }
     refresh() {
-      try {
-        this.getServiceModel().refresh();
-      } catch {
-        // The OData model refresh re-triggers the period binding and its dataReceived handler.
-      }
-      this.refreshDerived();
+      void this.loadDashboard();
     }
 
     /**
-     * Reloads persons and period data. Used by the create/restore dialogs after a successful operation.
+     * Reloads persons and refreshes the current dashboard. Used by the create/restore dialogs.
      */
     reload() {
       try {
-        try {
-          this.getServiceModel().refresh();
-        } catch {
-          // The /Persons binding re-fires dataReceived and re-picks the selection.
-        }
-        this.refreshDerived();
-      } catch (error) {
-        if (isSessionExpiredError(error)) {
-          return;
-        }
-        MessageBox.error(this.getText("backendUnavailable"));
+        this.getServiceModel().refresh();
+      } catch {
+        // The /Persons binding re-fires dataReceived and re-picks the selection.
       }
+      this.applyPersonSelection(this.getSelectedPersonId());
     }
     getSelectedPersonId() {
       return this.uiModel.getProperty("/selectedPersonId") || "";
@@ -238,8 +226,8 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       const select = this.byId("personSelect");
       const binding = select.getBinding("items");
       const applyLoaded = () => {
-        const contexts = binding.getContexts(0, 50);
-        const empty = contexts.length === 0;
+        const persons = this.getPersonsFromBinding();
+        const empty = persons.length === 0;
         if (empty) {
           this.uiModel.setProperty("/personsEmpty", true);
           this.uiModel.setProperty("/selectedPersonId", "");
@@ -247,12 +235,10 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         }
         this.uiModel.setProperty("/personsEmpty", false);
         const current = this.getSelectedPersonId();
-        if (!current) {
-          const first = contexts[0]?.getProperty("ID");
-          if (first) {
-            this.applyPersonSelection(first);
-          }
-        } else if (!this.byId("personSection").getBindingContext()) {
+        const currentExists = persons.some(person => person.ID === current);
+        if (!current || !currentExists) {
+          this.applyPersonSelection(persons[0].ID);
+        } else if (!this.uiModel.getProperty("/selectedPerson")?.ID) {
           this.applyPersonSelection(current);
         }
       };
@@ -261,68 +247,103 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       binding?.attachDataReceived(applyLoaded);
       applyLoaded();
     }
+    getPersonsFromBinding() {
+      const select = this.byId("personSelect");
+      const binding = select.getBinding("items");
+      if (!binding) {
+        return [];
+      }
+      return binding.getContexts(0, 100).map(context => context.getObject()).filter(person => !!person?.ID);
+    }
     applyPersonSelection(id) {
       const ui = this.uiModel;
       if (!id) {
         ui.setProperty("/selectedPersonId", "");
+        ui.setProperty("/selectedPerson", {});
         return;
       }
       ui.setProperty("/selectedPersonId", id);
-      const section = this.byId("personSection");
-      section.bindElement({
-        path: `/Persons(ID='${encodeURIComponent(id)}',IsActiveEntity=true)`
-      });
+      const person = this.getPersonsFromBinding().find(candidate => candidate.ID === id);
+      if (person) {
+        ui.setProperty("/selectedPerson", {
+          ID: person.ID,
+          Name: person.Name,
+          Income: person.Income,
+          ExpenseTarget: person.ExpenseTarget,
+          Currency: person.Currency,
+          ImageType: person.ImageType
+        });
+      }
       this.applyPeriodData();
     }
     applyPeriodData() {
       const ui = this.uiModel;
-      const personId = this.getSelectedPersonId();
-      if (!personId) {
-        return;
-      }
       const period = ui.getProperty("/period") || this.currentPeriod();
       ui.setProperty("/period", period);
       ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
-
-      // The /Transactions list binding re-applies its filters (person + period) and
-      // recomputes the summary via onTransactionsDataReceived.
-      ui.setProperty("/busy", true);
+      void this.loadDashboard();
     }
-    onTransactionsDataReceived() {
-      this.refreshDerived();
-    }
-    refreshDerived() {
+    async loadDashboard() {
       const ui = this.uiModel;
-      const personContext = this.byId("personSection").getBindingContext();
-      const person = personContext?.getObject();
-      const list = this.byId("transactionsList");
-      const binding = list.getBinding("items");
-      const transactions = binding ? binding.getContexts(0, 500).map(ctx => ctx.getObject()) : [];
+      const personId = this.getSelectedPersonId();
       const period = ui.getProperty("/period") || this.currentPeriod();
-      const currency = person ? resolveCurrency(person.Currency) || "BRL" : "BRL";
-      const income = Number(person?.Income) || 0;
-      const target = Number(person?.ExpenseTarget) || 0;
-      const expenses = transactions.reduce((sum, tx) => sum + (Number(tx.Amount) || 0), 0);
+      if (!personId) {
+        return;
+      }
+      ui.setProperty("/busy", true);
+      try {
+        if (!this._invoiceService || !this._odata) {
+          return;
+        }
+        const invoice = await this._invoiceService.getCompleteInvoice(personId, period);
+        this.renderInvoice(invoice);
+        const cards = await this._odata.requestEntitySet("Cards", {
+          select: ["ID", "Name", "Limit", "Currency", "DueDay", "ClosingDay"],
+          filters: [new Filter({
+            path: "Person/ID",
+            operator: FilterOperator.EQ,
+            value1: personId
+          })]
+        });
+        ui.setProperty("/cards", cards);
+      } catch (error) {
+        if (isSessionExpiredError(error)) {
+          return;
+        }
+        if (Environment.current() !== EnvironmentType.GITHUB) {
+          MessageBox.error(this.getText("backendUnavailable"));
+        }
+      } finally {
+        ui.setProperty("/busy", false);
+      }
+    }
+    renderInvoice(invoice) {
+      const ui = this.uiModel;
+      const person = ui.getProperty("/selectedPerson") || {};
+      const expenses = Number(invoice.TotalAmount) || 0;
+      const income = Number(person.Income) || 0;
+      const target = Number(person.ExpenseTarget) || 0;
+      const currency = resolveCurrency(invoice.Currency?.code, resolveCurrency(person.Currency)) || "BRL";
       const available = income - expenses;
-      const savings = income - expenses;
       const targetPercent = target > 0 ? Math.round(expenses / target * 100) : 0;
+      const transactions = (invoice.Transactions || []).map(transaction => ({
+        ...transaction,
+        Currency: currency
+      }));
       ui.setProperty("/summary", {
         available: formatCurrency(available, currency),
         income: formatCurrency(income, currency),
         expenses: formatCurrency(expenses, currency),
-        savings: formatCurrency(savings, currency),
+        savings: formatCurrency(available, currency),
         target: formatCurrency(target, currency),
         expenseHint: target > 0 ? this.getText("summaryExpenseHintMeta", [String(targetPercent)]) : this.getText("summaryExpenseHintSpent", [String(Math.round(expenses))]),
         targetHint: target > 0 ? this.getText("summaryTargetHintPlanned") : this.getText("summaryTargetHintEmpty"),
         trendText: this.getText("trendCalculating"),
         trendIcon: "sap-icon://trend-up"
       });
-      ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
+      ui.setProperty("/transactions", transactions);
       this.buildCategories(transactions, expenses, currency);
-      ui.setProperty("/busy", false);
-      if (person?.ID) {
-        void this.loadTrend(person.ID, period, expenses);
-      }
+      void this.loadTrend(this.getSelectedPersonId(), this.currentPeriodDefault(), expenses);
     }
     async loadTrend(personId, period, expenses) {
       if (!this._invoiceService) {
@@ -349,6 +370,9 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         }
       }
     }
+    currentPeriodDefault() {
+      return this.uiModel.getProperty("/period") || this.currentPeriod();
+    }
     buildCategories(transactions, expenses, currency) {
       const map = new Map();
       for (const transaction of transactions) {
@@ -359,6 +383,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         const entry = map.get(category.ID) || {
           ID: category.ID,
           Name: category.Name,
+          CategoryImagePath: category.ImagePath,
           Total: 0
         };
         entry.Total += Number(transaction.Amount) || 0;
@@ -375,9 +400,9 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       this.uiModel.setProperty("/categories", categories);
     }
     navigateMonth(delta) {
-      const period = this.uiModel.getProperty("/period") || this.currentPeriod();
+      const period = this.currentPeriodDefault();
       this.uiModel.setProperty("/period", this.shiftMonth(period.year, period.month, delta));
-      this.applyPeriodData();
+      void this.loadDashboard();
     }
     shiftMonth(year, month, delta) {
       const total = year * 12 + (month - 1) + delta;

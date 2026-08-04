@@ -129,7 +129,19 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
       }
     },
     createUiModel: function _createUiModel() {
+      const now = new Date();
       return new JSONModel({
+        period: {
+          year: now.getFullYear(),
+          month: now.getMonth() + 1
+        },
+        monthLabel: "",
+        selectedPerson: {},
+        selectedPersonId: "",
+        personsEmpty: false,
+        busy: false,
+        transactions: [],
+        cards: [],
         summary: {
           available: "",
           income: "",
@@ -141,11 +153,7 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
           trendText: "",
           trendIcon: "sap-icon://trend-up"
         },
-        monthLabel: "",
         categories: [],
-        personsEmpty: false,
-        selectedPersonId: "",
-        busy: false,
         newExpense: {},
         newCard: {}
       });

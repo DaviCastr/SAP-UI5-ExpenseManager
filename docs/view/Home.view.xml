@@ -22,8 +22,8 @@
                         <HBox alignItems="Center" class="topActions" wrap="Wrap">
                             <Text text="{i18n>personManageLabel}" class="personLabel" />
                             <Avatar
-                                src="{ parts: [ { path: 'ID' }, { path: 'ImageType' } ], formatter: 'formatter.personImage' }"
-                                initials="{ path: 'Name', formatter: 'formatter.initials' }"
+                                src="{ parts: [ { path: 'ui>/selectedPerson/ID' }, { path: 'ui>/selectedPerson/ImageType' } ], formatter: 'formatter.personImage' }"
+                                initials="{ path: 'ui>/selectedPerson/Name', formatter: 'formatter.initials' }"
                                 displaySize="XS"
                                 displayShape="Circle"
                                 class="personAvatar"
@@ -59,7 +59,7 @@
                         <VBox class="balanceCopy">
                             <Text text="{i18n>homeEyebrow}" class="eyebrow" />
                             <Title
-                                text="{ parts: [ { path: 'i18n>helloUser' }, { path: 'Name' } ], formatter: 'formatter.formatTemplate' }"
+                                text="{ parts: [ { path: 'i18n>helloUser' }, { path: 'ui>/selectedPerson/Name' } ], formatter: 'formatter.formatTemplate' }"
                                 level="H1"
                                 class="heroTitle"
                             />
@@ -136,19 +136,10 @@
                         </HBox>
                         <List
                             id="transactionsList"
-                            items="{
-                                path: '/Transactions',
-                                parameters: { $orderby: 'Date desc' },
-                                filters: [
-                                    { path: 'Category/Person/ID', operator: 'EQ', value: '{ui>/selectedPersonId}' },
-                                    { path: 'Invoice/Year', operator: 'EQ', value: '{ui>/period/year}' },
-                                    { path: 'Invoice/Month', operator: 'EQ', value: '{ui>/period/month}' }
-                                ]
-                            }"
+                            items="{ path: 'ui>/transactions' }"
                             showSeparators="None"
                             class="transactionList"
                             noDataText="{i18n>transactionsNoData}"
-                            updateFinished=".onTransactionsDataReceived"
                         >
                             <CustomListItem>
                                 <HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="transactionItem">
@@ -231,12 +222,7 @@
                             <Button icon="sap-icon://add" type="Transparent" press=".onOpenCardDialog" tooltip="{i18n>cardDialogTitle}" />
                         </HBox>
                         <List
-                            items="{
-                                path: '/Cards',
-                                filters: [
-                                    { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPersonId}' }
-                                ]
-                            }"
+                            items="{ path: 'ui>/cards' }"
                             showSeparators="None"
                             class="cardList"
                             noDataText="{i18n>cardsNoData}"
