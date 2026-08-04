@@ -34,7 +34,7 @@ export default class Component extends BaseComponent {
         });
     }
 
-    public async init(): Promise<void> {
+    public init(): void {
         // call the base component's init function
         super.init();
 
@@ -68,29 +68,19 @@ export default class Component extends BaseComponent {
         }), "ui");
 
         const environment = Environment.current();
-        let serviceReady = false;
 
         if (environment === EnvironmentType.GITHUB) {
-            serviceReady = await this.prepareGithubServiceModel();
+            void this.bootstrapServiceModel();
         } else if (environment === EnvironmentType.LOCAL && XsuaaAuthHelper.getConfig().auth) {
             XsuaaAuthHelper.setLocalOverrides();
-            serviceReady = await this.prepareGithubServiceModel();
-        } else if (!XsuaaAuthHelper.getConfig().odataService) {
-            this.applyManifestServiceUrl();
-            this._resolveServiceModelReady?.(true);
-            serviceReady = true;
+            void this.bootstrapServiceModel();
         } else {
-            this._resolveServiceModelReady?.(true);
-            serviceReady = true;
+            this.prepareStandaloneServiceModel();
         }
 
-        // enable routing only after the service model is ready, so that all
-        // view bindings are created against the authenticated model
+        // enable routing; view bindings to the default model are deferred and are
+        // (re-)created once the service model is set on the component
         this.getRouter().initialize();
-
-        if (!serviceReady) {
-            this.getRouter().navTo("Login");
-        }
     }
 
     public getServiceModelReady(): Promise<boolean> {
@@ -106,57 +96,58 @@ export default class Component extends BaseComponent {
         }
     }
 
-    private async prepareGithubServiceModel(): Promise<boolean> {
-        const session = AuthenticationService.getSession();
-
-        if (session && session.expiresAt > Date.now()) {
-            this.setGithubServiceModel(session.accessToken);
-            return true;
+    private prepareStandaloneServiceModel(): void {
+        if (!XsuaaAuthHelper.getConfig().odataService) {
+            this.applyManifestServiceUrl();
         }
+        this.setServiceModel("");
+        this._resolveServiceModelReady?.(true);
+    }
 
+    private async bootstrapServiceModel(): Promise<void> {
         try {
+            const session = AuthenticationService.getSession();
+
+            if (session && session.expiresAt > Date.now()) {
+                this.setServiceModel(session.accessToken);
+                this._resolveServiceModelReady?.(true);
+                return;
+            }
+
             const authenticated = await AuthenticationService.isAuthenticated();
             const updated = AuthenticationService.getSession();
 
             if (authenticated && updated && updated.accessToken) {
-                this.setGithubServiceModel(updated.accessToken);
-                return true;
+                this.setServiceModel(updated.accessToken);
+                this._resolveServiceModelReady?.(true);
+                return;
             }
 
             this._resolveServiceModelReady?.(false);
-            return false;
+            this.getRouter().navTo("Login");
         } catch (error) {
             this._resolveServiceModelReady?.(false);
-            return false;
+            this.getRouter().navTo("Login");
         }
     }
 
-    private setGithubServiceModel(accessToken: string): void {
+    private setServiceModel(accessToken: string): void {
         const config = XsuaaAuthHelper.getConfig();
+        const httpHeaders: Record<string, string> = {};
+
+        if (accessToken) {
+            httpHeaders.Authorization = `Bearer ${accessToken}`;
+        }
+
         const model = new ODataModel({
             serviceUrl: config.odataService,
-            httpHeaders: {
-                Authorization: `Bearer ${accessToken}`
-            },
+            httpHeaders,
             operationMode: "Server",
             autoExpandSelect: true,
             earlyRequests: true
         });
 
-        this.attachODataModelSessionGuard(model);
         this.setModel(model);
-        this._resolveServiceModelReady?.(true);
-    }
-
-    private attachODataModelSessionGuard(model: ODataModel): void {
-        model.attachRequestFailed((event) => {
-            const parameters = event.getParameters() as { response?: { statusCode?: number } };
-            const statusCode = parameters?.response?.statusCode;
-
-            if (statusCode === 401 || statusCode === 403) {
-                this.handleSessionExpired();
-            }
-        });
     }
 
     private handleSessionExpired(): void {

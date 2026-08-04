@@ -86,15 +86,6 @@
 						""
 					]
 				}
-			},
-			"": {
-				"dataSource": "mainService",
-				"preload": true,
-				"settings": {
-					"operationMode": "Server",
-					"autoExpandSelect": true,
-					"earlyRequests": true
-				}
 			}
 		},
 		"resources": {

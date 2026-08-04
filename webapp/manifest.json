@@ -78,15 +78,6 @@
         "settings": {
           "bundleName": "apps.dflc.expensemanager.i18n.i18n"
         }
-      },
-      "": {
-        "dataSource": "mainService",
-        "preload": true,
-        "settings": {
-          "operationMode": "Server",
-          "autoExpandSelect": true,
-          "earlyRequests": true
-        }
       }
     },
     "resources": {
