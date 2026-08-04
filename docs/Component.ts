@@ -1,6 +1,7 @@
 import BaseComponent from "sap/ui/core/UIComponent";
 import ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import MessageBox from "sap/m/MessageBox";
+import type { Router$BeforeRouteMatchedEvent } from "sap/ui/core/routing/Router";
 import ResourceModel from "sap/ui/model/resource/ResourceModel";
 import ResourceBundle from "sap/base/i18n/ResourceBundle";
 import { createDeviceModel } from "./model/models";
@@ -24,18 +25,9 @@ export default class Component extends BaseComponent {
     };
 
     private _sessionExpiredShown = false;
-    private _serviceModelReady: Promise<boolean>;
-    private _resolveServiceModelReady?: (value: boolean) => void;
-
-    public constructor() {
-        super();
-        this._serviceModelReady = new Promise((resolve) => {
-            this._resolveServiceModelReady = resolve;
-        });
-    }
+    private _serviceModelPromise: Promise<ODataModel | null> | null = null;
 
     public init(): void {
-        // call the base component's init function
         super.init();
 
         AuthenticationService.initialize(
@@ -44,91 +36,94 @@ export default class Component extends BaseComponent {
 
         AuthenticationService.onSessionExpired(() => this.handleSessionExpired());
 
-        // set the device model
         this.setModel(createDeviceModel(), "device");
-        this.setModel(new JSONModel({
-            summary: {
-                available: "",
-                income: "",
-                expenses: "",
-                savings: "",
-                target: "",
-                expenseHint: "",
-                targetHint: "",
-                trendText: "",
-                trendIcon: "sap-icon://trend-up"
-            },
-            monthLabel: "",
-            persons: [],
-            personsEmpty: false,
-            selectedPerson: { ID: "" },
-            busy: false,
-            newExpense: {},
-            newCard: {}
-        }), "ui");
+        this.setModel(this.createUiModel(), "ui");
 
         const environment = Environment.current();
 
         if (environment === EnvironmentType.GITHUB) {
-            void this.bootstrapServiceModel();
+            // The service model is provisioned lazily by the route guard and the controllers.
         } else if (environment === EnvironmentType.LOCAL && XsuaaAuthHelper.getConfig().auth) {
             XsuaaAuthHelper.setLocalOverrides();
-            void this.bootstrapServiceModel();
         } else {
             this.prepareStandaloneServiceModel();
         }
 
-        // enable routing; view bindings to the default model are deferred and are
-        // (re-)created once the service model is set on the component
         this.getRouter().initialize();
+        this.getRouter().attachBeforeRouteMatched((event) => this.handleBeforeRouteMatched(event));
     }
 
-    public getServiceModelReady(): Promise<boolean> {
-        return this._serviceModelReady;
-    }
+    /**
+     * Resolves with the shared OData model once a valid session is available,
+     * or with `null` when the user is not authenticated. The provisioning can
+     * be retried after a login (the promise is re-armed when it fails).
+     */
+    public ensureServiceModel(): Promise<ODataModel | null> {
+        const current = this.getModel() as ODataModel | undefined;
 
-    private applyManifestServiceUrl(): void {
-        const manifest = this.getManifestObject() as { get?: (key: string) => unknown } | undefined;
-        const uri = manifest?.get?.("/sap.app/dataSources/mainService/uri") as string | undefined;
-
-        if (uri) {
-            XsuaaAuthHelper.setServiceUrl(uri);
+        if (current) {
+            return Promise.resolve(current);
         }
-    }
 
-    private prepareStandaloneServiceModel(): void {
-        if (!XsuaaAuthHelper.getConfig().odataService) {
-            this.applyManifestServiceUrl();
+        if (!this._serviceModelPromise) {
+            this._serviceModelPromise = this.provisionServiceModel().then((model) => {
+                if (!model) {
+                    this._serviceModelPromise = null;
+                }
+                return model;
+            });
         }
-        this.setServiceModel("");
-        this._resolveServiceModelReady?.(true);
+
+        return this._serviceModelPromise;
     }
 
-    private async bootstrapServiceModel(): Promise<void> {
-        try {
-            const session = AuthenticationService.getSession();
+    private async provisionServiceModel(): Promise<ODataModel | null> {
+        const session = AuthenticationService.getSession();
 
-            if (session && session.expiresAt > Date.now()) {
-                this.setServiceModel(session.accessToken);
-                this._resolveServiceModelReady?.(true);
-                return;
-            }
+        if (session?.accessToken && session.expiresAt > Date.now()) {
+            this.setServiceModel(session.accessToken);
+            return this.getModel() as ODataModel;
+        }
 
-            const authenticated = await AuthenticationService.isAuthenticated();
-            const updated = AuthenticationService.getSession();
+        const authenticated = await AuthenticationService.isAuthenticated();
+        const updated = AuthenticationService.getSession();
 
-            if (authenticated && updated && updated.accessToken) {
-                this.setServiceModel(updated.accessToken);
-                this._resolveServiceModelReady?.(true);
-                return;
-            }
+        if (authenticated && updated?.accessToken && updated.expiresAt > Date.now()) {
+            this.setServiceModel(updated.accessToken);
+            return this.getModel() as ODataModel;
+        }
 
-            this._resolveServiceModelReady?.(false);
+        return null;
+    }
+
+    private handleBeforeRouteMatched(event: Router$BeforeRouteMatchedEvent): void {
+        if (!this.isAuthRequired()) {
+            return;
+        }
+
+        const target = event.getParameter("name") ?? "";
+        const session = AuthenticationService.getSession();
+        const authenticated = !!session?.accessToken && session.expiresAt > Date.now();
+
+        if (target === "Home" && !authenticated) {
             this.getRouter().navTo("Login");
-        } catch (error) {
-            this._resolveServiceModelReady?.(false);
-            this.getRouter().navTo("Login");
+        } else if (target === "Login" && authenticated) {
+            this.getRouter().navTo("Home");
         }
+    }
+
+    private isAuthRequired(): boolean {
+        const environment = Environment.current();
+
+        if (environment === EnvironmentType.GITHUB) {
+            return true;
+        }
+
+        if (environment === EnvironmentType.LOCAL && XsuaaAuthHelper.getConfig().auth) {
+            return true;
+        }
+
+        return false;
     }
 
     private setServiceModel(accessToken: string): void {
@@ -150,6 +145,45 @@ export default class Component extends BaseComponent {
         model.attachSessionTimeout(() => AuthenticationService.notifySessionExpired());
 
         this.setModel(model);
+    }
+
+    private prepareStandaloneServiceModel(): void {
+        if (!XsuaaAuthHelper.getConfig().odataService) {
+            this.applyManifestServiceUrl();
+        }
+        this.setServiceModel("");
+    }
+
+    private applyManifestServiceUrl(): void {
+        const manifest = this.getManifestObject() as { get?: (key: string) => unknown } | undefined;
+        const uri = manifest?.get?.("/sap.app/dataSources/mainService/uri") as string | undefined;
+
+        if (uri) {
+            XsuaaAuthHelper.setServiceUrl(uri);
+        }
+    }
+
+    private createUiModel(): JSONModel {
+        return new JSONModel({
+            summary: {
+                available: "",
+                income: "",
+                expenses: "",
+                savings: "",
+                target: "",
+                expenseHint: "",
+                targetHint: "",
+                trendText: "",
+                trendIcon: "sap-icon://trend-up"
+            },
+            monthLabel: "",
+            persons: [],
+            personsEmpty: false,
+            selectedPerson: { ID: "" },
+            busy: false,
+            newExpense: {},
+            newCard: {}
+        });
     }
 
     private handleSessionExpired(): void {

@@ -15,26 +15,120 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
    * @namespace apps.dflc.expensemanager
    */
   const Component = BaseComponent.extend("apps.dflc.expensemanager.Component", {
+    constructor: function constructor() {
+      BaseComponent.prototype.constructor.apply(this, arguments);
+      this._sessionExpiredShown = false;
+      this._serviceModelPromise = null;
+    },
     metadata: {
       manifest: "json",
       interfaces: ["sap.ui.core.IAsyncContentCreation"]
     },
-    constructor: function _constructor() {
-      BaseComponent.prototype.constructor.call(this);
-      this._sessionExpiredShown = false;
-      this._serviceModelReady = new Promise(resolve => {
-        this._resolveServiceModelReady = resolve;
-      });
-    },
     init: function _init() {
-      // call the base component's init function
       BaseComponent.prototype.init.call(this);
       AuthenticationService.initialize(AuthenticatedProviderFactory.create());
       AuthenticationService.onSessionExpired(() => this.handleSessionExpired());
-
-      // set the device model
       this.setModel(createDeviceModel(), "device");
-      this.setModel(new JSONModel({
+      this.setModel(this.createUiModel(), "ui");
+      const environment = Environment.current();
+      if (environment === EnvironmentType.GITHUB) {
+        // The service model is provisioned lazily by the route guard and the controllers.
+      } else if (environment === EnvironmentType.LOCAL && XsuaaAuthHelper.getConfig().auth) {
+        XsuaaAuthHelper.setLocalOverrides();
+      } else {
+        this.prepareStandaloneServiceModel();
+      }
+      this.getRouter().initialize();
+      this.getRouter().attachBeforeRouteMatched(event => this.handleBeforeRouteMatched(event));
+    },
+    /**
+     * Resolves with the shared OData model once a valid session is available,
+     * or with `null` when the user is not authenticated. The provisioning can
+     * be retried after a login (the promise is re-armed when it fails).
+     */
+    ensureServiceModel: function _ensureServiceModel() {
+      const current = this.getModel();
+      if (current) {
+        return Promise.resolve(current);
+      }
+      if (!this._serviceModelPromise) {
+        this._serviceModelPromise = this.provisionServiceModel().then(model => {
+          if (!model) {
+            this._serviceModelPromise = null;
+          }
+          return model;
+        });
+      }
+      return this._serviceModelPromise;
+    },
+    provisionServiceModel: async function _provisionServiceModel() {
+      const session = AuthenticationService.getSession();
+      if (session?.accessToken && session.expiresAt > Date.now()) {
+        this.setServiceModel(session.accessToken);
+        return this.getModel();
+      }
+      const authenticated = await AuthenticationService.isAuthenticated();
+      const updated = AuthenticationService.getSession();
+      if (authenticated && updated?.accessToken && updated.expiresAt > Date.now()) {
+        this.setServiceModel(updated.accessToken);
+        return this.getModel();
+      }
+      return null;
+    },
+    handleBeforeRouteMatched: function _handleBeforeRouteMatched(event) {
+      if (!this.isAuthRequired()) {
+        return;
+      }
+      const target = event.getParameter("name") ?? "";
+      const session = AuthenticationService.getSession();
+      const authenticated = !!session?.accessToken && session.expiresAt > Date.now();
+      if (target === "Home" && !authenticated) {
+        this.getRouter().navTo("Login");
+      } else if (target === "Login" && authenticated) {
+        this.getRouter().navTo("Home");
+      }
+    },
+    isAuthRequired: function _isAuthRequired() {
+      const environment = Environment.current();
+      if (environment === EnvironmentType.GITHUB) {
+        return true;
+      }
+      if (environment === EnvironmentType.LOCAL && XsuaaAuthHelper.getConfig().auth) {
+        return true;
+      }
+      return false;
+    },
+    setServiceModel: function _setServiceModel(accessToken) {
+      const config = XsuaaAuthHelper.getConfig();
+      const httpHeaders = {};
+      if (accessToken) {
+        httpHeaders.Authorization = `Bearer ${accessToken}`;
+      }
+      const model = new ODataModel({
+        serviceUrl: config.odataService,
+        httpHeaders,
+        operationMode: "Server",
+        autoExpandSelect: true,
+        earlyRequests: true
+      });
+      model.attachSessionTimeout(() => AuthenticationService.notifySessionExpired());
+      this.setModel(model);
+    },
+    prepareStandaloneServiceModel: function _prepareStandaloneServiceModel() {
+      if (!XsuaaAuthHelper.getConfig().odataService) {
+        this.applyManifestServiceUrl();
+      }
+      this.setServiceModel("");
+    },
+    applyManifestServiceUrl: function _applyManifestServiceUrl() {
+      const manifest = this.getManifestObject();
+      const uri = manifest?.get?.("/sap.app/dataSources/mainService/uri");
+      if (uri) {
+        XsuaaAuthHelper.setServiceUrl(uri);
+      }
+    },
+    createUiModel: function _createUiModel() {
+      return new JSONModel({
         summary: {
           available: "",
           income: "",
@@ -55,75 +149,7 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
         busy: false,
         newExpense: {},
         newCard: {}
-      }), "ui");
-      const environment = Environment.current();
-      if (environment === EnvironmentType.GITHUB) {
-        void this.bootstrapServiceModel();
-      } else if (environment === EnvironmentType.LOCAL && XsuaaAuthHelper.getConfig().auth) {
-        XsuaaAuthHelper.setLocalOverrides();
-        void this.bootstrapServiceModel();
-      } else {
-        this.prepareStandaloneServiceModel();
-      }
-
-      // enable routing; view bindings to the default model are deferred and are
-      // (re-)created once the service model is set on the component
-      this.getRouter().initialize();
-    },
-    getServiceModelReady: function _getServiceModelReady() {
-      return this._serviceModelReady;
-    },
-    applyManifestServiceUrl: function _applyManifestServiceUrl() {
-      const manifest = this.getManifestObject();
-      const uri = manifest?.get?.("/sap.app/dataSources/mainService/uri");
-      if (uri) {
-        XsuaaAuthHelper.setServiceUrl(uri);
-      }
-    },
-    prepareStandaloneServiceModel: function _prepareStandaloneServiceModel() {
-      if (!XsuaaAuthHelper.getConfig().odataService) {
-        this.applyManifestServiceUrl();
-      }
-      this.setServiceModel("");
-      this._resolveServiceModelReady?.(true);
-    },
-    bootstrapServiceModel: async function _bootstrapServiceModel() {
-      try {
-        const session = AuthenticationService.getSession();
-        if (session && session.expiresAt > Date.now()) {
-          this.setServiceModel(session.accessToken);
-          this._resolveServiceModelReady?.(true);
-          return;
-        }
-        const authenticated = await AuthenticationService.isAuthenticated();
-        const updated = AuthenticationService.getSession();
-        if (authenticated && updated && updated.accessToken) {
-          this.setServiceModel(updated.accessToken);
-          this._resolveServiceModelReady?.(true);
-          return;
-        }
-        this._resolveServiceModelReady?.(false);
-        this.getRouter().navTo("Login");
-      } catch (error) {
-        this._resolveServiceModelReady?.(false);
-        this.getRouter().navTo("Login");
-      }
-    },
-    setServiceModel: function _setServiceModel(accessToken) {
-      const config = XsuaaAuthHelper.getConfig();
-      const httpHeaders = {};
-      if (accessToken) {
-        httpHeaders.Authorization = `Bearer ${accessToken}`;
-      }
-      const model = new ODataModel({
-        serviceUrl: config.odataService,
-        httpHeaders,
-        operationMode: "Server",
-        autoExpandSelect: true,
-        earlyRequests: true
       });
-      model.attachSessionTimeout(() => AuthenticationService.notifySessionExpired());
-      this.setModel(model);
     },
     handleSessionExpired: function _handleSessionExpired() {
       if (this._sessionExpiredShown) {

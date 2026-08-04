@@ -1,5 +1,4 @@
 import JSONModel from "sap/ui/model/json/JSONModel";
-import ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import Dialog from "sap/m/Dialog";
@@ -12,12 +11,13 @@ import { BaseController } from "./BaseController";
 import { AuthenticationService } from "../auth/AuthenticationService";
 import Environment, { EnvironmentType } from "../util/Environment";
 import { formatCurrency } from "../util/format";
+import { ODataService } from "../service/ODataService";
+import { PersonService, type Person } from "../service/PersonService";
+import { InvoiceService, type CompleteInvoice, type Period } from "../service/InvoiceService";
 import {
-    getCompleteInvoice,
     getTransactionsByCategory,
-    CompleteInvoiceReturnProperties,
-    CategoryTransactionsProperties,
-    CategoryBreakdownItem
+    type CategoryTransactionsProperties,
+    type CategoryBreakdownItem
 } from "../util/expenseApi";
 import {
     requestExportBackup,
@@ -26,19 +26,6 @@ import {
     downloadBlob
 } from "../util/backupApi";
 import { isSessionExpiredError } from "../util/http";
-
-interface Person {
-    ID: string;
-    Name: string;
-    Income: number;
-    ExpenseTarget: number;
-    Currency: unknown;
-}
-
-interface Period {
-    year: number;
-    month: number;
-}
 
 interface Summary {
     available: string;
@@ -75,6 +62,8 @@ function resolveCurrency(currency: unknown, fallback = "BRL"): string {
 }
 
 export default class Home extends BaseController {
+    private _personService?: PersonService;
+    private _invoiceService?: InvoiceService;
     private _expenseDialog?: Promise<Dialog>;
     private _backupDialog?: Promise<Dialog>;
     private _personDialog?: Promise<Dialog>;
@@ -88,19 +77,27 @@ export default class Home extends BaseController {
     }
 
     public onInit(): void {
-        void this.bootstrap();
+        void this.initView();
     }
 
-    public async bootstrap(): Promise<void> {
-        const ready = await this.waitForServiceModel();
+    private async initView(): Promise<void> {
+        const model = await this.ensureServiceModel();
 
-        if (!ready) {
+        if (!model) {
+            this.navTo("Login");
             return;
         }
 
+        const odata = new ODataService(model);
+        this._personService = new PersonService(odata);
+        this._invoiceService = new InvoiceService(odata);
+
         try {
-            await this.loadPersons(this.getServiceModel());
+            await this.loadPersons();
         } catch (error) {
+            if (isSessionExpiredError(error)) {
+                return;
+            }
             if (Environment.current() !== EnvironmentType.GITHUB) {
                 MessageBox.error(this.getText("backendUnavailable"));
             }
@@ -263,8 +260,7 @@ export default class Home extends BaseController {
 
     public async refresh(): Promise<void> {
         try {
-            const model = this.getServiceModel();
-            model.refresh();
+            this.getServiceModel().refresh();
         } catch (error) {
             // The period data below is reloaded through the API regardless of the OData model.
         }
@@ -272,90 +268,51 @@ export default class Home extends BaseController {
         await this.loadPeriodData();
     }
 
-    private async waitForServiceModel(): Promise<boolean> {
-        const component = this.getOwnerComponent() as unknown as {
-            getServiceModelReady?: () => Promise<boolean>;
-        };
-
-        if (typeof component.getServiceModelReady === "function") {
-            const ready = await component.getServiceModelReady();
-
-            if (ready) {
-                return true;
-            }
-
-            return false;
-        }
-
-        const environment = Environment.current();
-
-        for (let attempt = 0; attempt < 40; attempt++) {
-            const model = this.getOwnerComponent()?.getModel() as ODataModel | undefined;
-
-            if (model) {
-                const serviceUrl = this.getServiceUrl(model);
-
-                if (environment === EnvironmentType.GITHUB) {
-                    if (serviceUrl && serviceUrl.indexOf("/api/") !== 0) {
-                        return true;
-                    }
-                } else {
-                    return true;
-                }
-            }
-
-            await new Promise((resolve) => setTimeout(resolve, 200));
-        }
-
-        return false;
-    }
-
-    private getServiceUrl(model: ODataModel): string {
-        const maybeOdata = model as unknown as { getServiceUrl?: () => string };
-        return typeof maybeOdata.getServiceUrl === "function" ? maybeOdata.getServiceUrl() : "";
-    }
-
-    private async loadPersons(model: ODataModel): Promise<void> {
+    /**
+     * Reloads the list of persons and the period data for the current selection.
+     * Used by the create/restore dialogs after a successful operation.
+     */
+    public async reload(): Promise<void> {
         try {
-            const binding = model.bindList("/Persons", undefined, undefined, undefined, {
-                $select: "ID,Name,Income,ExpenseTarget,Currency"
-            });
-            const contexts = await binding.requestContexts();
-            const persons = contexts.map((context) => context.getObject()) as Person[];
-
-            const ui = this.uiModel;
-            ui.setProperty("/persons", persons);
-
-            if (!persons.length) {
-                ui.setProperty("/personsEmpty", true);
-                ui.setProperty("/selectedPerson", { ID: "" });
-                ui.setProperty("/invoice", { Transactions: [] });
-                ui.setProperty("/categories", []);
-                ui.setProperty("/summary", { ...EMPTY_SUMMARY });
-                ui.setProperty("/monthLabel", "Nenhuma pessoa para gerenciar");
-                return;
-            }
-
-            ui.setProperty("/personsEmpty", false);
-
-            const currentId = ui.getProperty("/selectedPerson/ID") as string;
-            const selected = persons.find((person) => person.ID === currentId) || persons[0];
-
-            ui.setProperty("/selectedPerson", selected || { ID: "" });
-
-            if (!ui.getProperty("/period")) {
-                const now = new Date();
-                ui.setProperty("/period", { year: now.getFullYear(), month: now.getMonth() + 1 });
-            }
-
-            if (selected?.ID) {
-                await this.loadPeriodData();
-            }
+            await this.loadPersons();
         } catch (error) {
             if (isSessionExpiredError(error)) {
                 return;
             }
-            MessageBox.error(this.getText("errorLoadPersons"));
+            MessageBox.error(this.getText("backendUnavailable"));
+        }
+    }
+
+    private async loadPersons(): Promise<void> {
+        const persons = await this._personService!.fetchAll();
+        const ui = this.uiModel;
+
+        ui.setProperty("/persons", persons);
+
+        if (!persons.length) {
+            ui.setProperty("/personsEmpty", true);
+            ui.setProperty("/selectedPerson", { ID: "" });
+            ui.setProperty("/invoice", { Transactions: [] });
+            ui.setProperty("/categories", []);
+            ui.setProperty("/summary", { ...EMPTY_SUMMARY });
+            ui.setProperty("/monthLabel", "Nenhuma pessoa para gerenciar");
+            return;
+        }
+
+        ui.setProperty("/personsEmpty", false);
+
+        const currentId = ui.getProperty("/selectedPerson/ID") as string;
+        const selected = persons.find((person) => person.ID === currentId) || persons[0];
+
+        ui.setProperty("/selectedPerson", selected || { ID: "" });
+
+        if (!ui.getProperty("/period")) {
+            const now = new Date();
+            ui.setProperty("/period", { year: now.getFullYear(), month: now.getMonth() + 1 });
+        }
+
+        if (selected?.ID) {
+            await this.loadPeriodData();
         }
     }
 
@@ -363,7 +320,7 @@ export default class Home extends BaseController {
         const ui = this.uiModel;
         const person = ui.getProperty("/selectedPerson") as Person | undefined;
 
-        if (!person?.ID) {
+        if (!person?.ID || !this._invoiceService) {
             return;
         }
 
@@ -372,10 +329,9 @@ export default class Home extends BaseController {
 
         try {
             const previous = this.shiftMonth(period.year, period.month, -1);
-            const model = this.getServiceModel();
             const [invoice, previousInvoice] = await Promise.all([
-                getCompleteInvoice(model, person.ID, period.year, period.month),
-                getCompleteInvoice(model, person.ID, previous.year, previous.month)
+                this._invoiceService.getCompleteInvoice(person.ID, period),
+                this._invoiceService.getCompleteInvoice(person.ID, previous)
             ]);
 
             ui.setProperty("/invoice", invoice);
@@ -424,7 +380,7 @@ export default class Home extends BaseController {
         }
     }
 
-    private buildCategories(invoice: CompleteInvoiceReturnProperties): void {
+    private buildCategories(invoice: CompleteInvoice): void {
         const map = new Map<string, { ID: string; Name: string; CategoryImagePath?: string; Total: number }>();
         const total = Number(invoice.TotalAmount) || 0;
 
@@ -489,13 +445,5 @@ export default class Home extends BaseController {
             oView.addDependent(dialog as Control);
             return dialog as Dialog;
         });
-    }
-
-    private getServiceModel(): ODataModel {
-        const model = this.getOwnerComponent()?.getModel();
-        if (!model) {
-            throw new Error("O serviço financeiro não está disponível.");
-        }
-        return model as ODataModel;
     }
 }

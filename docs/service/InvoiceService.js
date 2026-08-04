@@ -1,0 +1,2 @@
+sap.ui.define([],function(){"use strict";class e{constructor(e){this.odata=e}async getCompleteInvoice(e,t){return this.odata.requestFunction("/RetrieveCompleteInvoice",{PersonId:e,Year:t.year,Month:t.month})}}var t={__esModule:true};t.InvoiceService=e;return t});
+//# sourceMappingURL=InvoiceService.js.map

@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../util/Environment", "../util/format", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageBox, MessageToast, Fragment, ___BaseController, ___auth_AuthenticationService, __Environment, ___util_format, ___util_expenseApi, ___util_backupApi, ___util_http) {
+sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../util/Environment", "../util/format", "../service/ODataService", "../service/PersonService", "../service/InvoiceService", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageBox, MessageToast, Fragment, ___BaseController, ___auth_AuthenticationService, __Environment, ___util_format, ___service_ODataService, ___service_PersonService, ___service_InvoiceService, ___util_expenseApi, ___util_backupApi, ___util_http) {
   "use strict";
 
   function _interopRequireDefault(obj) {
@@ -9,7 +9,9 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
   const Environment = _interopRequireDefault(__Environment);
   const EnvironmentType = __Environment["EnvironmentType"];
   const formatCurrency = ___util_format["formatCurrency"];
-  const getCompleteInvoice = ___util_expenseApi["getCompleteInvoice"];
+  const ODataService = ___service_ODataService["ODataService"];
+  const PersonService = ___service_PersonService["PersonService"];
+  const InvoiceService = ___service_InvoiceService["InvoiceService"];
   const getTransactionsByCategory = ___util_expenseApi["getTransactionsByCategory"];
   const requestExportBackup = ___util_backupApi["requestExportBackup"];
   const fetchBackupStream = ___util_backupApi["fetchBackupStream"];
@@ -41,16 +43,23 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       return this.getOwnerComponent()?.getModel("ui");
     }
     onInit() {
-      void this.bootstrap();
+      void this.initView();
     }
-    async bootstrap() {
-      const ready = await this.waitForServiceModel();
-      if (!ready) {
+    async initView() {
+      const model = await this.ensureServiceModel();
+      if (!model) {
+        this.navTo("Login");
         return;
       }
+      const odata = new ODataService(model);
+      this._personService = new PersonService(odata);
+      this._invoiceService = new InvoiceService(odata);
       try {
-        await this.loadPersons(this.getServiceModel());
+        await this.loadPersons();
       } catch (error) {
+        if (isSessionExpiredError(error)) {
+          return;
+        }
         if (Environment.current() !== EnvironmentType.GITHUB) {
           MessageBox.error(this.getText("backendUnavailable"));
         }
@@ -204,102 +213,74 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
     }
     async refresh() {
       try {
-        const model = this.getServiceModel();
-        model.refresh();
+        this.getServiceModel().refresh();
       } catch (error) {
         // The period data below is reloaded through the API regardless of the OData model.
       }
       await this.loadPeriodData();
     }
-    async waitForServiceModel() {
-      const component = this.getOwnerComponent();
-      if (typeof component.getServiceModelReady === "function") {
-        const ready = await component.getServiceModelReady();
-        if (ready) {
-          return true;
-        }
-        return false;
-      }
-      const environment = Environment.current();
-      for (let attempt = 0; attempt < 40; attempt++) {
-        const model = this.getOwnerComponent()?.getModel();
-        if (model) {
-          const serviceUrl = this.getServiceUrl(model);
-          if (environment === EnvironmentType.GITHUB) {
-            if (serviceUrl && serviceUrl.indexOf("/api/") !== 0) {
-              return true;
-            }
-          } else {
-            return true;
-          }
-        }
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-      return false;
-    }
-    getServiceUrl(model) {
-      const maybeOdata = model;
-      return typeof maybeOdata.getServiceUrl === "function" ? maybeOdata.getServiceUrl() : "";
-    }
-    async loadPersons(model) {
+
+    /**
+     * Reloads the list of persons and the period data for the current selection.
+     * Used by the create/restore dialogs after a successful operation.
+     */
+    async reload() {
       try {
-        const binding = model.bindList("/Persons", undefined, undefined, undefined, {
-          $select: "ID,Name,Income,ExpenseTarget,Currency"
-        });
-        const contexts = await binding.requestContexts();
-        const persons = contexts.map(context => context.getObject());
-        const ui = this.uiModel;
-        ui.setProperty("/persons", persons);
-        if (!persons.length) {
-          ui.setProperty("/personsEmpty", true);
-          ui.setProperty("/selectedPerson", {
-            ID: ""
-          });
-          ui.setProperty("/invoice", {
-            Transactions: []
-          });
-          ui.setProperty("/categories", []);
-          ui.setProperty("/summary", {
-            ...EMPTY_SUMMARY
-          });
-          ui.setProperty("/monthLabel", "Nenhuma pessoa para gerenciar");
-          return;
-        }
-        ui.setProperty("/personsEmpty", false);
-        const currentId = ui.getProperty("/selectedPerson/ID");
-        const selected = persons.find(person => person.ID === currentId) || persons[0];
-        ui.setProperty("/selectedPerson", selected || {
-          ID: ""
-        });
-        if (!ui.getProperty("/period")) {
-          const now = new Date();
-          ui.setProperty("/period", {
-            year: now.getFullYear(),
-            month: now.getMonth() + 1
-          });
-        }
-        if (selected?.ID) {
-          await this.loadPeriodData();
-        }
+        await this.loadPersons();
       } catch (error) {
         if (isSessionExpiredError(error)) {
           return;
         }
-        MessageBox.error(this.getText("errorLoadPersons"));
+        MessageBox.error(this.getText("backendUnavailable"));
+      }
+    }
+    async loadPersons() {
+      const persons = await this._personService.fetchAll();
+      const ui = this.uiModel;
+      ui.setProperty("/persons", persons);
+      if (!persons.length) {
+        ui.setProperty("/personsEmpty", true);
+        ui.setProperty("/selectedPerson", {
+          ID: ""
+        });
+        ui.setProperty("/invoice", {
+          Transactions: []
+        });
+        ui.setProperty("/categories", []);
+        ui.setProperty("/summary", {
+          ...EMPTY_SUMMARY
+        });
+        ui.setProperty("/monthLabel", "Nenhuma pessoa para gerenciar");
+        return;
+      }
+      ui.setProperty("/personsEmpty", false);
+      const currentId = ui.getProperty("/selectedPerson/ID");
+      const selected = persons.find(person => person.ID === currentId) || persons[0];
+      ui.setProperty("/selectedPerson", selected || {
+        ID: ""
+      });
+      if (!ui.getProperty("/period")) {
+        const now = new Date();
+        ui.setProperty("/period", {
+          year: now.getFullYear(),
+          month: now.getMonth() + 1
+        });
+      }
+      if (selected?.ID) {
+        await this.loadPeriodData();
       }
     }
     async loadPeriodData() {
       const ui = this.uiModel;
       const person = ui.getProperty("/selectedPerson");
-      if (!person?.ID) {
+      if (!person?.ID || !this._invoiceService) {
         return;
       }
       const period = ui.getProperty("/period") || this.currentPeriod();
       ui.setProperty("/busy", true);
       try {
         const previous = this.shiftMonth(period.year, period.month, -1);
-        const model = this.getServiceModel();
-        const [invoice, previousInvoice] = await Promise.all([getCompleteInvoice(model, person.ID, period.year, period.month), getCompleteInvoice(model, person.ID, previous.year, previous.month)]);
+        const [invoice, previousInvoice] = await Promise.all([this._invoiceService.getCompleteInvoice(person.ID, period), this._invoiceService.getCompleteInvoice(person.ID, previous)]);
         ui.setProperty("/invoice", invoice);
         ui.setProperty("/period", period);
         const currency = invoice.Currency?.code || resolveCurrency(person.Currency);
@@ -396,13 +377,6 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         oView.addDependent(dialog);
         return dialog;
       });
-    }
-    getServiceModel() {
-      const model = this.getOwnerComponent()?.getModel();
-      if (!model) {
-        throw new Error("O serviço financeiro não está disponível.");
-      }
-      return model;
     }
   }
   return Home;
