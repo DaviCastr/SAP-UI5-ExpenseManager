@@ -2,6 +2,7 @@ import Control from "sap/ui/core/Control";
 import Dialog from "sap/m/Dialog";
 import XMLView from "sap/ui/core/mvc/XMLView";
 import JSONModel from "sap/ui/model/json/JSONModel";
+import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import MessageBox from "sap/m/MessageBox";
 import { simulateExpenses } from "../../util/expenseApi";
 import { isSessionExpiredError } from "../../util/http";
@@ -41,7 +42,7 @@ const Simulation = {
         uiModel.setProperty("/busy", true);
 
         try {
-            const result = await simulateExpenses(person.ID, year, month);
+            const result = await simulateExpenses(view.getModel() as ODataModel, person.ID, year, month);
             uiModel.setProperty("/simulationResult", result);
         } catch (error) {
             if (isSessionExpiredError(error)) {

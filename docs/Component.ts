@@ -147,6 +147,8 @@ export default class Component extends BaseComponent {
             earlyRequests: true
         });
 
+        model.attachSessionTimeout(() => AuthenticationService.notifySessionExpired());
+
         this.setModel(model);
     }
 

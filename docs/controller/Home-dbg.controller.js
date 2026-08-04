@@ -139,7 +139,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       const person = ui.getProperty("/selectedPerson");
       const period = ui.getProperty("/period");
       ui.setProperty("/busy", true);
-      void getTransactionsByCategory(person.ID, category.ID, false, period.year, period.month).then(result => {
+      void getTransactionsByCategory(this.getServiceModel(), person.ID, category.ID, false, period.year, period.month).then(result => {
         ui.setProperty("/categoryDetail", result);
         if (!this._categoryDetailDialog) {
           this._categoryDetailDialog = this.loadFragmentDialog(oView, "CategoryDetail");
@@ -298,7 +298,8 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       ui.setProperty("/busy", true);
       try {
         const previous = this.shiftMonth(period.year, period.month, -1);
-        const [invoice, previousInvoice] = await Promise.all([getCompleteInvoice(person.ID, period.year, period.month), getCompleteInvoice(person.ID, previous.year, previous.month)]);
+        const model = this.getServiceModel();
+        const [invoice, previousInvoice] = await Promise.all([getCompleteInvoice(model, person.ID, period.year, period.month), getCompleteInvoice(model, person.ID, previous.year, previous.month)]);
         ui.setProperty("/invoice", invoice);
         ui.setProperty("/period", period);
         const currency = invoice.Currency?.code || resolveCurrency(person.Currency);

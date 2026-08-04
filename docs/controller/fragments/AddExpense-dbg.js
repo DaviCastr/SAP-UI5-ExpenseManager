@@ -19,7 +19,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "../../util/expenseApi"
       }
       uiModel.setProperty("/busy", true);
       try {
-        await addCardExpense({
+        await addCardExpense(view.getModel(), {
           CardId: expense.cardId,
           CategoryId: expense.categoryId,
           Description: expense.description,

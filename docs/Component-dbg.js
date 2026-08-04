@@ -122,6 +122,7 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
         autoExpandSelect: true,
         earlyRequests: true
       });
+      model.attachSessionTimeout(() => AuthenticationService.notifySessionExpired());
       this.setModel(model);
     },
     handleSessionExpired: function _handleSessionExpired() {

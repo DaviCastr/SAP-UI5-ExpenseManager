@@ -2,6 +2,7 @@ import Control from "sap/ui/core/Control";
 import Dialog from "sap/m/Dialog";
 import XMLView from "sap/ui/core/mvc/XMLView";
 import JSONModel from "sap/ui/model/json/JSONModel";
+import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import { addCardExpense } from "../../util/expenseApi";
@@ -36,7 +37,7 @@ const AdicionarGasto = {
         uiModel.setProperty("/busy", true);
 
         try {
-            await addCardExpense({
+            await addCardExpense(view.getModel() as ODataModel, {
                 CardId: expense.cardId,
                 CategoryId: expense.categoryId,
                 Description: expense.description,

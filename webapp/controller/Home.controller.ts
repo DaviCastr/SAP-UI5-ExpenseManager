@@ -190,7 +190,7 @@ export default class Home extends BaseController {
 
         ui.setProperty("/busy", true);
 
-        void getTransactionsByCategory(person.ID, category.ID, false, period.year, period.month)
+        void getTransactionsByCategory(this.getServiceModel(), person.ID, category.ID, false, period.year, period.month)
             .then((result: CategoryTransactionsProperties) => {
                 ui.setProperty("/categoryDetail", result);
                 if (!this._categoryDetailDialog) {
@@ -372,9 +372,10 @@ export default class Home extends BaseController {
 
         try {
             const previous = this.shiftMonth(period.year, period.month, -1);
+            const model = this.getServiceModel();
             const [invoice, previousInvoice] = await Promise.all([
-                getCompleteInvoice(person.ID, period.year, period.month),
-                getCompleteInvoice(person.ID, previous.year, previous.month)
+                getCompleteInvoice(model, person.ID, period.year, period.month),
+                getCompleteInvoice(model, person.ID, previous.year, previous.month)
             ]);
 
             ui.setProperty("/invoice", invoice);

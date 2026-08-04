@@ -26,7 +26,7 @@ sap.ui.define(["sap/m/MessageBox", "../../util/expenseApi", "../../util/http", "
       }
       uiModel.setProperty("/busy", true);
       try {
-        const result = await simulateExpenses(person.ID, year, month);
+        const result = await simulateExpenses(view.getModel(), person.ID, year, month);
         uiModel.setProperty("/simulationResult", result);
       } catch (error) {
         if (isSessionExpiredError(error)) {
