@@ -163,6 +163,20 @@ export class XsuaaAuthHelper {
         return currentUrl.toString();
     }
 
+    public static async loadRuntimeConfig(): Promise<void> {
+        if ((window as any).__EXPENSE_MANAGER_CONFIG__?.auth) {
+            return;
+        }
+
+        await new Promise<void>((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = sap.ui.require.toUrl("apps/dflc/expensemanager/config/runtime-config.js");
+            script.onload = () => resolve();
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
     private static generateRandomString(length: number): string {
         const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         const values = new Uint8Array(length);

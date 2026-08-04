@@ -29,13 +29,13 @@
                         />
                         <Select
                             id="personSelect"
-                            items="{ui>/personOptions}"
+                            items="{/Persons}"
                             selectedKey="{ui>/selectedPerson/ID}"
                             change=".onPersonChange"
                             class="personSelect"
                             width="12rem"
                         >
-                            <core:Item key="{key}" text="{text}" />
+                            <core:Item key="{ID}" text="{Name}" />
                         </Select>
                         <Button
                             icon="sap-icon://add"

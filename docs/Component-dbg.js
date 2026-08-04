@@ -24,8 +24,9 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
       manifest: "json",
       interfaces: ["sap.ui.core.IAsyncContentCreation"]
     },
-    init: function _init() {
+    init: async function _init() {
       BaseComponent.prototype.init.call(this);
+      await XsuaaAuthHelper.loadRuntimeConfig();
       AuthenticationService.initialize(AuthenticatedProviderFactory.create());
       AuthenticationService.onSessionExpired(() => this.handleSessionExpired());
       this.setModel(createDeviceModel(), "device");

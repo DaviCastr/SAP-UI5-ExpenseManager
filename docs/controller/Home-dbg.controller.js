@@ -239,6 +239,11 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
      */
     async reload() {
       try {
+        try {
+          this.getServiceModel().refresh();
+        } catch {
+          // the period data below is reloaded through the API regardless of the OData model
+        }
         await this.loadPersons();
       } catch (error) {
         if (isSessionExpiredError(error)) {
@@ -251,10 +256,6 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       const persons = await this._personService.fetchAll();
       const ui = this.uiModel;
       ui.setProperty("/persons", persons);
-      ui.setProperty("/personOptions", persons.map(person => ({
-        key: person.ID,
-        text: person.Name || person.ID
-      })));
       if (!persons.length) {
         ui.setProperty("/personsEmpty", true);
         ui.setProperty("/selectedPerson", {

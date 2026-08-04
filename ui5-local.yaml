@@ -4,22 +4,33 @@ specVersion: "3.1"
 metadata:
   name: apps.dflc.expensemanager
 type: application
-framework:
-  name: SAPUI5
-  version: 1.150.1
-  libraries:
-    - name: sap.m
-    - name: sap.ui.core
-    - name: sap.ushell
-    - name: themelib_sap_horizon
 server:
   customMiddleware:
+    - name: fiori-tools-proxy
+      afterMiddleware: compression
+      configuration:
+        ignoreCertErrors: false # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
+        ui5:
+          path:
+            - /resources
+            - /test-resources
+          url: https://ui5.sap.com
+        backend:
+          - path: /api
+            url: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
+          - path: /auth
+            url: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
     - name: fiori-tools-appreload
       afterMiddleware: compression
       configuration:
         port: 35729
         path: webapp
         delay: 300
+    - name: fiori-tools-preview
+      afterMiddleware: fiori-tools-appreload
+      configuration:
+        flp:
+          theme: sap_horizon
     - name: ui5-tooling-transpile-middleware
       afterMiddleware: compression
       configuration:
@@ -28,20 +39,6 @@ server:
           overridesToOverride: true
         excludePatterns:
           - /Component-preload.js
-    - name: fiori-tools-preview
-      afterMiddleware: fiori-tools-appreload
-      configuration:
-        flp:
-          theme: sap_horizon_dark
-    - name: fiori-tools-proxy
-      afterMiddleware: compression
-      configuration:
-        ignoreCertErrors: false # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
-        backend:
-          - path: /api
-            url: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
-          - path: /auth
-            url: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
 builder:
   customTasks:
     - name: ui5-tooling-transpile-task

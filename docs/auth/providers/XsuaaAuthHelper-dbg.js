@@ -116,6 +116,18 @@ sap.ui.define([], function () {
       currentUrl.hash = "";
       return currentUrl.toString();
     }
+    static async loadRuntimeConfig() {
+      if (window.__EXPENSE_MANAGER_CONFIG__?.auth) {
+        return;
+      }
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = sap.ui.require.toUrl("apps/dflc/expensemanager/config/runtime-config.js");
+        script.onload = () => resolve();
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
     static generateRandomString(length) {
       const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
       const values = new Uint8Array(length);

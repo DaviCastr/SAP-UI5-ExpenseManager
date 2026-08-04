@@ -27,8 +27,10 @@ export default class Component extends BaseComponent {
     private _sessionExpiredShown = false;
     private _serviceModelPromise: Promise<ODataModel | null> | null = null;
 
-    public init(): void {
+    public async init(): Promise<void> {
         super.init();
+
+        await XsuaaAuthHelper.loadRuntimeConfig();
 
         AuthenticationService.initialize(
             AuthenticatedProviderFactory.create()

@@ -292,6 +292,11 @@ export default class Home extends BaseController {
      */
     public async reload(): Promise<void> {
         try {
+            try {
+                this.getServiceModel().refresh();
+            } catch {
+                // the period data below is reloaded through the API regardless of the OData model
+            }
             await this.loadPersons();
         } catch (error) {
             if (isSessionExpiredError(error)) {
@@ -306,7 +311,6 @@ export default class Home extends BaseController {
         const ui = this.uiModel;
 
         ui.setProperty("/persons", persons);
-        ui.setProperty("/personOptions", persons.map((person) => ({ key: person.ID, text: person.Name || person.ID })));
 
         if (!persons.length) {
             ui.setProperty("/personsEmpty", true);
