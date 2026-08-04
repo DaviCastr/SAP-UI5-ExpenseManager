@@ -34,7 +34,7 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast",
         await uploadBackupStream(row.ID, backupFile);
         dialog.close();
         MessageToast.show(getText(view, "backupRestored"));
-        await view.getController().reload();
+        void view.getController().reload();
       } catch (error) {
         if (isSessionExpiredError(error)) {
           return;

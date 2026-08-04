@@ -81,7 +81,7 @@ const AdicionarPessoa = {
 
             dialog.close();
             MessageToast.show(getText(view, "personCreated"));
-            await (view.getController() as Home).reload();
+            void (view.getController() as Home).reload();
         } catch (error) {
             if (isSessionExpiredError(error)) {
                 return;

@@ -1,16 +1,18 @@
 sap.ui.define([], function () {
   "use strict";
 
+  function getConfigWindow() {
+    return window;
+  }
   class XsuaaAuthHelper {
     static getConfig() {
-      const globalWindow = window;
-      return globalWindow.__EXPENSE_MANAGER_CONFIG__ ?? {
+      return getConfigWindow().__EXPENSE_MANAGER_CONFIG__ ?? {
         btpHost: "",
         odataService: ""
       };
     }
     static setServiceUrl(url) {
-      const globalWindow = window;
+      const globalWindow = getConfigWindow();
       if (!globalWindow.__EXPENSE_MANAGER_CONFIG__) {
         globalWindow.__EXPENSE_MANAGER_CONFIG__ = {
           btpHost: "",
@@ -20,7 +22,7 @@ sap.ui.define([], function () {
       globalWindow.__EXPENSE_MANAGER_CONFIG__.odataService = url;
     }
     static setLocalOverrides() {
-      const globalWindow = window;
+      const globalWindow = getConfigWindow();
       const config = globalWindow.__EXPENSE_MANAGER_CONFIG__ ?? {
         btpHost: "",
         odataService: ""
@@ -117,14 +119,16 @@ sap.ui.define([], function () {
       return currentUrl.toString();
     }
     static async loadRuntimeConfig() {
-      if (window.__EXPENSE_MANAGER_CONFIG__?.auth) {
+      if (getConfigWindow().__EXPENSE_MANAGER_CONFIG__?.auth) {
         return;
       }
       await new Promise((resolve, reject) => {
         const script = document.createElement("script");
         script.src = sap.ui.require.toUrl("apps/dflc/expensemanager/config/runtime-config.js");
-        script.onload = () => resolve();
-        script.onerror = reject;
+        const onLoad = () => resolve();
+        const onError = () => reject(new Error("Falha ao carregar a configuração de runtime."));
+        script.addEventListener("load", onLoad);
+        script.addEventListener("error", onError);
         document.head.appendChild(script);
       });
     }

@@ -44,6 +44,25 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
     const formatted = formatCurrency(total, currency);
     return `${name} • ${formatted}`;
   }
+  function personImage(id, imageType) {
+    if (!id || !imageType) {
+      return "";
+    }
+    return `${XsuaaAuthHelper.getConfig().odataService}Persons(ID='${encodeURIComponent(id)}',IsActiveEntity=true)/Image`;
+  }
+  function transactionSubtle(category, date) {
+    const formatted = date ? formatDate(date) : "";
+    if (category && formatted) {
+      return `${category} • ${formatted}`;
+    }
+    return category || formatted || "";
+  }
+  function formatTemplate(template, ...args) {
+    if (!template) {
+      return "";
+    }
+    return args.reduce((acc, arg, index) => acc.replace(new RegExp(`\\{${index}\\}`, "g"), String(arg ?? "")), template);
+  }
   function initials(name) {
     if (!name) {
       return "?";
@@ -61,6 +80,9 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   __exports.imageUrl = imageUrl;
   __exports.formatMonth = formatMonth;
   __exports.formatCardTitle = formatCardTitle;
+  __exports.personImage = personImage;
+  __exports.transactionSubtle = transactionSubtle;
+  __exports.formatTemplate = formatTemplate;
   __exports.initials = initials;
   return __exports;
 });

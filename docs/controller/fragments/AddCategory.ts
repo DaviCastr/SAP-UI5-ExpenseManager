@@ -50,7 +50,7 @@ const AdicionarCategoria = {
         const uiModel = view.getModel("ui") as JSONModel;
 
         const category = uiModel.getProperty("/newCategory") as NewCategory;
-        const personId = uiModel.getProperty("/selectedPerson/ID") as string;
+        const personId = uiModel.getProperty("/selectedPersonId") as string;
 
         if (!category.name) {
             MessageBox.warning(getText(view, "errorFillRequiredFields"));
@@ -78,7 +78,7 @@ const AdicionarCategoria = {
 
             dialog.close();
             MessageToast.show(getText(view, "categoryCreated"));
-            await (view.getController() as Home).refresh();
+            void (view.getController() as Home).refresh();
         } catch (error) {
             if (isSessionExpiredError(error)) {
                 return;

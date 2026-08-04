@@ -13,8 +13,8 @@ import { AuthenticationService } from "../auth/AuthenticationService";
 import Environment, { EnvironmentType } from "../util/Environment";
 import { formatCurrency } from "../util/format";
 import { ODataService } from "../service/ODataService";
-import { PersonService, type Person } from "../service/PersonService";
 import { InvoiceService, type CompleteInvoice, type Period } from "../service/InvoiceService";
+import type ListBinding from "sap/ui/model/ListBinding";
 import {
     getTransactionsByCategory,
     type CategoryTransactionsProperties,
@@ -28,30 +28,6 @@ import {
 } from "../util/backupApi";
 import { isSessionExpiredError } from "../util/http";
 
-interface Summary {
-    available: string;
-    income: string;
-    expenses: string;
-    savings: string;
-    target: string;
-    expenseHint: string;
-    targetHint: string;
-    trendText: string;
-    trendIcon: string;
-}
-
-const EMPTY_SUMMARY: Summary = {
-    available: "",
-    income: "",
-    expenses: "",
-    savings: "",
-    target: "",
-    expenseHint: "",
-    targetHint: "",
-    trendText: "",
-    trendIcon: "sap-icon://trend-up"
-};
-
 function resolveCurrency(currency: unknown, fallback = "BRL"): string {
     if (typeof currency === "string" && currency) {
         return currency;
@@ -63,7 +39,6 @@ function resolveCurrency(currency: unknown, fallback = "BRL"): string {
 }
 
 export default class Home extends BaseController {
-    private _personService?: PersonService;
     private _invoiceService?: InvoiceService;
     private _expenseDialog?: Promise<Dialog>;
     private _backupDialog?: Promise<Dialog>;
@@ -90,11 +65,11 @@ export default class Home extends BaseController {
         }
 
         const odata = new ODataService(model);
-        this._personService = new PersonService(odata);
         this._invoiceService = new InvoiceService(odata);
 
         try {
-            await this.loadPersons();
+            this.setupPersonSelector();
+            this.applyPersonSelection(this.getSelectedPersonId());
         } catch (error) {
             if (isSessionExpiredError(error)) {
                 return;
@@ -106,24 +81,14 @@ export default class Home extends BaseController {
     }
 
     public onPersonChange(oEvent: Event): void {
-        const source = oEvent.getSource<Select>();
-        const id = source?.getSelectedItem()?.getKey();
+        const selectedItem = (oEvent.getParameters() as { selectedItem?: { getKey?: () => string } }).selectedItem;
+        const id = selectedItem?.getKey?.();
 
         if (!id) {
             return;
         }
 
-        const ui = this.uiModel;
-        const persons = ui.getProperty("/persons") as Person[];
-        const person = persons.find((entry) => entry.ID === id);
-
-        if (!person) {
-            return;
-        }
-
-        ui.setProperty("/selectedPerson", person);
-        ui.setProperty("/selectedPersonImage", this.personImage(person));
-        void this.loadPeriodData();
+        this.applyPersonSelection(id);
     }
 
     public async onLogout(): Promise<void> {
@@ -186,7 +151,7 @@ export default class Home extends BaseController {
     public onThisMonth(): void {
         const now = new Date();
         this.uiModel.setProperty("/period", { year: now.getFullYear(), month: now.getMonth() + 1 });
-        void this.loadPeriodData();
+        this.applyPeriodData();
     }
 
     public onCategoryPress(oEvent: Event): void {
@@ -200,12 +165,12 @@ export default class Home extends BaseController {
 
         const oView = this.getView() as XMLView;
         const ui = this.uiModel;
-        const person = ui.getProperty("/selectedPerson") as Person;
+        const personId = ui.getProperty("/selectedPersonId") as string;
         const period = ui.getProperty("/period") as Period;
 
         ui.setProperty("/busy", true);
 
-        void getTransactionsByCategory(this.getServiceModel(), person.ID, category.ID, false, period.year, period.month)
+        void getTransactionsByCategory(this.getServiceModel(), personId, category.ID, false, period.year, period.month)
             .then((result: CategoryTransactionsProperties) => {
                 ui.setProperty("/categoryDetail", result);
                 if (!this._categoryDetailDialog) {
@@ -276,28 +241,27 @@ export default class Home extends BaseController {
         }
     }
 
-    public async refresh(): Promise<void> {
+    public refresh(): void {
         try {
             this.getServiceModel().refresh();
-        } catch (error) {
-            // The period data below is reloaded through the API regardless of the OData model.
+        } catch {
+            // The OData model refresh re-triggers the period binding and its dataReceived handler.
         }
 
-        await this.loadPeriodData();
+        this.refreshDerived();
     }
 
     /**
-     * Reloads the list of persons and the period data for the current selection.
-     * Used by the create/restore dialogs after a successful operation.
+     * Reloads persons and period data. Used by the create/restore dialogs after a successful operation.
      */
-    public async reload(): Promise<void> {
+    public reload(): void {
         try {
             try {
                 this.getServiceModel().refresh();
             } catch {
-                // the period data below is reloaded through the API regardless of the OData model
+                // The /Persons binding re-fires dataReceived and re-picks the selection.
             }
-            await this.loadPersons();
+            this.refreshDerived();
         } catch (error) {
             if (isSessionExpiredError(error)) {
                 return;
@@ -306,106 +270,170 @@ export default class Home extends BaseController {
         }
     }
 
-    private async loadPersons(): Promise<void> {
-        const persons = await this._personService!.fetchAll();
+    private getSelectedPersonId(): string {
+        return (this.uiModel.getProperty("/selectedPersonId") as string) || "";
+    }
+
+    private setupPersonSelector(): void {
+        const select = this.byId("personSelect") as Select;
+        const binding = select.getBinding("items") as ListBinding;
+
+        binding?.attachDataReceived(() => {
+            const contexts = binding.getContexts(0, 50);
+            const empty = contexts.length === 0;
+
+            if (empty) {
+                this.uiModel.setProperty("/personsEmpty", true);
+                this.uiModel.setProperty("/selectedPersonId", "");
+                return;
+            }
+
+            this.uiModel.setProperty("/personsEmpty", false);
+
+            const current = this.getSelectedPersonId();
+
+            if (!current) {
+                const first = contexts[0]?.getProperty("ID") as string | undefined;
+                if (first) {
+                    this.applyPersonSelection(first);
+                }
+            } else if (!(this.byId("personSection") as Control).getBindingContext()) {
+                this.applyPersonSelection(current);
+            }
+        });
+    }
+
+    private applyPersonSelection(id: string): void {
         const ui = this.uiModel;
 
-        ui.setProperty("/persons", persons);
-
-        if (!persons.length) {
-            ui.setProperty("/personsEmpty", true);
-            ui.setProperty("/selectedPerson", { ID: "" });
-            ui.setProperty("/selectedPersonImage", "");
-            ui.setProperty("/invoice", { Transactions: [] });
-            ui.setProperty("/categories", []);
-            ui.setProperty("/summary", { ...EMPTY_SUMMARY });
-            ui.setProperty("/monthLabel", "");
+        if (!id) {
+            ui.setProperty("/selectedPersonId", "");
             return;
         }
 
-        ui.setProperty("/personsEmpty", false);
+        ui.setProperty("/selectedPersonId", id);
 
-        const currentId = ui.getProperty("/selectedPerson/ID") as string;
-        const selected = persons.find((person) => person.ID === currentId) || persons[0];
+        const section = this.byId("personSection") as Control;
+        section.bindElement({
+            path: `/Persons(ID='${encodeURIComponent(id)}',IsActiveEntity=true)`
+        });
 
-        ui.setProperty("/selectedPerson", selected || { ID: "" });
-        ui.setProperty("/selectedPersonImage", selected ? this.personImage(selected) : "");
-
-        if (!ui.getProperty("/period")) {
-            const now = new Date();
-            ui.setProperty("/period", { year: now.getFullYear(), month: now.getMonth() + 1 });
-        }
-
-        if (selected?.ID) {
-            await this.loadPeriodData();
-        }
+        this.applyPeriodData();
     }
 
-    private personImage(person: Person): string {
-        return person.ImageType ? this._personService!.getImageUrl(person) : "";
-    }
-
-    private async loadPeriodData(): Promise<void> {
+    private applyPeriodData(): void {
         const ui = this.uiModel;
-        const person = ui.getProperty("/selectedPerson") as Person | undefined;
+        const personId = this.getSelectedPersonId();
 
-        if (!person?.ID || !this._invoiceService) {
+        if (!personId) {
             return;
         }
 
         const period = (ui.getProperty("/period") as Period) || this.currentPeriod();
-        ui.setProperty("/busy", true);
+        ui.setProperty("/period", period);
+        ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
+
+        const section = this.byId("periodSection") as Control;
+        section.bindElement({
+            path: `/RetrieveCompleteInvoice(PersonId='${encodeURIComponent(personId)}',Year=${period.year},Month=${period.month})`,
+            events: {
+                dataRequested: () => ui.setProperty("/busy", true),
+                dataReceived: () => {
+                    void this.refreshDerived();
+                }
+            }
+        });
+    }
+
+    public onTransactionsDataReceived(): void {
+        void this.refreshDerived();
+    }
+
+    private refreshDerived(): void {
+        const ui = this.uiModel;
+        const personContext = (this.byId("personSection") as Control).getBindingContext();
+        const periodContext = (this.byId("periodSection") as Control).getBindingContext();
+        const person = personContext?.getObject() as {
+            ID: string;
+            Name?: string;
+            Income?: number;
+            ExpenseTarget?: number;
+            Currency?: string | { code?: string };
+        } | undefined;
+        const invoice = periodContext?.getObject() as CompleteInvoice | undefined;
+
+        if (!person?.ID || !invoice) {
+            return;
+        }
+
+        const period = (ui.getProperty("/period") as Period) || this.currentPeriod();
+
+        const currency = invoice.Currency?.code || resolveCurrency(person.Currency) || "BRL";
+        const income = Number(person.Income) || 0;
+        const expenses = Number(invoice.TotalAmount) || 0;
+        const target = Number(person.ExpenseTarget) || 0;
+        const available = income - expenses;
+        const savings = income - expenses;
+        const targetPercent = target > 0 ? Math.round((expenses / target) * 100) : 0;
+
+        ui.setProperty("/summary", {
+            available: formatCurrency(available, currency),
+            income: formatCurrency(income, currency),
+            expenses: formatCurrency(expenses, currency),
+            savings: formatCurrency(savings, currency),
+            target: formatCurrency(target, currency),
+            expenseHint: target > 0
+                ? this.getText("summaryExpenseHintMeta", [String(targetPercent)])
+                : this.getText("summaryExpenseHintSpent", [String(Math.round(expenses))]),
+            targetHint: target > 0
+                ? this.getText("summaryTargetHintPlanned")
+                : this.getText("summaryTargetHintEmpty"),
+            trendText: this.getText("trendCalculating"),
+            trendIcon: "sap-icon://trend-up"
+        });
+        ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
+
+        this.buildCategories(invoice);
+        ui.setProperty("/busy", false);
+
+        void this.loadTrend(person.ID, period);
+    }
+
+    private async loadTrend(personId: string, period: Period): Promise<void> {
+        if (!this._invoiceService) {
+            return;
+        }
+
+        const previous = this.shiftMonth(period.year, period.month, -1);
 
         try {
-            const previous = this.shiftMonth(period.year, period.month, -1);
-            const [invoice, previousInvoice] = await Promise.all([
-                this._invoiceService.getCompleteInvoice(person.ID, period),
-                this._invoiceService.getCompleteInvoice(person.ID, previous)
-            ]);
-
-            ui.setProperty("/invoice", invoice);
-            ui.setProperty("/period", period);
-
-            const currency = invoice.Currency?.code || resolveCurrency(person.Currency);
-            const income = Number(person.Income) || 0;
-            const expenses = Number(invoice.TotalAmount) || 0;
+            const expenses = Number((this.byId("periodSection") as Control).getBindingContext()?.getProperty("TotalAmount")) || 0;
+            const previousInvoice = await this._invoiceService.getCompleteInvoice(personId, previous);
             const previousExpenses = Number(previousInvoice.TotalAmount) || 0;
-            const target = Number(person.ExpenseTarget) || 0;
-            const available = income - expenses;
-            const savings = income - expenses;
 
             const trend = previousExpenses > 0
                 ? ((expenses - previousExpenses) / previousExpenses) * 100
                 : (expenses > 0 ? 100 : 0);
+            const trendingUp = trend > 0;
+            const delta = String(Math.abs(Math.round(trend)));
 
-            const trendText = previousExpenses > 0
-                ? `${Math.abs(Math.round(trend))}% ${trend <= 0 ? "menos" : "mais"} que o mês anterior`
-                : (expenses > 0 ? "Sem comparação com o mês anterior" : "Sem gastos registrados no período");
-            const trendIcon = trend > 0 ? "sap-icon://trend-down" : "sap-icon://trend-up";
+            let trendText: string;
+            if (previousExpenses > 0) {
+                trendText = trendingUp
+                    ? this.getText("trendMore", [delta])
+                    : this.getText("trendLess", [delta]);
+            } else {
+                trendText = expenses > 0
+                    ? this.getText("trendNoComparison")
+                    : this.getText("trendNoExpenses");
+            }
 
-            const targetPercent = target > 0 ? Math.round((expenses / target) * 100) : 0;
-
-            ui.setProperty("/summary", {
-                available: formatCurrency(available, currency),
-                income: formatCurrency(income, currency),
-                expenses: formatCurrency(expenses, currency),
-                savings: formatCurrency(savings, currency),
-                target: formatCurrency(target, currency),
-                expenseHint: target > 0 ? `${targetPercent}% da meta utilizada` : `${Math.round(expenses)} de gastos no período`,
-                targetHint: target > 0 ? "Meta planejada para o período" : "Defina uma meta de gasto",
-                trendText,
-                trendIcon
-            });
-            ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
-
-            this.buildCategories(invoice);
+            this.uiModel.setProperty("/summary/trendText", trendText);
+            this.uiModel.setProperty("/summary/trendIcon", trendingUp ? "sap-icon://trend-down" : "sap-icon://trend-up");
         } catch (error) {
             if (isSessionExpiredError(error)) {
                 return;
             }
-            MessageBox.error(this.getText("errorLoadPeriod"));
-        } finally {
-            ui.setProperty("/busy", false);
         }
     }
 
@@ -446,7 +474,7 @@ export default class Home extends BaseController {
     private navigateMonth(delta: number): void {
         const period = (this.uiModel.getProperty("/period") as Period) || this.currentPeriod();
         this.uiModel.setProperty("/period", this.shiftMonth(period.year, period.month, delta));
-        void this.loadPeriodData();
+        this.applyPeriodData();
     }
 
     private shiftMonth(year: number, month: number, delta: number): Period {

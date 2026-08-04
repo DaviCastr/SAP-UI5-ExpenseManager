@@ -32,7 +32,7 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast",
       const view = dialog.getParent();
       const uiModel = view.getModel("ui");
       const card = uiModel.getProperty("/newCard");
-      const personId = uiModel.getProperty("/selectedPerson/ID");
+      const personId = uiModel.getProperty("/selectedPersonId");
       if (!card.name || !card.limit) {
         MessageBox.warning(getText(view, "errorFillRequiredFields"));
         return;
@@ -59,7 +59,7 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast",
         }
         dialog.close();
         MessageToast.show(getText(view, "cardAdded"));
-        await view.getController().refresh();
+        void view.getController().refresh();
       } catch (error) {
         if (isSessionExpiredError(error)) {
           return;

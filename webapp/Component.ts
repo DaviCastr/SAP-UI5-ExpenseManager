@@ -179,9 +179,9 @@ export default class Component extends BaseComponent {
                 trendIcon: "sap-icon://trend-up"
             },
             monthLabel: "",
-            persons: [],
+            categories: [],
             personsEmpty: false,
-            selectedPerson: { ID: "" },
+            selectedPersonId: "",
             busy: false,
             newExpense: {},
             newCard: {}

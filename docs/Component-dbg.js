@@ -142,11 +142,9 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
           trendIcon: "sap-icon://trend-up"
         },
         monthLabel: "",
-        persons: [],
+        categories: [],
         personsEmpty: false,
-        selectedPerson: {
-          ID: ""
-        },
+        selectedPersonId: "",
         busy: false,
         newExpense: {},
         newCard: {}

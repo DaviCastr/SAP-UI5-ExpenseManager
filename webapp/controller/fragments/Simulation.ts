@@ -24,9 +24,9 @@ const Simulation = {
         const uiModel = view.getModel("ui") as JSONModel;
 
         const simulation = uiModel.getProperty("/simulation") as SimulationState;
-        const person = uiModel.getProperty("/selectedPerson") as { ID: string } | undefined;
+        const personId = uiModel.getProperty("/selectedPersonId") as string;
 
-        if (!person?.ID) {
+        if (!personId) {
             MessageBox.warning(getText(view, "errorMissingPerson"));
             return;
         }
@@ -42,7 +42,7 @@ const Simulation = {
         uiModel.setProperty("/busy", true);
 
         try {
-            const result = await simulateExpenses(view.getModel() as ODataModel, person.ID, year, month);
+            const result = await simulateExpenses(view.getModel() as ODataModel, personId, year, month);
             uiModel.setProperty("/simulationResult", result);
         } catch (error) {
             if (isSessionExpiredError(error)) {

@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../util/Environment", "../util/format", "../service/ODataService", "../service/PersonService", "../service/InvoiceService", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageBox, MessageToast, Fragment, ___BaseController, ___auth_AuthenticationService, __Environment, ___util_format, ___service_ODataService, ___service_PersonService, ___service_InvoiceService, ___util_expenseApi, ___util_backupApi, ___util_http) {
+sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../util/Environment", "../util/format", "../service/ODataService", "../service/InvoiceService", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageBox, MessageToast, Fragment, ___BaseController, ___auth_AuthenticationService, __Environment, ___util_format, ___service_ODataService, ___service_InvoiceService, ___util_expenseApi, ___util_backupApi, ___util_http) {
   "use strict";
 
   function _interopRequireDefault(obj) {
@@ -10,7 +10,6 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
   const EnvironmentType = __Environment["EnvironmentType"];
   const formatCurrency = ___util_format["formatCurrency"];
   const ODataService = ___service_ODataService["ODataService"];
-  const PersonService = ___service_PersonService["PersonService"];
   const InvoiceService = ___service_InvoiceService["InvoiceService"];
   const getTransactionsByCategory = ___util_expenseApi["getTransactionsByCategory"];
   const requestExportBackup = ___util_backupApi["requestExportBackup"];
@@ -18,17 +17,6 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
   const deleteBackupRow = ___util_backupApi["deleteBackupRow"];
   const downloadBlob = ___util_backupApi["downloadBlob"];
   const isSessionExpiredError = ___util_http["isSessionExpiredError"];
-  const EMPTY_SUMMARY = {
-    available: "",
-    income: "",
-    expenses: "",
-    savings: "",
-    target: "",
-    expenseHint: "",
-    targetHint: "",
-    trendText: "",
-    trendIcon: "sap-icon://trend-up"
-  };
   function resolveCurrency(currency, fallback = "BRL") {
     if (typeof currency === "string" && currency) {
       return currency;
@@ -52,10 +40,10 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         return;
       }
       const odata = new ODataService(model);
-      this._personService = new PersonService(odata);
       this._invoiceService = new InvoiceService(odata);
       try {
-        await this.loadPersons();
+        this.setupPersonSelector();
+        this.applyPersonSelection(this.getSelectedPersonId());
       } catch (error) {
         if (isSessionExpiredError(error)) {
           return;
@@ -66,20 +54,12 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       }
     }
     onPersonChange(oEvent) {
-      const source = oEvent.getSource();
-      const id = source?.getSelectedItem()?.getKey();
+      const selectedItem = oEvent.getParameters().selectedItem;
+      const id = selectedItem?.getKey?.();
       if (!id) {
         return;
       }
-      const ui = this.uiModel;
-      const persons = ui.getProperty("/persons");
-      const person = persons.find(entry => entry.ID === id);
-      if (!person) {
-        return;
-      }
-      ui.setProperty("/selectedPerson", person);
-      ui.setProperty("/selectedPersonImage", this.personImage(person));
-      void this.loadPeriodData();
+      this.applyPersonSelection(id);
     }
     async onLogout() {
       await AuthenticationService.logout();
@@ -147,7 +127,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         year: now.getFullYear(),
         month: now.getMonth() + 1
       });
-      void this.loadPeriodData();
+      this.applyPeriodData();
     }
     onCategoryPress(oEvent) {
       const source = oEvent.getSource();
@@ -158,10 +138,10 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       }
       const oView = this.getView();
       const ui = this.uiModel;
-      const person = ui.getProperty("/selectedPerson");
+      const personId = ui.getProperty("/selectedPersonId");
       const period = ui.getProperty("/period");
       ui.setProperty("/busy", true);
-      void getTransactionsByCategory(this.getServiceModel(), person.ID, category.ID, false, period.year, period.month).then(result => {
+      void getTransactionsByCategory(this.getServiceModel(), personId, category.ID, false, period.year, period.month).then(result => {
         ui.setProperty("/categoryDetail", result);
         if (!this._categoryDetailDialog) {
           this._categoryDetailDialog = this.loadFragmentDialog(oView, "CategoryDetail");
@@ -224,27 +204,26 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         ui.setProperty("/busy", false);
       }
     }
-    async refresh() {
+    refresh() {
       try {
         this.getServiceModel().refresh();
-      } catch (error) {
-        // The period data below is reloaded through the API regardless of the OData model.
+      } catch {
+        // The OData model refresh re-triggers the period binding and its dataReceived handler.
       }
-      await this.loadPeriodData();
+      this.refreshDerived();
     }
 
     /**
-     * Reloads the list of persons and the period data for the current selection.
-     * Used by the create/restore dialogs after a successful operation.
+     * Reloads persons and period data. Used by the create/restore dialogs after a successful operation.
      */
-    async reload() {
+    reload() {
       try {
         try {
           this.getServiceModel().refresh();
         } catch {
-          // the period data below is reloaded through the API regardless of the OData model
+          // The /Persons binding re-fires dataReceived and re-picks the selection.
         }
-        await this.loadPersons();
+        this.refreshDerived();
       } catch (error) {
         if (isSessionExpiredError(error)) {
           return;
@@ -252,91 +231,125 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         MessageBox.error(this.getText("backendUnavailable"));
       }
     }
-    async loadPersons() {
-      const persons = await this._personService.fetchAll();
+    getSelectedPersonId() {
+      return this.uiModel.getProperty("/selectedPersonId") || "";
+    }
+    setupPersonSelector() {
+      const select = this.byId("personSelect");
+      const binding = select.getBinding("items");
+      binding?.attachDataReceived(() => {
+        const contexts = binding.getContexts(0, 50);
+        const empty = contexts.length === 0;
+        if (empty) {
+          this.uiModel.setProperty("/personsEmpty", true);
+          this.uiModel.setProperty("/selectedPersonId", "");
+          return;
+        }
+        this.uiModel.setProperty("/personsEmpty", false);
+        const current = this.getSelectedPersonId();
+        if (!current) {
+          const first = contexts[0]?.getProperty("ID");
+          if (first) {
+            this.applyPersonSelection(first);
+          }
+        } else if (!this.byId("personSection").getBindingContext()) {
+          this.applyPersonSelection(current);
+        }
+      });
+    }
+    applyPersonSelection(id) {
       const ui = this.uiModel;
-      ui.setProperty("/persons", persons);
-      if (!persons.length) {
-        ui.setProperty("/personsEmpty", true);
-        ui.setProperty("/selectedPerson", {
-          ID: ""
-        });
-        ui.setProperty("/selectedPersonImage", "");
-        ui.setProperty("/invoice", {
-          Transactions: []
-        });
-        ui.setProperty("/categories", []);
-        ui.setProperty("/summary", {
-          ...EMPTY_SUMMARY
-        });
-        ui.setProperty("/monthLabel", "");
+      if (!id) {
+        ui.setProperty("/selectedPersonId", "");
         return;
       }
-      ui.setProperty("/personsEmpty", false);
-      const currentId = ui.getProperty("/selectedPerson/ID");
-      const selected = persons.find(person => person.ID === currentId) || persons[0];
-      ui.setProperty("/selectedPerson", selected || {
-        ID: ""
+      ui.setProperty("/selectedPersonId", id);
+      const section = this.byId("personSection");
+      section.bindElement({
+        path: `/Persons(ID='${encodeURIComponent(id)}',IsActiveEntity=true)`
       });
-      ui.setProperty("/selectedPersonImage", selected ? this.personImage(selected) : "");
-      if (!ui.getProperty("/period")) {
-        const now = new Date();
-        ui.setProperty("/period", {
-          year: now.getFullYear(),
-          month: now.getMonth() + 1
-        });
-      }
-      if (selected?.ID) {
-        await this.loadPeriodData();
-      }
+      this.applyPeriodData();
     }
-    personImage(person) {
-      return person.ImageType ? this._personService.getImageUrl(person) : "";
-    }
-    async loadPeriodData() {
+    applyPeriodData() {
       const ui = this.uiModel;
-      const person = ui.getProperty("/selectedPerson");
-      if (!person?.ID || !this._invoiceService) {
+      const personId = this.getSelectedPersonId();
+      if (!personId) {
         return;
       }
       const period = ui.getProperty("/period") || this.currentPeriod();
-      ui.setProperty("/busy", true);
+      ui.setProperty("/period", period);
+      ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
+      const section = this.byId("periodSection");
+      section.bindElement({
+        path: `/RetrieveCompleteInvoice(PersonId='${encodeURIComponent(personId)}',Year=${period.year},Month=${period.month})`,
+        events: {
+          dataRequested: () => ui.setProperty("/busy", true),
+          dataReceived: () => {
+            void this.refreshDerived();
+          }
+        }
+      });
+    }
+    onTransactionsDataReceived() {
+      void this.refreshDerived();
+    }
+    refreshDerived() {
+      const ui = this.uiModel;
+      const personContext = this.byId("personSection").getBindingContext();
+      const periodContext = this.byId("periodSection").getBindingContext();
+      const person = personContext?.getObject();
+      const invoice = periodContext?.getObject();
+      if (!person?.ID || !invoice) {
+        return;
+      }
+      const period = ui.getProperty("/period") || this.currentPeriod();
+      const currency = invoice.Currency?.code || resolveCurrency(person.Currency) || "BRL";
+      const income = Number(person.Income) || 0;
+      const expenses = Number(invoice.TotalAmount) || 0;
+      const target = Number(person.ExpenseTarget) || 0;
+      const available = income - expenses;
+      const savings = income - expenses;
+      const targetPercent = target > 0 ? Math.round(expenses / target * 100) : 0;
+      ui.setProperty("/summary", {
+        available: formatCurrency(available, currency),
+        income: formatCurrency(income, currency),
+        expenses: formatCurrency(expenses, currency),
+        savings: formatCurrency(savings, currency),
+        target: formatCurrency(target, currency),
+        expenseHint: target > 0 ? this.getText("summaryExpenseHintMeta", [String(targetPercent)]) : this.getText("summaryExpenseHintSpent", [String(Math.round(expenses))]),
+        targetHint: target > 0 ? this.getText("summaryTargetHintPlanned") : this.getText("summaryTargetHintEmpty"),
+        trendText: this.getText("trendCalculating"),
+        trendIcon: "sap-icon://trend-up"
+      });
+      ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
+      this.buildCategories(invoice);
+      ui.setProperty("/busy", false);
+      void this.loadTrend(person.ID, period);
+    }
+    async loadTrend(personId, period) {
+      if (!this._invoiceService) {
+        return;
+      }
+      const previous = this.shiftMonth(period.year, period.month, -1);
       try {
-        const previous = this.shiftMonth(period.year, period.month, -1);
-        const [invoice, previousInvoice] = await Promise.all([this._invoiceService.getCompleteInvoice(person.ID, period), this._invoiceService.getCompleteInvoice(person.ID, previous)]);
-        ui.setProperty("/invoice", invoice);
-        ui.setProperty("/period", period);
-        const currency = invoice.Currency?.code || resolveCurrency(person.Currency);
-        const income = Number(person.Income) || 0;
-        const expenses = Number(invoice.TotalAmount) || 0;
+        const expenses = Number(this.byId("periodSection").getBindingContext()?.getProperty("TotalAmount")) || 0;
+        const previousInvoice = await this._invoiceService.getCompleteInvoice(personId, previous);
         const previousExpenses = Number(previousInvoice.TotalAmount) || 0;
-        const target = Number(person.ExpenseTarget) || 0;
-        const available = income - expenses;
-        const savings = income - expenses;
         const trend = previousExpenses > 0 ? (expenses - previousExpenses) / previousExpenses * 100 : expenses > 0 ? 100 : 0;
-        const trendText = previousExpenses > 0 ? `${Math.abs(Math.round(trend))}% ${trend <= 0 ? "menos" : "mais"} que o mês anterior` : expenses > 0 ? "Sem comparação com o mês anterior" : "Sem gastos registrados no período";
-        const trendIcon = trend > 0 ? "sap-icon://trend-down" : "sap-icon://trend-up";
-        const targetPercent = target > 0 ? Math.round(expenses / target * 100) : 0;
-        ui.setProperty("/summary", {
-          available: formatCurrency(available, currency),
-          income: formatCurrency(income, currency),
-          expenses: formatCurrency(expenses, currency),
-          savings: formatCurrency(savings, currency),
-          target: formatCurrency(target, currency),
-          expenseHint: target > 0 ? `${targetPercent}% da meta utilizada` : `${Math.round(expenses)} de gastos no período`,
-          targetHint: target > 0 ? "Meta planejada para o período" : "Defina uma meta de gasto",
-          trendText,
-          trendIcon
-        });
-        ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
-        this.buildCategories(invoice);
+        const trendingUp = trend > 0;
+        const delta = String(Math.abs(Math.round(trend)));
+        let trendText;
+        if (previousExpenses > 0) {
+          trendText = trendingUp ? this.getText("trendMore", [delta]) : this.getText("trendLess", [delta]);
+        } else {
+          trendText = expenses > 0 ? this.getText("trendNoComparison") : this.getText("trendNoExpenses");
+        }
+        this.uiModel.setProperty("/summary/trendText", trendText);
+        this.uiModel.setProperty("/summary/trendIcon", trendingUp ? "sap-icon://trend-down" : "sap-icon://trend-up");
       } catch (error) {
         if (isSessionExpiredError(error)) {
           return;
         }
-        MessageBox.error(this.getText("errorLoadPeriod"));
-      } finally {
-        ui.setProperty("/busy", false);
       }
     }
     buildCategories(invoice) {
@@ -370,7 +383,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
     navigateMonth(delta) {
       const period = this.uiModel.getProperty("/period") || this.currentPeriod();
       this.uiModel.setProperty("/period", this.shiftMonth(period.year, period.month, delta));
-      void this.loadPeriodData();
+      this.applyPeriodData();
     }
     shiftMonth(year, month, delta) {
       const total = year * 12 + (month - 1) + delta;

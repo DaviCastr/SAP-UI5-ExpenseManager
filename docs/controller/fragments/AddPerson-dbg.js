@@ -53,7 +53,7 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast",
         }
         dialog.close();
         MessageToast.show(getText(view, "personCreated"));
-        await view.getController().reload();
+        void view.getController().reload();
       } catch (error) {
         if (isSessionExpiredError(error)) {
           return;

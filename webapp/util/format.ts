@@ -41,6 +41,31 @@ export function formatCardTitle(name: string, total: number, currency: string): 
     return `${name} • ${formatted}`;
 }
 
+export function personImage(id?: string, imageType?: string): string {
+    if (!id || !imageType) {
+        return "";
+    }
+    return `${XsuaaAuthHelper.getConfig().odataService}Persons(ID='${encodeURIComponent(id)}',IsActiveEntity=true)/Image`;
+}
+
+export function transactionSubtle(category?: string, date?: string): string {
+    const formatted = date ? formatDate(date) : "";
+    if (category && formatted) {
+        return `${category} • ${formatted}`;
+    }
+    return category || formatted || "";
+}
+
+export function formatTemplate(template?: string, ...args: Array<string | number>): string {
+    if (!template) {
+        return "";
+    }
+    return args.reduce(
+        (acc: string, arg, index) => acc.replace(new RegExp(`\\{${index}\\}`, "g"), String(arg ?? "")),
+        template
+    );
+}
+
 export function initials(name?: string): string {
     if (!name) {
         return "?";

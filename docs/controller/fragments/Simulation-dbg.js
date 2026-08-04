@@ -13,8 +13,8 @@ sap.ui.define(["sap/m/MessageBox", "../../util/expenseApi", "../../util/http", "
       const view = dialog.getParent();
       const uiModel = view.getModel("ui");
       const simulation = uiModel.getProperty("/simulation");
-      const person = uiModel.getProperty("/selectedPerson");
-      if (!person?.ID) {
+      const personId = uiModel.getProperty("/selectedPersonId");
+      if (!personId) {
         MessageBox.warning(getText(view, "errorMissingPerson"));
         return;
       }
@@ -26,7 +26,7 @@ sap.ui.define(["sap/m/MessageBox", "../../util/expenseApi", "../../util/http", "
       }
       uiModel.setProperty("/busy", true);
       try {
-        const result = await simulateExpenses(view.getModel(), person.ID, year, month);
+        const result = await simulateExpenses(view.getModel(), personId, year, month);
         uiModel.setProperty("/simulationResult", result);
       } catch (error) {
         if (isSessionExpiredError(error)) {

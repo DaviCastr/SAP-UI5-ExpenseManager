@@ -31,7 +31,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "../../util/expenseApi"
         });
         dialog.close();
         MessageToast.show(getText(view, "expenseRegistered"));
-        await view.getController().refresh();
+        void view.getController().refresh();
       } catch (error) {
         if (isSessionExpiredError(error)) {
           return;

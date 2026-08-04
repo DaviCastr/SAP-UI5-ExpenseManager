@@ -26,18 +26,25 @@ interface TokenResponse {
     error_description?: string;
 }
 
+type RuntimeConfigWindow = Window & typeof globalThis & {
+    __EXPENSE_MANAGER_CONFIG__?: RuntimeConfig;
+};
+
+function getConfigWindow(): RuntimeConfigWindow {
+    return window as RuntimeConfigWindow;
+}
+
 export class XsuaaAuthHelper {
 
     public static getConfig(): RuntimeConfig {
-        const globalWindow = window as Window & typeof globalThis & { __EXPENSE_MANAGER_CONFIG__?: RuntimeConfig };
-        return globalWindow.__EXPENSE_MANAGER_CONFIG__ ?? {
+        return getConfigWindow().__EXPENSE_MANAGER_CONFIG__ ?? {
             btpHost: "",
             odataService: ""
         };
     }
 
     public static setServiceUrl(url: string): void {
-        const globalWindow = window as Window & typeof globalThis & { __EXPENSE_MANAGER_CONFIG__?: RuntimeConfig };
+        const globalWindow = getConfigWindow();
         if (!globalWindow.__EXPENSE_MANAGER_CONFIG__) {
             globalWindow.__EXPENSE_MANAGER_CONFIG__ = { btpHost: "", odataService: "" };
         }
@@ -45,7 +52,7 @@ export class XsuaaAuthHelper {
     }
 
     public static setLocalOverrides(): void {
-        const globalWindow = window as Window & typeof globalThis & { __EXPENSE_MANAGER_CONFIG__?: RuntimeConfig };
+        const globalWindow = getConfigWindow();
         const config = globalWindow.__EXPENSE_MANAGER_CONFIG__ ?? { btpHost: "", odataService: "" };
         globalWindow.__EXPENSE_MANAGER_CONFIG__ = config;
 
@@ -164,15 +171,19 @@ export class XsuaaAuthHelper {
     }
 
     public static async loadRuntimeConfig(): Promise<void> {
-        if ((window as any).__EXPENSE_MANAGER_CONFIG__?.auth) {
+        if (getConfigWindow().__EXPENSE_MANAGER_CONFIG__?.auth) {
             return;
         }
 
         await new Promise<void>((resolve, reject) => {
             const script = document.createElement("script");
             script.src = sap.ui.require.toUrl("apps/dflc/expensemanager/config/runtime-config.js");
-            script.onload = () => resolve();
-            script.onerror = reject;
+
+            const onLoad = () => resolve();
+            const onError = () => reject(new Error("Falha ao carregar a configuração de runtime."));
+
+            script.addEventListener("load", onLoad);
+            script.addEventListener("error", onError);
             document.head.appendChild(script);
         });
     }

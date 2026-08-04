@@ -50,7 +50,7 @@ const AdicionarGasto = {
 
             dialog.close();
             MessageToast.show(getText(view, "expenseRegistered"));
-            await (view.getController() as Home).refresh();
+            void (view.getController() as Home).refresh();
         } catch (error) {
             if (isSessionExpiredError(error)) {
                 return;

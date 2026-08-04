@@ -10,76 +10,82 @@
     <Page id="homePage" showHeader="false" enableScrolling="true" class="financePage">
         <content>
             <VBox class="financeShell">
-                <HBox class="topBar" justifyContent="SpaceBetween" alignItems="Center" wrap="Wrap">
-                    <HBox alignItems="Center" class="brandGroup">
-                        <core:Icon src="sap-icon://wallet" class="brandMark" />
-                        <VBox>
-                            <Title text="{i18n>brandTitle}" level="H2" class="brandTitle" />
-                            <Text text="{ui>/monthLabel}" class="brandCaption" />
+                <VBox id="personSection">
+                    <HBox class="topBar" justifyContent="SpaceBetween" alignItems="Center" wrap="Wrap">
+                        <HBox alignItems="Center" class="brandGroup">
+                            <core:Icon src="sap-icon://wallet" class="brandMark" />
+                            <VBox>
+                                <Title text="{i18n>brandTitle}" level="H2" class="brandTitle" />
+                                <Text text="{ui>/monthLabel}" class="brandCaption" />
+                            </VBox>
+                        </HBox>
+                        <HBox alignItems="Center" class="topActions" wrap="Wrap">
+                            <Text text="{i18n>personManageLabel}" class="personLabel" />
+                            <Avatar
+                                src="{ parts: [ { path: 'ID' }, { path: 'ImageType' } ], formatter: 'formatter.personImage' }"
+                                initials="{ path: 'Name', formatter: 'formatter.initials' }"
+                                displaySize="XS"
+                                displayShape="Circle"
+                                class="personAvatar"
+                            />
+                            <Select
+                                id="personSelect"
+                                items="{/Persons}"
+                                selectedKey="{ui>/selectedPersonId}"
+                                change=".onPersonChange"
+                                class="personSelect"
+                                width="12rem"
+                            >
+                                <core:Item key="{ID}" text="{Name}" />
+                            </Select>
+                            <Button
+                                icon="sap-icon://add"
+                                type="Transparent"
+                                tooltip="{i18n>personAddButton}"
+                                press=".onOpenPersonDialog"
+                                class="iconAction"
+                            />
+                            <Button
+                                icon="sap-icon://log"
+                                type="Transparent"
+                                tooltip="{i18n>logoutTooltip}"
+                                press=".onLogout"
+                                class="iconAction"
+                            />
+                        </HBox>
+                    </HBox>
+
+                    <HBox class="balanceHero" justifyContent="SpaceBetween" alignItems="Stretch" wrap="Wrap" busy="{ui>/busy}" visible="{= !${ui>/personsEmpty} }">
+                        <VBox class="balanceCopy">
+                            <Text text="{i18n>homeEyebrow}" class="eyebrow" />
+                            <Title
+                                text="{ parts: [ { path: 'i18n>helloUser' }, { path: 'Name' } ], formatter: 'formatter.formatTemplate' }"
+                                level="H1"
+                                class="heroTitle"
+                            />
+                            <Text text="{i18n>heroGreetingSubtitle}" class="heroSubtitle" />
+                            <HBox class="heroActions" wrap="Wrap">
+                                <Button text="{i18n>actionRegisterExpense}" icon="sap-icon://add" type="Emphasized" press=".onOpenExpenseDialog" class="primaryAction" />
+                                <Button text="{i18n>actionAddCard}" icon="sap-icon://credit-card" type="Transparent" press=".onOpenCardDialog" class="secondaryAction" />
+                                <Button text="{i18n>actionSimulate}" icon="sap-icon://customer-view" type="Transparent" press=".onOpenSimulationDialog" class="secondaryAction" />
+                                <Button text="{i18n>actionRestoreBackup}" icon="sap-icon://upload-to-cloud" type="Transparent" press=".onRestoreBackup" class="secondaryAction" />
+                                <Button text="{i18n>actionExportBackup}" icon="sap-icon://download-to-cloud" type="Transparent" press=".onExportBackup" class="secondaryAction" />
+                            </HBox>
+                        </VBox>
+                        <VBox class="balanceCard">
+                            <Text text="{i18n>balanceAvailableLabel}" class="balanceLabel" />
+                            <ObjectNumber number="{ui>/summary/available}" class="balanceNumber" />
+                            <HBox alignItems="Center" class="balanceTrend">
+                                <core:Icon src="{ui>/summary/trendIcon}" />
+                                <Text text="{ui>/summary/trendText}" />
+                            </HBox>
                         </VBox>
                     </HBox>
-                    <HBox alignItems="Center" class="topActions" wrap="Wrap">
-                        <Text text="{i18n>personManageLabel}" class="personLabel" />
-                        <Avatar
-                            src="{ui>/selectedPersonImage}"
-                            initials="{ path: 'ui>/selectedPerson/Name', formatter: 'formatter.initials' }"
-                            displaySize="XS"
-                            displayShape="Circle"
-                            class="personAvatar"
-                        />
-                        <Select
-                            id="personSelect"
-                            items="{/Persons}"
-                            selectedKey="{ui>/selectedPerson/ID}"
-                            change=".onPersonChange"
-                            class="personSelect"
-                            width="12rem"
-                        >
-                            <core:Item key="{ID}" text="{Name}" />
-                        </Select>
-                        <Button
-                            icon="sap-icon://add"
-                            type="Transparent"
-                            tooltip="{i18n>personAddButton}"
-                            press=".onOpenPersonDialog"
-                            class="iconAction"
-                        />
-                        <Button
-                            icon="sap-icon://log"
-                            type="Transparent"
-                            tooltip="{i18n>logoutTooltip}"
-                            press=".onLogout"
-                            class="iconAction"
-                        />
-                    </HBox>
-                </HBox>
-
-                <HBox class="balanceHero" justifyContent="SpaceBetween" alignItems="Stretch" wrap="Wrap" busy="{ui>/busy}">
-                    <VBox class="balanceCopy">
-                        <Text text="SEU DINHEIRO, COM CLAREZA" class="eyebrow" />
-                        <Title text="Olá, {ui>/selectedPerson/Name}!" level="H1" class="heroTitle" />
-                        <Text text="Aqui está o panorama financeiro deste mês." class="heroSubtitle" />
-                        <HBox class="heroActions" wrap="Wrap">
-                        <Button text="Registrar gasto" icon="sap-icon://add" type="Emphasized" press=".onOpenExpenseDialog" class="primaryAction" />
-                        <Button text="Adicionar cartão" icon="sap-icon://credit-card" type="Transparent" press=".onOpenCardDialog" class="secondaryAction" />
-                        <Button text="Simular gastos" icon="sap-icon://customer-view" type="Transparent" press=".onOpenSimulationDialog" class="secondaryAction" />
-                        <Button text="Restaurar backup" icon="sap-icon://upload-to-cloud" type="Transparent" press=".onRestoreBackup" class="secondaryAction" />
-                        <Button text="Exportar backup" icon="sap-icon://download-to-cloud" type="Transparent" press=".onExportBackup" class="secondaryAction" />
-                        </HBox>
-                    </VBox>
-                    <VBox class="balanceCard">
-                        <Text text="DISPONÍVEL ESTE MÊS" class="balanceLabel" />
-                        <ObjectNumber number="{ui>/summary/available}" class="balanceNumber" />
-                        <HBox alignItems="Center" class="balanceTrend">
-                            <core:Icon src="{ui>/summary/trendIcon}" />
-                            <Text text="{ui>/summary/trendText}" />
-                        </HBox>
-                    </VBox>
-                </HBox>
+                </VBox>
 
                 <HBox class="periodNav" justifyContent="SpaceBetween" alignItems="Center" wrap="Wrap" visible="{= !${ui>/personsEmpty} }">
                     <VBox>
-                        <Title text="Visão geral do período" level="H3" />
+                        <Title text="{i18n>periodOverviewTitle}" level="H3" />
                         <Text text="{ui>/monthLabel}" class="sectionHint" />
                     </VBox>
                     <HBox alignItems="Center" class="periodNavActions">
@@ -101,38 +107,39 @@
 
                 <HBox class="metricGrid" wrap="Wrap" visible="{= !${ui>/personsEmpty} }">
                     <VBox class="metricCard incomeMetric">
-                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="RECEITAS" class="metricLabel" /><core:Icon src="sap-icon://trend-up" /></HBox>
+                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="{i18n>metricIncomeLabel}" class="metricLabel" /><core:Icon src="sap-icon://trend-up" /></HBox>
                         <ObjectNumber number="{ui>/summary/income}" class="metricNumber" />
-                        <Text text="Entradas previstas no mês" class="metricHint" />
+                        <Text text="{i18n>metricIncomeHint}" class="metricHint" />
                     </VBox>
                     <VBox class="metricCard expenseMetric">
-                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="GASTOS DO MÊS" class="metricLabel" /><core:Icon src="sap-icon://cart" /></HBox>
+                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="{i18n>metricExpensesLabel}" class="metricLabel" /><core:Icon src="sap-icon://cart" /></HBox>
                         <ObjectNumber number="{ui>/summary/expenses}" class="metricNumber" />
                         <Text text="{ui>/summary/expenseHint}" class="metricHint" />
                     </VBox>
                     <VBox class="metricCard saveMetric">
-                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="RESERVA DO MÊS" class="metricLabel" /><core:Icon src="sap-icon://savings" /></HBox>
+                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="{i18n>metricSavingsLabel}" class="metricLabel" /><core:Icon src="sap-icon://savings" /></HBox>
                         <ObjectNumber number="{ui>/summary/savings}" class="metricNumber" />
-                        <Text text="O que sobra após os gastos do mês" class="metricHint" />
+                        <Text text="{i18n>metricSavingsHint}" class="metricHint" />
                     </VBox>
                     <VBox class="metricCard targetMetric">
-                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="META DE GASTO" class="metricLabel" /><core:Icon src="sap-icon://target" /></HBox>
+                        <HBox justifyContent="SpaceBetween" alignItems="Start"><Text text="{i18n>metricTargetLabel}" class="metricLabel" /><core:Icon src="sap-icon://target" /></HBox>
                         <ObjectNumber number="{ui>/summary/target}" class="metricNumber" />
                         <Text text="{ui>/summary/targetHint}" class="metricHint" />
                     </VBox>
                 </HBox>
 
                 <HBox class="dashboardGrid" wrap="Wrap" visible="{= !${ui>/personsEmpty} }">
-                    <VBox class="surfaceCard transactionsPanel">
+                    <VBox id="periodSection" class="surfaceCard transactionsPanel">
                         <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
-                            <VBox><Title text="Movimentações recentes" level="H3" /><Text text="Últimos lançamentos desta pessoa" class="sectionHint" /></VBox>
+                            <VBox><Title text="{i18n>recentTransactionsTitle}" level="H3" /><Text text="{i18n>recentTransactionsHint}" class="sectionHint" /></VBox>
                             <Button icon="sap-icon://add" type="Transparent" press=".onOpenCategoryDialog" tooltip="{i18n>categoryAddButton}" />
                         </HBox>
                         <List
-                            items="{ path: 'ui>/invoice/Transactions' }"
+                            items="{Transactions}"
                             showSeparators="None"
                             class="transactionList"
-                            noDataText="Ainda não há movimentações para este período."
+                            noDataText="{i18n>transactionsNoData}"
+                            dataReceived=".onTransactionsDataReceived"
                         >
                             <CustomListItem>
                                 <HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="transactionItem">
@@ -140,14 +147,14 @@
                                         <VBox class="transactionIcon"><core:Icon src="sap-icon://receipt" /></VBox>
                                         <VBox>
                                             <Text text="{Description}" class="transactionTitle" />
-                                            <Text text="{Category/Name} • { formatter: 'formatter.formatDate', path: 'Date' }" class="transactionDate" />
+                                            <Text text="{ parts: [ { path: 'Category/Name' }, { path: 'Date' } ], formatter: 'formatter.transactionSubtle' }" class="transactionDate" />
                                         </VBox>
                                     </HBox>
                                     <ObjectNumber
                                         number="{
                                             parts: [
                                                 { path: 'Amount' },
-                                                { path: '$ui>/invoice/Currency/code' }
+                                                { path: '../Currency/code' }
                                             ],
                                             formatter: 'formatter.formatCurrency'
                                         }"
@@ -160,14 +167,14 @@
 
                     <VBox class="surfaceCard categoriesPanel">
                         <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
-                            <VBox><Title text="Gastos por categoria" level="H3" /><Text text="Distribuição do período" class="sectionHint" /></VBox>
+                            <VBox><Title text="{i18n>categoriesTitle}" level="H3" /><Text text="{i18n>categoriesHint}" class="sectionHint" /></VBox>
                             <Button icon="sap-icon://add" type="Transparent" press=".onOpenCategoryDialog" tooltip="{i18n>categoryAddButton}" />
                         </HBox>
                         <List
                             items="{ path: 'ui>/categories' }"
                             showSeparators="None"
                             class="categoryList"
-                            noDataText="Nenhuma categoria com gastos neste período."
+                            noDataText="{i18n>categoriesNoData}"
                         >
                             <CustomListItem press=".onCategoryPress">
                                 <HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="categoryItem">
@@ -211,19 +218,19 @@
 
                     <VBox class="surfaceCard cardsPanel">
                         <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
-                            <VBox><Title text="Seus cartões" level="H3" /><Text text="Limites e datas de vencimento" class="sectionHint" /></VBox>
-                            <Button icon="sap-icon://add" type="Transparent" press=".onOpenCardDialog" tooltip="Adicionar cartão" />
+                            <VBox><Title text="{i18n>cardsTitle}" level="H3" /><Text text="{i18n>cardsHint}" class="sectionHint" /></VBox>
+                            <Button icon="sap-icon://add" type="Transparent" press=".onOpenCardDialog" tooltip="{i18n>cardDialogTitle}" />
                         </HBox>
                         <List
                             items="{
                                 path: '/Cards',
                                 filters: [
-                                    { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPerson/ID}' }
+                                    { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPersonId}' }
                                 ]
                             }"
                             showSeparators="None"
                             class="cardList"
-                            noDataText="Adicione o primeiro cartão desta pessoa."
+                            noDataText="{i18n>cardsNoData}"
                         >
                             <CustomListItem>
                                 <VBox class="creditCardItem">
@@ -231,7 +238,7 @@
                                         <Text text="{Name}" class="creditCardName" />
                                         <core:Icon src="sap-icon://credit-card" />
                                     </HBox>
-                                    <Text text="Limite" class="creditCardLabel" />
+                                    <Text text="{i18n>cardLimitLabel}" class="creditCardLabel" />
                                     <ObjectNumber
                                         number="{
                                             parts: [
@@ -242,7 +249,10 @@
                                         }"
                                         class="creditCardValue"
                                     />
-                                    <HBox justifyContent="SpaceBetween"><Text text="Fecha dia {ClosingDay}" class="creditCardFoot" /><Text text="Vence dia {DueDay}" class="creditCardFoot" /></HBox>
+                                    <HBox justifyContent="SpaceBetween">
+                                        <Text text="{ parts: [ { path: 'i18n>cardClosingDay' }, { path: 'ClosingDay' } ], formatter: 'formatter.formatTemplate' }" class="creditCardFoot" />
+                                        <Text text="{ parts: [ { path: 'i18n>cardDueDay' }, { path: 'DueDay' } ], formatter: 'formatter.formatTemplate' }" class="creditCardFoot" />
+                                    </HBox>
                                 </VBox>
                             </CustomListItem>
                         </List>
