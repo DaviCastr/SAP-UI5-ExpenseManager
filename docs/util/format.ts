@@ -40,3 +40,15 @@ export function formatCardTitle(name: string, total: number, currency: string): 
     const formatted = formatCurrency(total, currency);
     return `${name} • ${formatted}`;
 }
+
+export function initials(name?: string): string {
+    if (!name) {
+        return "?";
+    }
+
+    const parts = name.split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0] ?? "";
+    const second = parts[1]?.[0] ?? parts[0]?.[1] ?? "";
+
+    return (first + second).toUpperCase();
+}

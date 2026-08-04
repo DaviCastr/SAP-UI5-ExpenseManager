@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../util/Environment", "../util/format", "../service/ODataService", "../service/PersonService", "../service/InvoiceService", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageBox, MessageToast, Fragment, ___BaseController, ___auth_AuthenticationService, __Environment, ___util_format, ___service_ODataService, ___service_PersonService, ___service_InvoiceService, ___util_expenseApi, ___util_backupApi, ___util_http) {
+sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Item", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../util/Environment", "../util/format", "../service/ODataService", "../service/PersonService", "../service/InvoiceService", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageBox, MessageToast, Item, Fragment, ___BaseController, ___auth_AuthenticationService, __Environment, ___util_format, ___service_ODataService, ___service_PersonService, ___service_InvoiceService, ___util_expenseApi, ___util_backupApi, ___util_http) {
   "use strict";
 
   function _interopRequireDefault(obj) {
@@ -65,7 +65,20 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         }
       }
     }
-    onPersonChange() {
+    onPersonChange(oEvent) {
+      const source = oEvent.getSource();
+      const id = source?.getSelectedItem()?.getKey();
+      if (!id) {
+        return;
+      }
+      const ui = this.uiModel;
+      const persons = ui.getProperty("/persons");
+      const person = persons.find(entry => entry.ID === id);
+      if (!person) {
+        return;
+      }
+      ui.setProperty("/selectedPerson", person);
+      ui.setProperty("/selectedPersonImage", this.personImage(person));
       void this.loadPeriodData();
     }
     async onLogout() {
@@ -238,11 +251,16 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       const persons = await this._personService.fetchAll();
       const ui = this.uiModel;
       ui.setProperty("/persons", persons);
+      ui.setProperty("/personItems", persons.map(person => new Item({
+        key: person.ID,
+        text: person.Name || person.ID
+      })));
       if (!persons.length) {
         ui.setProperty("/personsEmpty", true);
         ui.setProperty("/selectedPerson", {
           ID: ""
         });
+        ui.setProperty("/selectedPersonImage", "");
         ui.setProperty("/invoice", {
           Transactions: []
         });
@@ -250,7 +268,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         ui.setProperty("/summary", {
           ...EMPTY_SUMMARY
         });
-        ui.setProperty("/monthLabel", "Nenhuma pessoa para gerenciar");
+        ui.setProperty("/monthLabel", "");
         return;
       }
       ui.setProperty("/personsEmpty", false);
@@ -259,6 +277,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       ui.setProperty("/selectedPerson", selected || {
         ID: ""
       });
+      ui.setProperty("/selectedPersonImage", selected ? this.personImage(selected) : "");
       if (!ui.getProperty("/period")) {
         const now = new Date();
         ui.setProperty("/period", {
@@ -269,6 +288,9 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       if (selected?.ID) {
         await this.loadPeriodData();
       }
+    }
+    personImage(person) {
+      return person.ImageType ? this._personService.getImageUrl(person) : "";
     }
     async loadPeriodData() {
       const ui = this.uiModel;

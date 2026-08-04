@@ -10,7 +10,9 @@ html, body, .sapUiBody { background: #f4f7f8; font-family: "72", "Segoe UI", san
 .brandCaption, .sectionHint, .metricHint, .transactionDate, .dialogIntro { color: #687b7c; font-size: .8rem; }
 .topActions, .heroActions { gap: .5rem; align-items: center; }
 .personLabel { color: #687b7c; font-size: .8rem; }
-.personSelect .sapMSltInner { border-radius: .7rem; border-color: #d5e3e1; }
+.personAvatar .sapMAvatar { background: #eafaf4; color: #087c67; border: 1px solid #d8f7ed; }
+.personSelect { background: #fff; border-radius: .7rem; }
+.personSelect .sapMSltInner { border-radius: .7rem; border-color: #d5e3e1; background: #fff; color: #102a2b; }
 .primaryAction .sapMBtnInner { border-radius: .7rem; background: #087c67; border-color: #087c67; }
 .iconAction .sapMBtnInner, .linkAction .sapMBtnInner { border-radius: .7rem; }
 

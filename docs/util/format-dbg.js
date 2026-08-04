@@ -44,6 +44,15 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
     const formatted = formatCurrency(total, currency);
     return `${name} • ${formatted}`;
   }
+  function initials(name) {
+    if (!name) {
+      return "?";
+    }
+    const parts = name.split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0] ?? "";
+    const second = parts[1]?.[0] ?? parts[0]?.[1] ?? "";
+    return (first + second).toUpperCase();
+  }
   var __exports = {
     __esModule: true
   };
@@ -52,6 +61,7 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   __exports.imageUrl = imageUrl;
   __exports.formatMonth = formatMonth;
   __exports.formatCardTitle = formatCardTitle;
+  __exports.initials = initials;
   return __exports;
 });
 //# sourceMappingURL=format-dbg.js.map

@@ -2,6 +2,8 @@ import JSONModel from "sap/ui/model/json/JSONModel";
 import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import Dialog from "sap/m/Dialog";
+import Select from "sap/m/Select";
+import Item from "sap/ui/core/Item";
 import Control from "sap/ui/core/Control";
 import Event from "sap/ui/base/Event";
 import Context from "sap/ui/model/Context";
@@ -104,7 +106,24 @@ export default class Home extends BaseController {
         }
     }
 
-    public onPersonChange(): void {
+    public onPersonChange(oEvent: Event): void {
+        const source = oEvent.getSource<Select>();
+        const id = source?.getSelectedItem()?.getKey();
+
+        if (!id) {
+            return;
+        }
+
+        const ui = this.uiModel;
+        const persons = ui.getProperty("/persons") as Person[];
+        const person = persons.find((entry) => entry.ID === id);
+
+        if (!person) {
+            return;
+        }
+
+        ui.setProperty("/selectedPerson", person);
+        ui.setProperty("/selectedPersonImage", this.personImage(person));
         void this.loadPeriodData();
     }
 
@@ -288,14 +307,16 @@ export default class Home extends BaseController {
         const ui = this.uiModel;
 
         ui.setProperty("/persons", persons);
+        ui.setProperty("/personItems", persons.map((person) => new Item({ key: person.ID, text: person.Name || person.ID })));
 
         if (!persons.length) {
             ui.setProperty("/personsEmpty", true);
             ui.setProperty("/selectedPerson", { ID: "" });
+            ui.setProperty("/selectedPersonImage", "");
             ui.setProperty("/invoice", { Transactions: [] });
             ui.setProperty("/categories", []);
             ui.setProperty("/summary", { ...EMPTY_SUMMARY });
-            ui.setProperty("/monthLabel", "Nenhuma pessoa para gerenciar");
+            ui.setProperty("/monthLabel", "");
             return;
         }
 
@@ -305,6 +326,7 @@ export default class Home extends BaseController {
         const selected = persons.find((person) => person.ID === currentId) || persons[0];
 
         ui.setProperty("/selectedPerson", selected || { ID: "" });
+        ui.setProperty("/selectedPersonImage", selected ? this.personImage(selected) : "");
 
         if (!ui.getProperty("/period")) {
             const now = new Date();
@@ -314,6 +336,10 @@ export default class Home extends BaseController {
         if (selected?.ID) {
             await this.loadPeriodData();
         }
+    }
+
+    private personImage(person: Person): string {
+        return person.ImageType ? this._personService!.getImageUrl(person) : "";
     }
 
     private async loadPeriodData(): Promise<void> {

@@ -10,7 +10,7 @@
     <Page id="homePage" showHeader="false" enableScrolling="true" class="financePage">
         <content>
             <VBox class="financeShell">
-                <HBox class="topBar" justifyContent="SpaceBetween" alignItems="Center">
+                <HBox class="topBar" justifyContent="SpaceBetween" alignItems="Center" wrap="Wrap">
                     <HBox alignItems="Center" class="brandGroup">
                         <core:Icon src="sap-icon://wallet" class="brandMark" />
                         <VBox>
@@ -18,18 +18,23 @@
                             <Text text="{ui>/monthLabel}" class="brandCaption" />
                         </VBox>
                     </HBox>
-                    <HBox alignItems="Center" class="topActions">
-                        <Label text="Gerenciando" class="personLabel" />
+                    <HBox alignItems="Center" class="topActions" wrap="Wrap">
+                        <Text text="{i18n>personManageLabel}" class="personLabel" />
+                        <Avatar
+                            src="{ui>/selectedPersonImage}"
+                            initials="{ path: 'ui>/selectedPerson/Name', formatter: 'formatter.initials' }"
+                            displaySize="XS"
+                            displayShape="Circle"
+                            class="personAvatar"
+                        />
                         <Select
                             id="personSelect"
+                            items="{ui>/personItems}"
                             selectedKey="{ui>/selectedPerson/ID}"
-                            items="{ui>/persons}"
                             change=".onPersonChange"
                             class="personSelect"
                             width="12rem"
-                        >
-                            <core:Item key="{ID}" text="{Name}" />
-                        </Select>
+                        />
                         <Button
                             icon="sap-icon://add"
                             type="Transparent"
@@ -40,7 +45,7 @@
                         <Button
                             icon="sap-icon://log"
                             type="Transparent"
-                            tooltip="Sair"
+                            tooltip="{i18n>logoutTooltip}"
                             press=".onLogout"
                             class="iconAction"
                         />
@@ -76,16 +81,16 @@
                         <Text text="{ui>/monthLabel}" class="sectionHint" />
                     </VBox>
                     <HBox alignItems="Center" class="periodNavActions">
-                        <Button icon="sap-icon://slim-arrow-left" type="Transparent" press=".onPreviousMonth" tooltip="Mês anterior" class="iconAction" />
-                        <Button text="{ui>/monthLabel}" type="Transparent" press=".onThisMonth" class="periodNavLabel" />
-                        <Button icon="sap-icon://slim-arrow-right" type="Transparent" press=".onNextMonth" tooltip="Próximo mês" class="iconAction" />
+                        <Button icon="sap-icon://slim-arrow-left" type="Transparent" press=".onPreviousMonth" tooltip="{i18n>previousMonthTooltip}" class="iconAction" />
+                        <Button text="{ui>/monthLabel}" type="Transparent" press=".onThisMonth" tooltip="{i18n>currentMonthTooltip}" class="periodNavLabel" />
+                        <Button icon="sap-icon://slim-arrow-right" type="Transparent" press=".onNextMonth" tooltip="{i18n>nextMonthTooltip}" class="iconAction" />
                     </HBox>
                 </HBox>
 
                 <VBox class="emptyState" visible="{ui>/personsEmpty}" alignItems="Center" justifyContent="Center">
                     <core:Icon src="sap-icon://inbox" class="emptyStateIcon" />
-                    <Title text="Nenhuma pessoa para gerenciar" level="H2" class="emptyStateTitle" />
-                    <Text text="Ainda não existem dados no seu serviço financeiro. Restaure um backup ou crie uma pessoa para começar." class="emptyStateText" />
+                    <Title text="{i18n>emptyPersonsTitle}" level="H2" class="emptyStateTitle" />
+                    <Text text="{i18n>emptyPersonsText}" class="emptyStateText" />
                     <HBox wrap="Wrap" alignItems="Center" justifyContent="Center">
                         <Button text="{i18n>personAddButton}" icon="sap-icon://person-add" type="Emphasized" press=".onOpenPersonDialog" class="emptyStateButton" />
                         <Button text="{i18n>backupRestoreButton}" icon="sap-icon://upload-to-cloud" type="Transparent" press=".onRestoreBackup" class="emptyStateButton" />
