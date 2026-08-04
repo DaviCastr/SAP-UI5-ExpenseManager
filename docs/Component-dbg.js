@@ -26,7 +26,7 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
         this._resolveServiceModelReady = resolve;
       });
     },
-    init: function _init() {
+    init: async function _init() {
       // call the base component's init function
       BaseComponent.prototype.init.call(this);
       AuthenticationService.initialize(AuthenticatedProviderFactory.create());
@@ -56,20 +56,27 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
         newExpense: {},
         newCard: {}
       }), "ui");
-
-      // enable routing
-      this.getRouter().initialize();
       const environment = Environment.current();
+      let serviceReady = false;
       if (environment === EnvironmentType.GITHUB) {
-        void this.prepareGithubServiceModel();
+        serviceReady = await this.prepareGithubServiceModel();
       } else if (environment === EnvironmentType.LOCAL && XsuaaAuthHelper.getConfig().auth) {
         XsuaaAuthHelper.setLocalOverrides();
-        void this.prepareGithubServiceModel();
+        serviceReady = await this.prepareGithubServiceModel();
       } else if (!XsuaaAuthHelper.getConfig().odataService) {
         this.applyManifestServiceUrl();
         this._resolveServiceModelReady?.(true);
+        serviceReady = true;
       } else {
         this._resolveServiceModelReady?.(true);
+        serviceReady = true;
+      }
+
+      // enable routing only after the service model is ready, so that all
+      // view bindings are created against the authenticated model
+      this.getRouter().initialize();
+      if (!serviceReady) {
+        this.getRouter().navTo("Login");
       }
     },
     getServiceModelReady: function _getServiceModelReady() {
@@ -86,20 +93,20 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
       const session = AuthenticationService.getSession();
       if (session && session.expiresAt > Date.now()) {
         this.setGithubServiceModel(session.accessToken);
-        return;
+        return true;
       }
       try {
         const authenticated = await AuthenticationService.isAuthenticated();
         const updated = AuthenticationService.getSession();
         if (authenticated && updated && updated.accessToken) {
           this.setGithubServiceModel(updated.accessToken);
-        } else {
-          this._resolveServiceModelReady?.(false);
-          this.getRouter().navTo("Login");
+          return true;
         }
+        this._resolveServiceModelReady?.(false);
+        return false;
       } catch (error) {
         this._resolveServiceModelReady?.(false);
-        this.getRouter().navTo("Login");
+        return false;
       }
     },
     setGithubServiceModel: function _setGithubServiceModel(accessToken) {

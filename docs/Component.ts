@@ -34,7 +34,7 @@ export default class Component extends BaseComponent {
         });
     }
 
-    public init(): void {
+    public async init(): Promise<void> {
         // call the base component's init function
         super.init();
 
@@ -67,21 +67,29 @@ export default class Component extends BaseComponent {
             newCard: {}
         }), "ui");
 
-        // enable routing
-        this.getRouter().initialize();
-
         const environment = Environment.current();
+        let serviceReady = false;
 
         if (environment === EnvironmentType.GITHUB) {
-            void this.prepareGithubServiceModel();
+            serviceReady = await this.prepareGithubServiceModel();
         } else if (environment === EnvironmentType.LOCAL && XsuaaAuthHelper.getConfig().auth) {
             XsuaaAuthHelper.setLocalOverrides();
-            void this.prepareGithubServiceModel();
+            serviceReady = await this.prepareGithubServiceModel();
         } else if (!XsuaaAuthHelper.getConfig().odataService) {
             this.applyManifestServiceUrl();
             this._resolveServiceModelReady?.(true);
+            serviceReady = true;
         } else {
             this._resolveServiceModelReady?.(true);
+            serviceReady = true;
+        }
+
+        // enable routing only after the service model is ready, so that all
+        // view bindings are created against the authenticated model
+        this.getRouter().initialize();
+
+        if (!serviceReady) {
+            this.getRouter().navTo("Login");
         }
     }
 
@@ -98,12 +106,12 @@ export default class Component extends BaseComponent {
         }
     }
 
-    private async prepareGithubServiceModel(): Promise<void> {
+    private async prepareGithubServiceModel(): Promise<boolean> {
         const session = AuthenticationService.getSession();
 
         if (session && session.expiresAt > Date.now()) {
             this.setGithubServiceModel(session.accessToken);
-            return;
+            return true;
         }
 
         try {
@@ -112,13 +120,14 @@ export default class Component extends BaseComponent {
 
             if (authenticated && updated && updated.accessToken) {
                 this.setGithubServiceModel(updated.accessToken);
-            } else {
-                this._resolveServiceModelReady?.(false);
-                this.getRouter().navTo("Login");
+                return true;
             }
+
+            this._resolveServiceModelReady?.(false);
+            return false;
         } catch (error) {
             this._resolveServiceModelReady?.(false);
-            this.getRouter().navTo("Login");
+            return false;
         }
     }
 

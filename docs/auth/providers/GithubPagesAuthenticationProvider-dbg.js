@@ -59,7 +59,17 @@ sap.ui.define(["../AuthenticationService", "../storage/SessionStorage", "./Xsuaa
       const tokenResponse = await XsuaaAuthHelper.exchangeAuthorizationCode(authCode);
       const sessionData = XsuaaAuthHelper.createSession(tokenResponse);
       SessionStorage.save(sessionData);
+      this.cleanUpAuthorizationParams();
       return true;
+    }
+    cleanUpAuthorizationParams() {
+      if (typeof window === "undefined" || typeof window.history?.replaceState !== "function") {
+        return;
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.delete("code");
+      url.searchParams.delete("state");
+      window.history.replaceState({}, document.title, url.toString());
     }
   }
   var __exports = {
