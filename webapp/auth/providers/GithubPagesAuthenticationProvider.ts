@@ -66,12 +66,17 @@ export class GithubPagesAuthenticationProvider implements IAuthenticationProvide
             return false;
         }
 
-        const tokenResponse = await XsuaaAuthHelper.exchangeAuthorizationCode(authCode);
-        const sessionData = XsuaaAuthHelper.createSession(tokenResponse);
-        SessionStorage.save(sessionData);
-        this.cleanUpAuthorizationParams();
+        try {
+            const tokenResponse = await XsuaaAuthHelper.exchangeAuthorizationCode(authCode);
+            const sessionData = XsuaaAuthHelper.createSession(tokenResponse);
+            SessionStorage.save(sessionData);
+            this.cleanUpAuthorizationParams();
 
-        return true;
+            return true;
+        } catch (error) {
+            this.cleanUpAuthorizationParams();
+            throw error;
+        }
     }
 
     private cleanUpAuthorizationParams(): void {

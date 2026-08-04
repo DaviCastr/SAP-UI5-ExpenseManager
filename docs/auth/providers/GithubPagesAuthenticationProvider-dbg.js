@@ -56,11 +56,16 @@ sap.ui.define(["../AuthenticationService", "../storage/SessionStorage", "./Xsuaa
       if (savedState && state && savedState !== state) {
         return false;
       }
-      const tokenResponse = await XsuaaAuthHelper.exchangeAuthorizationCode(authCode);
-      const sessionData = XsuaaAuthHelper.createSession(tokenResponse);
-      SessionStorage.save(sessionData);
-      this.cleanUpAuthorizationParams();
-      return true;
+      try {
+        const tokenResponse = await XsuaaAuthHelper.exchangeAuthorizationCode(authCode);
+        const sessionData = XsuaaAuthHelper.createSession(tokenResponse);
+        SessionStorage.save(sessionData);
+        this.cleanUpAuthorizationParams();
+        return true;
+      } catch (error) {
+        this.cleanUpAuthorizationParams();
+        throw error;
+      }
     }
     cleanUpAuthorizationParams() {
       if (typeof window === "undefined" || typeof window.history?.replaceState !== "function") {
