@@ -3,7 +3,6 @@
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
     xmlns:core="sap.ui.core"
-    xmlns:u="sap.ui.unified"
     core:require="{
         formatter: 'apps/dflc/expensemanager/util/format'
     }"
@@ -15,7 +14,7 @@
                     <HBox alignItems="Center" class="brandGroup">
                         <core:Icon src="sap-icon://wallet" class="brandMark" />
                         <VBox>
-                            <Title text="meu fluxo" level="H2" class="brandTitle" />
+                            <Title text="{i18n>brandTitle}" level="H2" class="brandTitle" />
                             <Text text="{ui>/monthLabel}" class="brandCaption" />
                         </VBox>
                     </HBox>
@@ -32,6 +31,13 @@
                             <core:Item key="{ID}" text="{Name}" />
                         </Select>
                         <Button
+                            icon="sap-icon://add"
+                            type="Transparent"
+                            tooltip="{i18n>personAddButton}"
+                            press=".onOpenPersonDialog"
+                            class="iconAction"
+                        />
+                        <Button
                             icon="sap-icon://log"
                             type="Transparent"
                             tooltip="Sair"
@@ -47,10 +53,11 @@
                         <Title text="Olá, {ui>/selectedPerson/Name}!" level="H1" class="heroTitle" />
                         <Text text="Aqui está o panorama financeiro deste mês." class="heroSubtitle" />
                         <HBox class="heroActions" wrap="Wrap">
-                            <Button text="Registrar gasto" icon="sap-icon://add" type="Emphasized" press=".onOpenExpenseDialog" class="primaryAction" />
-                            <Button text="Adicionar cartão" icon="sap-icon://credit-card" type="Transparent" press=".onOpenCardDialog" class="secondaryAction" />
-                            <Button text="Restaurar backup" icon="sap-icon://upload-to-cloud" type="Transparent" press=".onRestoreBackup" class="secondaryAction" />
-                            <Button text="Exportar backup" icon="sap-icon://download-to-cloud" type="Transparent" press=".onExportBackup" class="secondaryAction" />
+                        <Button text="Registrar gasto" icon="sap-icon://add" type="Emphasized" press=".onOpenExpenseDialog" class="primaryAction" />
+                        <Button text="Adicionar cartão" icon="sap-icon://credit-card" type="Transparent" press=".onOpenCardDialog" class="secondaryAction" />
+                        <Button text="Simular gastos" icon="sap-icon://customer-view" type="Transparent" press=".onOpenSimulationDialog" class="secondaryAction" />
+                        <Button text="Restaurar backup" icon="sap-icon://upload-to-cloud" type="Transparent" press=".onRestoreBackup" class="secondaryAction" />
+                        <Button text="Exportar backup" icon="sap-icon://download-to-cloud" type="Transparent" press=".onExportBackup" class="secondaryAction" />
                         </HBox>
                     </VBox>
                     <VBox class="balanceCard">
@@ -63,11 +70,26 @@
                     </VBox>
                 </HBox>
 
+                <HBox class="periodNav" justifyContent="SpaceBetween" alignItems="Center" wrap="Wrap" visible="{= !${ui>/personsEmpty} }">
+                    <VBox>
+                        <Title text="Visão geral do período" level="H3" />
+                        <Text text="{ui>/monthLabel}" class="sectionHint" />
+                    </VBox>
+                    <HBox alignItems="Center" class="periodNavActions">
+                        <Button icon="sap-icon://slim-arrow-left" type="Transparent" press=".onPreviousMonth" tooltip="Mês anterior" class="iconAction" />
+                        <Button text="{ui>/monthLabel}" type="Transparent" press=".onThisMonth" class="periodNavLabel" />
+                        <Button icon="sap-icon://slim-arrow-right" type="Transparent" press=".onNextMonth" tooltip="Próximo mês" class="iconAction" />
+                    </HBox>
+                </HBox>
+
                 <VBox class="emptyState" visible="{ui>/personsEmpty}" alignItems="Center" justifyContent="Center">
                     <core:Icon src="sap-icon://inbox" class="emptyStateIcon" />
                     <Title text="Nenhuma pessoa para gerenciar" level="H2" class="emptyStateTitle" />
-                    <Text text="Ainda não existem dados no seu serviço financeiro. Restaure um backup para começar." class="emptyStateText" />
-                    <Button text="Restaurar backup" icon="sap-icon://upload-to-cloud" type="Emphasized" press=".onRestoreBackup" class="emptyStateButton" />
+                    <Text text="Ainda não existem dados no seu serviço financeiro. Restaure um backup ou crie uma pessoa para começar." class="emptyStateText" />
+                    <HBox wrap="Wrap" alignItems="Center" justifyContent="Center">
+                        <Button text="{i18n>personAddButton}" icon="sap-icon://person-add" type="Emphasized" press=".onOpenPersonDialog" class="emptyStateButton" />
+                        <Button text="{i18n>backupRestoreButton}" icon="sap-icon://upload-to-cloud" type="Transparent" press=".onRestoreBackup" class="emptyStateButton" />
+                    </HBox>
                 </VBox>
 
                 <HBox class="metricGrid" wrap="Wrap" visible="{= !${ui>/personsEmpty} }">
@@ -97,23 +119,13 @@
                     <VBox class="surfaceCard transactionsPanel">
                         <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
                             <VBox><Title text="Movimentações recentes" level="H3" /><Text text="Últimos lançamentos desta pessoa" class="sectionHint" /></VBox>
+                            <Button icon="sap-icon://add" type="Transparent" press=".onOpenCategoryDialog" tooltip="{i18n>categoryAddButton}" />
                         </HBox>
                         <List
-                            items="{
-                                path: '/Transactions',
-                                parameters: {
-                                    $orderby: 'Date desc',
-                                    $expand: 'Category'
-                                },
-                                filters: [
-                                    { path: 'Invoice/Card/Person/ID', operator: 'EQ', value: '{ui>/selectedPerson/ID}' }
-                                ]
-                            }"
-                            growing="true"
-                            growingThreshold="10"
+                            items="{ path: 'ui>/invoice/Transactions' }"
                             showSeparators="None"
                             class="transactionList"
-                            noDataText="Ainda não há movimentações para esta pessoa."
+                            noDataText="Ainda não há movimentações para este período."
                         >
                             <CustomListItem>
                                 <HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="transactionItem">
@@ -128,7 +140,58 @@
                                         number="{
                                             parts: [
                                                 { path: 'Amount' },
-                                                { path: 'Currency' }
+                                                { path: '$ui>/invoice/Currency/code' }
+                                            ],
+                                            formatter: 'formatter.formatCurrency'
+                                        }"
+                                        class="transactionAmount"
+                                    />
+                                </HBox>
+                            </CustomListItem>
+                        </List>
+                    </VBox>
+
+                    <VBox class="surfaceCard categoriesPanel">
+                        <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
+                            <VBox><Title text="Gastos por categoria" level="H3" /><Text text="Distribuição do período" class="sectionHint" /></VBox>
+                            <Button icon="sap-icon://add" type="Transparent" press=".onOpenCategoryDialog" tooltip="{i18n>categoryAddButton}" />
+                        </HBox>
+                        <List
+                            items="{ path: 'ui>/categories' }"
+                            showSeparators="None"
+                            class="categoryList"
+                            noDataText="Nenhuma categoria com gastos neste período."
+                        >
+                            <CustomListItem press=".onCategoryPress">
+                                <HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="categoryItem">
+                                    <HBox alignItems="Center" class="categoryItemMain">
+                                        <Avatar
+                                            src="{
+                                                parts: [ { path: 'CategoryImagePath' } ],
+                                                formatter: 'formatter.imageUrl'
+                                            }"
+                                            displaySize="Custom"
+                                            customDisplaySize="2.75rem"
+                                            displayShape="Circle"
+                                            initials="{Name}"
+                                            class="categoryItemAvatar"
+                                        />
+                                        <VBox>
+                                            <Text text="{Name}" class="transactionTitle" />
+                                            <ProgressIndicator
+                                                percentValue="{Percent}"
+                                                displayValue="{Percent}%"
+                                                state="None"
+                                                width="12rem"
+                                                class="categoryProgress"
+                                            />
+                                        </VBox>
+                                    </HBox>
+                                    <ObjectNumber
+                                        number="{
+                                            parts: [
+                                                { path: 'Total' },
+                                                { path: 'CurrencyCode' }
                                             ],
                                             formatter: 'formatter.formatCurrency'
                                         }"
@@ -179,67 +242,6 @@
                     </VBox>
                 </HBox>
             </VBox>
-
-            <Dialog id="expenseDialog" title="Registrar um gasto" class="financeDialog" contentWidth="28rem">
-                <VBox class="dialogContent">
-                    <Text text="Registre agora e acompanhe o impacto no seu próximo fechamento." class="dialogIntro" />
-                    <Label text="Descrição" labelFor="expenseDescription" /><Input id="expenseDescription" value="{ui>/newExpense/description}" placeholder="Ex.: Mercado da semana" />
-                    <Label text="Valor" labelFor="expenseAmount" /><Input id="expenseAmount" value="{ui>/newExpense/amount}" type="Number" placeholder="0,00" />
-                    <Label text="Cartão" labelFor="expenseCard" />
-                    <Select
-                        id="expenseCard"
-                        selectedKey="{ui>/newExpense/cardId}"
-                        items="{
-                            path: '/Cards',
-                            filters: [
-                                { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPerson/ID}' }
-                            ]
-                        }"
-                    ><core:Item key="{ID}" text="{Name}" /></Select>
-                    <Label text="Categoria" labelFor="expenseCategory" />
-                    <Select
-                        id="expenseCategory"
-                        selectedKey="{ui>/newExpense/categoryId}"
-                        items="{
-                            path: '/Categories',
-                            filters: [
-                                { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPerson/ID}' }
-                            ]
-                        }"
-                    ><core:Item key="{ID}" text="{Name}" /></Select>
-                </VBox>
-                <beginButton><Button text="Registrar" type="Emphasized" press=".onCreateExpense" /></beginButton>
-                <endButton><Button text="Cancelar" press=".onCloseExpenseDialog" /></endButton>
-            </Dialog>
-
-            <Dialog id="cardDialog" title="Novo cartão" class="financeDialog" contentWidth="28rem">
-                <VBox class="dialogContent">
-                    <Text text="O cartão será criado como rascunho. Você poderá revisá-lo antes de publicar." class="dialogIntro" />
-                    <Label text="Nome do cartão" labelFor="cardName" /><Input id="cardName" value="{ui>/newCard/name}" placeholder="Ex.: Cartão principal" />
-                    <Label text="Limite" labelFor="cardLimit" /><Input id="cardLimit" value="{ui>/newCard/limit}" type="Number" placeholder="0,00" />
-                    <Label text="Moeda" labelFor="cardCurrency" />
-                    <Select id="cardCurrency" selectedKey="{ui>/newCard/currency}"><core:Item key="BRL" text="Real brasileiro (BRL)" /><core:Item key="USD" text="Dólar americano (USD)" /></Select>
-                </VBox>
-                <beginButton><Button text="Salvar rascunho" type="Emphasized" press=".onCreateCardDraft" /></beginButton>
-                <endButton><Button text="Cancelar" press=".onCloseCardDialog" /></endButton>
-            </Dialog>
-
-            <Dialog id="backupDialog" title="Restaurar backup" class="financeDialog" contentWidth="30rem">
-                <VBox class="dialogContent">
-                    <Text text="Selecione o arquivo .zip exportado para importar seus dados. As informações serão restauradas no serviço." class="dialogIntro" />
-                    <Label text="Arquivo de backup" labelFor="backupFileUploader" />
-                    <u:FileUploader
-                        id="backupFileUploader"
-                        buttonText="Escolher arquivo"
-                        placeholder="Nenhum arquivo selecionado"
-                        fileType="zip"
-                        change=".onBackupFileChange"
-                        width="100%"
-                    />
-                </VBox>
-                <beginButton><Button text="Restaurar" type="Emphasized" press=".onImportBackup" /></beginButton>
-                <endButton><Button text="Cancelar" press=".onCloseBackupDialog" /></endButton>
-            </Dialog>
         </content>
     </Page>
 </mvc:View>

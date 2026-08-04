@@ -9,6 +9,30 @@ sap.ui.define([], function () {
         odataService: ""
       };
     }
+    static setServiceUrl(url) {
+      const globalWindow = window;
+      if (!globalWindow.__EXPENSE_MANAGER_CONFIG__) {
+        globalWindow.__EXPENSE_MANAGER_CONFIG__ = {
+          btpHost: "",
+          odataService: ""
+        };
+      }
+      globalWindow.__EXPENSE_MANAGER_CONFIG__.odataService = url;
+    }
+    static setLocalOverrides() {
+      const globalWindow = window;
+      const config = globalWindow.__EXPENSE_MANAGER_CONFIG__ ?? {
+        btpHost: "",
+        odataService: ""
+      };
+      globalWindow.__EXPENSE_MANAGER_CONFIG__ = config;
+      config.odataService = "/api/service/ExpenseManager/";
+      if (config.auth) {
+        config.auth.tokenEndpoint = "/auth/login";
+        config.auth.refreshEndpoint = "/auth/refresh";
+        config.auth.redirectUri = "";
+      }
+    }
     static createAuthorizationFlow() {
       const config = this.getConfig().auth;
       if (!config || !config.clientId || !config.authDomain) {

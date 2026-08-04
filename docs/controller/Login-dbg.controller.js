@@ -1,4 +1,4 @@
-sap.ui.define(["./BaseController", "../auth/AuthenticationService", "../util/Environment", "sap/m/MessageToast"], function (___BaseController, ___auth_AuthenticationService, __Environment, MessageToast) {
+sap.ui.define(["./BaseController", "../auth/AuthenticationService", "../util/Environment", "sap/m/MessageToast", "sap/m/MessageBox"], function (___BaseController, ___auth_AuthenticationService, __Environment, MessageToast, MessageBox) {
   "use strict";
 
   function _interopRequireDefault(obj) {
@@ -14,15 +14,27 @@ sap.ui.define(["./BaseController", "../auth/AuthenticationService", "../util/Env
         if (authenticated) {
           this.navTo("Home");
         }
+      }).catch(() => {
+        this.showBackendUnavailable();
       });
     }
     async onLogin() {
-      await AuthenticationService.login();
-      if (Environment.current() === EnvironmentType.GITHUB) {
-        MessageToast.show("Redirecionando para a autenticação do XSUAA...");
+      try {
+        await AuthenticationService.login();
+      } catch (error) {
+        this.showBackendUnavailable();
         return;
       }
-      MessageToast.show("Aguarde a autenticação do BTP");
+      if (Environment.current() === EnvironmentType.GITHUB || Environment.current() === EnvironmentType.LOCAL) {
+        MessageToast.show(this.getText("loginRedirecting"));
+        return;
+      }
+      MessageToast.show(this.getText("loginAwaitBtp"));
+    }
+    showBackendUnavailable() {
+      if (Environment.current() === EnvironmentType.GITHUB) {
+        MessageBox.error(this.getText("backendUnavailableLogin"));
+      }
     }
   }
   return Login;

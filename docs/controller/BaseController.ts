@@ -21,4 +21,8 @@ export abstract class BaseController extends Controller {
             .getResourceBundle() as ResourceBundle;
     }
 
+    protected getText(key: string, parameters?: string[]): string {
+        return this.getResourceBundle().getText(key, parameters) ?? key;
+    }
+
 }

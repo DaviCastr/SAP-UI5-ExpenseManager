@@ -1,30 +1,43 @@
 import JSONModel from "sap/ui/model/json/JSONModel";
 import ODataModel from "sap/ui/model/odata/v4/ODataModel";
-import Filter from "sap/ui/model/Filter";
-import FilterOperator from "sap/ui/model/FilterOperator";
 import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import Dialog from "sap/m/Dialog";
+import Control from "sap/ui/core/Control";
 import Event from "sap/ui/base/Event";
+import Context from "sap/ui/model/Context";
+import Fragment from "sap/ui/core/Fragment";
+import XMLView from "sap/ui/core/mvc/XMLView";
 import { BaseController } from "./BaseController";
 import { AuthenticationService } from "../auth/AuthenticationService";
 import Environment, { EnvironmentType } from "../util/Environment";
 import { formatCurrency } from "../util/format";
 import {
-    createBackupRow,
-    uploadBackupStream,
+    getCompleteInvoice,
+    getTransactionsByCategory,
+    CompleteInvoiceReturnProperties,
+    CategoryTransactionsProperties,
+    CategoryBreakdownItem
+} from "../util/expenseApi";
+import {
     requestExportBackup,
     fetchBackupStream,
     deleteBackupRow,
     downloadBlob
 } from "../util/backupApi";
+import { isSessionExpiredError } from "../util/http";
 
 interface Person {
     ID: string;
     Name: string;
     Income: number;
     ExpenseTarget: number;
-    Currency: string;
+    Currency: unknown;
+}
+
+interface Period {
+    year: number;
+    month: number;
 }
 
 interface Summary {
@@ -51,8 +64,24 @@ const EMPTY_SUMMARY: Summary = {
     trendIcon: "sap-icon://trend-up"
 };
 
+function resolveCurrency(currency: unknown, fallback = "BRL"): string {
+    if (typeof currency === "string" && currency) {
+        return currency;
+    }
+    if (currency && typeof currency === "object") {
+        return (currency as { code?: string }).code || fallback;
+    }
+    return fallback;
+}
+
 export default class Home extends BaseController {
-    private backupFile: File | null = null;
+    private _expenseDialog?: Promise<Dialog>;
+    private _backupDialog?: Promise<Dialog>;
+    private _personDialog?: Promise<Dialog>;
+    private _cardDialog?: Promise<Dialog>;
+    private _categoryDialog?: Promise<Dialog>;
+    private _categoryDetailDialog?: Promise<Dialog>;
+    private _simulationDialog?: Promise<Dialog>;
 
     private get uiModel(): JSONModel {
         return this.getOwnerComponent()?.getModel("ui") as JSONModel;
@@ -62,29 +91,24 @@ export default class Home extends BaseController {
         void this.bootstrap();
     }
 
-    private async bootstrap(): Promise<void> {
-        const model = await this.waitForServiceModel();
+    public async bootstrap(): Promise<void> {
+        const ready = await this.waitForServiceModel();
 
-        if (!model) {
-            if (Environment.current() !== EnvironmentType.GITHUB) {
-                MessageBox.error("Não foi possível conectar ao serviço financeiro.");
-            }
+        if (!ready) {
             return;
         }
 
-        await this.loadPersons(model);
+        try {
+            await this.loadPersons(this.getServiceModel());
+        } catch (error) {
+            if (Environment.current() !== EnvironmentType.GITHUB) {
+                MessageBox.error(this.getText("backendUnavailable"));
+            }
+        }
     }
 
     public onPersonChange(): void {
-        const ui = this.uiModel;
-        const personId = ui.getProperty("/selectedPerson/ID") as string;
-        const persons = ui.getProperty("/persons") as Person[];
-        const person = persons.find((item) => item.ID === personId);
-
-        if (person) {
-            const model = this.getOwnerComponent()?.getModel() as ODataModel;
-            void this.loadPersonData(model, person);
-        }
+        void this.loadPeriodData();
     }
 
     public async onLogout(): Promise<void> {
@@ -93,112 +117,128 @@ export default class Home extends BaseController {
     }
 
     public onOpenExpenseDialog(): void {
+        const oView = this.getView() as XMLView;
         this.uiModel.setProperty("/newExpense", { description: "", amount: "", cardId: "", categoryId: "" });
-        (this.byId("expenseDialog") as Dialog).open();
-    }
 
-    public onCloseExpenseDialog(): void {
-        (this.byId("expenseDialog") as Dialog).close();
-    }
-
-    public async onCreateExpense(): Promise<void> {
-        const expense = this.uiModel.getProperty("/newExpense") as { description: string; amount: string; cardId: string; categoryId: string };
-        if (!expense.description || !expense.amount || !expense.cardId || !expense.categoryId) {
-            MessageBox.warning("Preencha descrição, valor, cartão e categoria para continuar.");
-            return;
+        if (!this._expenseDialog) {
+            this._expenseDialog = this.loadFragmentDialog(oView, "AddExpense");
         }
 
-        const model = this.getServiceModel();
-        const action = model.bindContext("/AddCardExpense(...)");
-        action.setParameter("CardId", expense.cardId);
-        action.setParameter("CategoryId", expense.categoryId);
-        action.setParameter("Description", expense.description);
-        action.setParameter("Value", Number(expense.amount.replace(",", ".")));
-        action.setParameter("Currency", "BRL");
-        action.setParameter("TransactionDate", new Date().toISOString().slice(0, 10));
-        action.setParameter("Installments", 1);
-        action.setParameter("FixedExpense", false);
+        void this._expenseDialog.then((dialog) => dialog.open());
+    }
 
-        try {
-            await action.invoke();
-            (this.byId("expenseDialog") as Dialog).close();
-            MessageToast.show("Gasto registrado com sucesso.");
-        } catch (error) {
-            MessageBox.error("Não foi possível registrar o gasto. Verifique sua conexão e tente novamente.");
+    public onOpenPersonDialog(): void {
+        const oView = this.getView() as XMLView;
+        this.uiModel.setProperty("/newPerson", { name: "", email: "", phone: "", income: "", currency: "BRL", target: "" });
+
+        if (!this._personDialog) {
+            this._personDialog = this.loadFragmentDialog(oView, "AddPerson");
         }
+
+        void this._personDialog.then((dialog) => dialog.open());
     }
 
     public onOpenCardDialog(): void {
+        const oView = this.getView() as XMLView;
         this.uiModel.setProperty("/newCard", { name: "", limit: "", currency: "BRL" });
-        (this.byId("cardDialog") as Dialog).open();
+
+        if (!this._cardDialog) {
+            this._cardDialog = this.loadFragmentDialog(oView, "AddCard");
+        }
+
+        void this._cardDialog.then((dialog) => dialog.open());
     }
 
-    public onCloseCardDialog(): void {
-        (this.byId("cardDialog") as Dialog).close();
+    public onOpenCategoryDialog(): void {
+        const oView = this.getView() as XMLView;
+        this.uiModel.setProperty("/newCategory", { name: "" });
+
+        if (!this._categoryDialog) {
+            this._categoryDialog = this.loadFragmentDialog(oView, "AddCategory");
+        }
+
+        void this._categoryDialog.then((dialog) => dialog.open());
     }
 
-    public async onCreateCardDraft(): Promise<void> {
-        const card = this.uiModel.getProperty("/newCard") as { name: string; limit: string; currency: string };
-        if (!card.name || !card.limit) {
-            MessageBox.warning("Informe o nome e o limite do cartão.");
+    public onPreviousMonth(): void {
+        this.navigateMonth(-1);
+    }
+
+    public onNextMonth(): void {
+        this.navigateMonth(1);
+    }
+
+    public onThisMonth(): void {
+        const now = new Date();
+        this.uiModel.setProperty("/period", { year: now.getFullYear(), month: now.getMonth() + 1 });
+        void this.loadPeriodData();
+    }
+
+    public onCategoryPress(oEvent: Event): void {
+        const source = oEvent.getSource<Control>();
+        const bindingContext = source?.getBindingContext("ui") as Context | undefined;
+        const category = bindingContext?.getObject() as CategoryBreakdownItem | undefined;
+
+        if (!category) {
             return;
         }
 
-        const model = this.getServiceModel();
-        const binding = model.bindList("/Cards", undefined, undefined, undefined, { $$updateGroupId: "draft" });
-        binding.create({
-            Name: card.name,
-            Limit: Number(card.limit.replace(",", ".")),
-            AvailableLimit: Number(card.limit.replace(",", ".")),
-            Currency_code: card.currency,
-            DueDay: 10,
-            ClosingDay: 3
-        });
+        const oView = this.getView() as XMLView;
+        const ui = this.uiModel;
+        const person = ui.getProperty("/selectedPerson") as Person;
+        const period = ui.getProperty("/period") as Period;
 
-        try {
-            await model.submitBatch("draft");
-            (this.byId("cardDialog") as Dialog).close();
-            MessageToast.show("Cartão salvo como rascunho. Revise-o antes de publicar.");
-        } catch (error) {
-            MessageBox.error("Não foi possível salvar o rascunho do cartão.");
-        }
+        ui.setProperty("/busy", true);
+
+        void getTransactionsByCategory(person.ID, category.ID, false, period.year, period.month)
+            .then((result: CategoryTransactionsProperties) => {
+                ui.setProperty("/categoryDetail", result);
+                if (!this._categoryDetailDialog) {
+                    this._categoryDetailDialog = this.loadFragmentDialog(oView, "CategoryDetail");
+                }
+                return this._categoryDetailDialog;
+            })
+            .then((dialog) => dialog.open())
+            .catch((error) => {
+                if (isSessionExpiredError(error)) {
+                    return;
+                }
+                MessageBox.error(this.getText("errorLoadCategoryDetail"));
+            })
+            .finally(() => {
+                ui.setProperty("/busy", false);
+            });
     }
 
-    public onBackupFileChange(event: Event): void {
-        const parameters = event.getParameters() as { files?: File[] };
-        const files = parameters.files;
-        this.backupFile = files && files.length > 0 ? files[0] : null;
+    public onOpenSimulationDialog(): void {
+        const oView = this.getView() as XMLView;
+        const now = new Date();
+        const ui = this.uiModel;
+
+        if (!ui.getProperty("/simulation")) {
+            ui.setProperty("/simulation", { month: String(now.getMonth() + 1), year: String(now.getFullYear()) });
+        }
+        if (!ui.getProperty("/simulationMonthOptions")) {
+            const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            ui.setProperty("/simulationMonthOptions", monthNames.map((name, index) => ({ key: String(index + 1), text: name })));
+        }
+        ui.setProperty("/simulationResult", null);
+
+        if (!this._simulationDialog) {
+            this._simulationDialog = this.loadFragmentDialog(oView, "Simulation");
+        }
+
+        void this._simulationDialog.then((dialog) => dialog.open());
     }
 
     public onRestoreBackup(): void {
-        this.backupFile = null;
-        (this.byId("backupDialog") as Dialog).open();
-    }
+        const oView = this.getView() as XMLView;
 
-    public onCloseBackupDialog(): void {
-        (this.byId("backupDialog") as Dialog).close();
-    }
-
-    public async onImportBackup(): Promise<void> {
-        if (!this.backupFile) {
-            MessageBox.warning("Selecione um arquivo .zip de backup para continuar.");
-            return;
+        if (!this._backupDialog) {
+            this._backupDialog = this.loadFragmentDialog(oView, "Backup");
         }
 
-        const ui = this.uiModel;
-        ui.setProperty("/busy", true);
-
-        try {
-            const row = await createBackupRow();
-            await uploadBackupStream(row.ID, this.backupFile);
-            (this.byId("backupDialog") as Dialog).close();
-            MessageToast.show("Backup restaurado com sucesso.");
-            await this.bootstrap();
-        } catch (error) {
-            MessageBox.error("Não foi possível restaurar o backup. Verifique se o arquivo é um backup válido.");
-        } finally {
-            ui.setProperty("/busy", false);
-        }
+        void this._backupDialog.then((dialog) => dialog.open());
     }
 
     public async onExportBackup(): Promise<void> {
@@ -210,38 +250,69 @@ export default class Home extends BaseController {
             const blob = await fetchBackupStream(guid);
             downloadBlob(blob, `meu-fluxo-backup-${new Date().toISOString().slice(0, 10)}.zip`);
             await deleteBackupRow(guid);
-            MessageToast.show("Backup exportado com sucesso.");
+            MessageToast.show(this.getText("backupExported"));
         } catch (error) {
-            MessageBox.error("Não foi possível exportar o backup. Verifique sua conexão.");
+            if (isSessionExpiredError(error)) {
+                return;
+            }
+            MessageBox.error(this.getText("errorExportBackup"));
         } finally {
             ui.setProperty("/busy", false);
         }
     }
 
-    private async waitForServiceModel(): Promise<ODataModel | null> {
+    public async refresh(): Promise<void> {
+        try {
+            const model = this.getServiceModel();
+            model.refresh();
+        } catch (error) {
+            // The period data below is reloaded through the API regardless of the OData model.
+        }
+
+        await this.loadPeriodData();
+    }
+
+    private async waitForServiceModel(): Promise<boolean> {
+        const component = this.getOwnerComponent() as unknown as {
+            getServiceModelReady?: () => Promise<boolean>;
+        };
+
+        if (typeof component.getServiceModelReady === "function") {
+            const ready = await component.getServiceModelReady();
+
+            if (ready) {
+                return true;
+            }
+
+            return false;
+        }
+
         const environment = Environment.current();
 
         for (let attempt = 0; attempt < 40; attempt++) {
             const model = this.getOwnerComponent()?.getModel() as ODataModel | undefined;
 
             if (model) {
-                const serviceUrl = typeof (model as any).getServiceUrl === "function"
-                    ? (model as any).getServiceUrl()
-                    : "";
+                const serviceUrl = this.getServiceUrl(model);
 
                 if (environment === EnvironmentType.GITHUB) {
                     if (serviceUrl && serviceUrl.indexOf("/api/") !== 0) {
-                        return model;
+                        return true;
                     }
                 } else {
-                    return model;
+                    return true;
                 }
             }
 
             await new Promise((resolve) => setTimeout(resolve, 200));
         }
 
-        return null;
+        return false;
+    }
+
+    private getServiceUrl(model: ODataModel): string {
+        const maybeOdata = model as unknown as { getServiceUrl?: () => string };
+        return typeof maybeOdata.getServiceUrl === "function" ? maybeOdata.getServiceUrl() : "";
     }
 
     private async loadPersons(model: ODataModel): Promise<void> {
@@ -258,6 +329,8 @@ export default class Home extends BaseController {
             if (!persons.length) {
                 ui.setProperty("/personsEmpty", true);
                 ui.setProperty("/selectedPerson", { ID: "" });
+                ui.setProperty("/invoice", { Transactions: [] });
+                ui.setProperty("/categories", []);
                 ui.setProperty("/summary", { ...EMPTY_SUMMARY });
                 ui.setProperty("/monthLabel", "Nenhuma pessoa para gerenciar");
                 return;
@@ -270,92 +343,151 @@ export default class Home extends BaseController {
 
             ui.setProperty("/selectedPerson", selected || { ID: "" });
 
-            if (selected) {
-                await this.loadPersonData(model, selected);
-            } else {
-                ui.setProperty("/monthLabel", this.currentMonthLabel());
+            if (!ui.getProperty("/period")) {
+                const now = new Date();
+                ui.setProperty("/period", { year: now.getFullYear(), month: now.getMonth() + 1 });
+            }
+
+            if (selected?.ID) {
+                await this.loadPeriodData();
             }
         } catch (error) {
-            MessageBox.error("Não foi possível carregar suas pessoas. Verifique sua conexão.");
+            if (isSessionExpiredError(error)) {
+                return;
+            }
+            MessageBox.error(this.getText("errorLoadPersons"));
         }
     }
 
-    private async loadPersonData(model: ODataModel, person: Person): Promise<void> {
+    private async loadPeriodData(): Promise<void> {
         const ui = this.uiModel;
+        const person = ui.getProperty("/selectedPerson") as Person | undefined;
+
+        if (!person?.ID) {
+            return;
+        }
+
+        const period = (ui.getProperty("/period") as Period) || this.currentPeriod();
         ui.setProperty("/busy", true);
 
         try {
-            const now = new Date();
-            const startPrevious = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const startCurrent = new Date(now.getFullYear(), now.getMonth(), 1);
-            const startNext = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-            const toIso = (date: Date) => date.toISOString().slice(0, 10);
+            const previous = this.shiftMonth(period.year, period.month, -1);
+            const [invoice, previousInvoice] = await Promise.all([
+                getCompleteInvoice(person.ID, period.year, period.month),
+                getCompleteInvoice(person.ID, previous.year, previous.month)
+            ]);
 
-            const filters = [
-                new Filter({ path: "Invoice/Card/Person/ID", operator: FilterOperator.EQ, value1: person.ID }),
-                new Filter({ path: "Date", operator: FilterOperator.GE, value1: toIso(startPrevious) }),
-                new Filter({ path: "Date", operator: FilterOperator.LT, value1: toIso(startNext) })
-            ];
+            ui.setProperty("/invoice", invoice);
+            ui.setProperty("/period", period);
 
-            const binding = model.bindList("/Transactions", undefined, undefined, filters, {
-                $select: "Amount,Date,Currency"
-            });
-            const contexts = await binding.requestContexts();
-
-            let currentExpenses = 0;
-            let previousExpenses = 0;
-
-            contexts.forEach((context) => {
-                const transaction = context.getObject();
-                const amount = Number(transaction.Amount) || 0;
-                const date = new Date(transaction.Date);
-
-                if (date >= startCurrent && date < startNext) {
-                    currentExpenses += amount;
-                } else if (date >= startPrevious && date < startCurrent) {
-                    previousExpenses += amount;
-                }
-            });
-
+            const currency = invoice.Currency?.code || resolveCurrency(person.Currency);
             const income = Number(person.Income) || 0;
+            const expenses = Number(invoice.TotalAmount) || 0;
+            const previousExpenses = Number(previousInvoice.TotalAmount) || 0;
             const target = Number(person.ExpenseTarget) || 0;
-            const available = income - currentExpenses;
-            const savings = income - currentExpenses;
-            const currency = person.Currency || "BRL";
+            const available = income - expenses;
+            const savings = income - expenses;
 
             const trend = previousExpenses > 0
-                ? ((currentExpenses - previousExpenses) / previousExpenses) * 100
-                : (currentExpenses > 0 ? 100 : 0);
+                ? ((expenses - previousExpenses) / previousExpenses) * 100
+                : (expenses > 0 ? 100 : 0);
 
             const trendText = previousExpenses > 0
                 ? `${Math.abs(Math.round(trend))}% ${trend <= 0 ? "menos" : "mais"} que o mês anterior`
-                : (currentExpenses > 0 ? "Sem comparação com o mês anterior" : "Sem gastos registrados este mês");
+                : (expenses > 0 ? "Sem comparação com o mês anterior" : "Sem gastos registrados no período");
             const trendIcon = trend > 0 ? "sap-icon://trend-down" : "sap-icon://trend-up";
 
-            const targetPercent = target > 0 ? Math.round((currentExpenses / target) * 100) : 0;
+            const targetPercent = target > 0 ? Math.round((expenses / target) * 100) : 0;
 
             ui.setProperty("/summary", {
                 available: formatCurrency(available, currency),
                 income: formatCurrency(income, currency),
-                expenses: formatCurrency(currentExpenses, currency),
+                expenses: formatCurrency(expenses, currency),
                 savings: formatCurrency(savings, currency),
                 target: formatCurrency(target, currency),
-                expenseHint: target > 0 ? `${targetPercent}% da meta utilizada` : `${Math.round(currentExpenses)} de gastos no mês`,
-                targetHint: target > 0 ? "Meta planejada para o mês" : "Defina uma meta de gasto",
+                expenseHint: target > 0 ? `${targetPercent}% da meta utilizada` : `${Math.round(expenses)} de gastos no período`,
+                targetHint: target > 0 ? "Meta planejada para o período" : "Defina uma meta de gasto",
                 trendText,
                 trendIcon
             });
-            ui.setProperty("/monthLabel", this.currentMonthLabel());
+            ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
+
+            this.buildCategories(invoice);
         } catch (error) {
-            MessageBox.error("Não foi possível carregar os dados desta pessoa.");
+            if (isSessionExpiredError(error)) {
+                return;
+            }
+            MessageBox.error(this.getText("errorLoadPeriod"));
         } finally {
             ui.setProperty("/busy", false);
         }
     }
 
-    private currentMonthLabel(): string {
-        const label = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    private buildCategories(invoice: CompleteInvoiceReturnProperties): void {
+        const map = new Map<string, { ID: string; Name: string; CategoryImagePath?: string; Total: number }>();
+        const total = Number(invoice.TotalAmount) || 0;
+
+        for (const transaction of invoice.Transactions || []) {
+            if (!transaction.Category) {
+                continue;
+            }
+            const category = transaction.Category;
+            const entry = map.get(category.ID) || {
+                ID: category.ID,
+                Name: category.Name,
+                CategoryImagePath: category.ImagePath,
+                Total: 0
+            };
+            entry.Total += Number(transaction.Amount) || 0;
+            map.set(category.ID, entry);
+        }
+
+        const currency = invoice.Currency?.code || "BRL";
+        const categories: CategoryBreakdownItem[] = Array.from(map.values())
+            .map((item) => ({
+                ID: item.ID,
+                Name: item.Name,
+                CategoryImagePath: item.CategoryImagePath,
+                Total: item.Total,
+                Percent: total > 0 ? Math.round((item.Total / total) * 100) : 0,
+                CurrencyCode: currency
+            }))
+            .sort((a, b) => b.Total - a.Total);
+
+        this.uiModel.setProperty("/categories", categories);
+    }
+
+    private navigateMonth(delta: number): void {
+        const period = (this.uiModel.getProperty("/period") as Period) || this.currentPeriod();
+        this.uiModel.setProperty("/period", this.shiftMonth(period.year, period.month, delta));
+        void this.loadPeriodData();
+    }
+
+    private shiftMonth(year: number, month: number, delta: number): Period {
+        const total = year * 12 + (month - 1) + delta;
+        return {
+            year: Math.floor(total / 12),
+            month: (total % 12) + 1
+        };
+    }
+
+    private currentPeriod(): Period {
+        const now = new Date();
+        return { year: now.getFullYear(), month: now.getMonth() + 1 };
+    }
+
+    private periodLabel(year: number, month: number): string {
+        const label = new Date(year, month - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
         return `Visão geral • ${label}`;
+    }
+
+    private loadFragmentDialog(oView: XMLView, fragmentName: string): Promise<Dialog> {
+        return Fragment.load({
+            name: `apps.dflc.expensemanager.view.fragments.${fragmentName}`
+        }).then((dialog) => {
+            oView.addDependent(dialog as Control);
+            return dialog as Dialog;
+        });
     }
 
     private getServiceModel(): ODataModel {

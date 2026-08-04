@@ -1,4 +1,4 @@
-sap.ui.define(["../../util/Environment", "./BtpAuthenticationProvider", "./GithubPagesAuthenticationProvider", "./MockAuthenticationProvider"], function (__Environment, ___BtpAuthenticationProvider, ___GithubPagesAuthenticationProvider, ___MockAuthenticationProvider) {
+sap.ui.define(["../../util/Environment", "./BtpAuthenticationProvider", "./GithubPagesAuthenticationProvider", "./MockAuthenticationProvider", "./XsuaaAuthHelper"], function (__Environment, ___BtpAuthenticationProvider, ___GithubPagesAuthenticationProvider, ___MockAuthenticationProvider, ___XsuaaAuthHelper) {
   "use strict";
 
   function _interopRequireDefault(obj) {
@@ -9,6 +9,7 @@ sap.ui.define(["../../util/Environment", "./BtpAuthenticationProvider", "./Githu
   const BtpAuthenticationProvider = ___BtpAuthenticationProvider["BtpAuthenticationProvider"];
   const GithubPagesAuthenticationProvider = ___GithubPagesAuthenticationProvider["GithubPagesAuthenticationProvider"];
   const MockAuthenticationProvider = ___MockAuthenticationProvider["MockAuthenticationProvider"];
+  const XsuaaAuthHelper = ___XsuaaAuthHelper["XsuaaAuthHelper"];
   class AuthenticatedProviderFactory {
     static create() {
       switch (Environment.current()) {
@@ -17,6 +18,7 @@ sap.ui.define(["../../util/Environment", "./BtpAuthenticationProvider", "./Githu
         case EnvironmentType.GITHUB:
           return new GithubPagesAuthenticationProvider();
         case EnvironmentType.LOCAL:
+          return XsuaaAuthHelper.getConfig().auth ? new GithubPagesAuthenticationProvider() : new MockAuthenticationProvider();
         default:
           return new MockAuthenticationProvider();
       }

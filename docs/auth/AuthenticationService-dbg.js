@@ -3,6 +3,7 @@ sap.ui.define(["./storage/SessionStorage"], function (___storage_SessionStorage)
 
   const SessionStorage = ___storage_SessionStorage["SessionStorage"];
   class AuthenticationService {
+    static sessionExpiredHandler = null;
     static initialize(provider) {
       this.provider = provider;
     }
@@ -19,6 +20,13 @@ sap.ui.define(["./storage/SessionStorage"], function (___storage_SessionStorage)
     }
     static async isAuthenticated() {
       return this.provider.isAuthenticated();
+    }
+    static onSessionExpired(handler) {
+      this.sessionExpiredHandler = handler;
+    }
+    static notifySessionExpired() {
+      SessionStorage.clear();
+      this.sessionExpiredHandler?.();
     }
   }
   var __exports = {

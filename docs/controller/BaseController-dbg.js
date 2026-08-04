@@ -11,6 +11,9 @@ sap.ui.define(["sap/ui/core/mvc/Controller", "sap/ui/core/UIComponent"], functio
     getResourceBundle() {
       return this.getOwnerComponent().getModel("i18n").getResourceBundle();
     }
+    getText(key, parameters) {
+      return this.getResourceBundle().getText(key, parameters) ?? key;
+    }
   }
   var __exports = {
     __esModule: true

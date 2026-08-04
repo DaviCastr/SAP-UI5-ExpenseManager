@@ -1,29 +1,7 @@
-sap.ui.define(["../auth/AuthenticationService", "../auth/providers/XsuaaAuthHelper"], function (___auth_AuthenticationService, ___auth_providers_XsuaaAuthHelper) {
+sap.ui.define(["./http"], function (___http) {
   "use strict";
 
-  const AuthenticationService = ___auth_AuthenticationService["AuthenticationService"];
-  const XsuaaAuthHelper = ___auth_providers_XsuaaAuthHelper["XsuaaAuthHelper"];
-  function getToken() {
-    const session = AuthenticationService.getSession();
-    return session?.accessToken || "";
-  }
-  function getServiceUrl() {
-    return XsuaaAuthHelper.getConfig().odataService;
-  }
-  function buildHeaders(init) {
-    const headers = new Headers(init.headers || {});
-    const token = getToken();
-    if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
-    }
-    return headers;
-  }
-  async function request(path, init = {}) {
-    return fetch(`${getServiceUrl()}${path}`, {
-      ...init,
-      headers: buildHeaders(init)
-    });
-  }
+  const request = ___http["request"];
   async function createBackupRow() {
     const response = await request("Backups", {
       method: "POST",

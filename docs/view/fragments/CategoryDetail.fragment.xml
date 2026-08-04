@@ -1,0 +1,99 @@
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m"
+    xmlns:l="sap.ui.layout"
+    id="CategoryDetail"
+>
+    <Dialog
+        id="categoryDetailDialog"
+        title="{i18n>categoryDetailTitle}"
+        class="financeDialog"
+        contentWidth="34rem"
+        contentHeight="70%"
+        core:require="{
+            formatter: 'apps/dflc/expensemanager/util/format',
+            handler: 'apps/dflc/expensemanager/controller/fragments/CategoryDetail'
+        }"
+    >
+        <content>
+            <VBox class="dialogContent">
+                <HBox alignItems="Center" class="categoryDetailHeader">
+                    <Avatar
+                        src="{
+                            parts: [ { path: 'ui>/categoryDetail/ImagePath' } ],
+                            formatter: 'formatter.imageUrl'
+                        }"
+                        displaySize="Custom"
+                        customDisplaySize="3.5rem"
+                        displayShape="Circle"
+                        initials="{ui>/categoryDetail/Name}"
+                        class="categoryDetailAvatar"
+                    />
+                    <VBox>
+                        <Title text="{ui>/categoryDetail/Name}" level="H3" />
+                        <Text text="Total gasto no período" class="sectionHint" />
+                    </VBox>
+                    <ObjectNumber
+                        number="{
+                            parts: [ { path: 'ui>/categoryDetail/TotalAmount' }, { path: 'ui>/categoryDetail/Currency/code' } ],
+                            formatter: 'formatter.formatCurrency'
+                        }"
+                        class="categoryDetailTotal"
+                    />
+                </HBox>
+
+                <Accordion id="categoryAccordion" items="{ path: 'ui>/categoryDetail/Cards' }" visible="{= ${ui>/categoryDetail/Cards}.length > 0 }">
+                    <AccordionItem
+                        title="{
+                            parts: [ { path: 'Name' }, { path: 'TotalAmount' }, { path: '$ui>/categoryDetail/Currency/code' } ],
+                            formatter: 'formatter.formatCardTitle'
+                        }"
+                        icon="sap-icon://credit-card"
+                    >
+                        <VBox items="{ path: 'Invoices' }" class="categoryInvoiceList">
+                            <HBox class="categoryInvoiceItem" justifyContent="SpaceBetween" alignItems="Center">
+                                <VBox>
+                                    <Text text="{
+                                        parts: [ { path: 'Year' }, { path: 'Month' } ],
+                                        formatter: 'formatter.formatMonth'
+                                    }" class="transactionTitle" />
+                                    <Text text="{Description}" class="transactionDate" />
+                                </VBox>
+                                <ObjectNumber
+                                    number="{
+                                        parts: [ { path: 'TotalAmount' }, { path: '$ui>/categoryDetail/Currency/code' } ],
+                                        formatter: 'formatter.formatCurrency'
+                                    }"
+                                    class="transactionAmount"
+                                />
+                            </HBox>
+                            <List items="{ path: 'Transactions' }" showSeparators="Inner" class="transactionList" noDataText="Sem lançamentos neste período.">
+                                <CustomListItem>
+                                    <HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="transactionItem">
+                                        <VBox>
+                                            <Text text="{Description}" class="transactionTitle" />
+                                            <Text text="{ formatter: 'formatter.formatDate', path: 'Date' }" class="transactionDate" />
+                                        </VBox>
+                                        <ObjectNumber
+                                            number="{
+                                                parts: [ { path: 'Amount' }, { path: '$ui>/categoryDetail/Currency/code' } ],
+                                                formatter: 'formatter.formatCurrency'
+                                            }"
+                                            class="transactionAmount"
+                                        />
+                                    </HBox>
+                                </CustomListItem>
+                            </List>
+                        </VBox>
+                    </AccordionItem>
+                </Accordion>
+
+                <VBox visible="{= ${ui>/categoryDetail/Cards}.length === 0 }" class="categoryEmpty">
+                    <core:Icon src="sap-icon://blank-tag" class="categoryEmptyIcon" />
+                    <Text text="Nenhum gasto registrado para esta categoria no período." class="sectionHint" />
+                </VBox>
+            </VBox>
+        </content>
+        <beginButton><Button text="Fechar" press="handler.onFecharCategoria" /></beginButton>
+    </Dialog>
+</core:FragmentDefinition>
