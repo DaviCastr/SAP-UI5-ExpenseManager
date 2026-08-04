@@ -9,6 +9,8 @@ import JSONModel from "sap/ui/model/json/JSONModel";
 import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import { createEntity, uploadImage } from "../../util/entityApi";
+import { isSessionExpiredError } from "../../util/http";
+import { getText } from "../../util/i18n";
 import type Home from "../../controller/Home.controller";
 
 interface NewCard {
@@ -53,12 +55,12 @@ const AdicionarCartao = {
         const personId = uiModel.getProperty("/selectedPerson/ID") as string;
 
         if (!card.name || !card.limit) {
-            MessageBox.warning("Informe o nome e o limite do cartão.");
+            MessageBox.warning(getText(view, "errorFillRequiredFields"));
             return;
         }
 
         if (!personId) {
-            MessageBox.warning("Selecione uma pessoa antes de adicionar um cartão.");
+            MessageBox.warning(getText(view, "errorMissingPerson"));
             return;
         }
 
@@ -82,10 +84,13 @@ const AdicionarCartao = {
             }
 
             dialog.close();
-            MessageToast.show("Cartão adicionado com sucesso.");
+            MessageToast.show(getText(view, "cardAdded"));
             await (view.getController() as Home).refresh();
         } catch (error) {
-            MessageBox.error("Não foi possível adicionar o cartão. Verifique sua conexão e tente novamente.");
+            if (isSessionExpiredError(error)) {
+                return;
+            }
+            MessageBox.error(getText(view, "errorCreateCard"));
         } finally {
             uiModel.setProperty("/busy", false);
         }

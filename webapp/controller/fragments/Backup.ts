@@ -8,6 +8,8 @@ import JSONModel from "sap/ui/model/json/JSONModel";
 import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import { createBackupRow, uploadBackupStream } from "../../util/backupApi";
+import { isSessionExpiredError } from "../../util/http";
+import { getText } from "../../util/i18n";
 import type Home from "../../controller/Home.controller";
 
 let backupFile: File | null = null;
@@ -35,7 +37,7 @@ const Backup = {
         const uiModel = view.getModel("ui") as JSONModel;
 
         if (!backupFile) {
-            MessageBox.warning("Selecione um arquivo .zip de backup para continuar.");
+            MessageBox.warning(getText(view, "errorSelectBackupFile"));
             return;
         }
 
@@ -45,10 +47,13 @@ const Backup = {
             const row = await createBackupRow();
             await uploadBackupStream(row.ID, backupFile);
             dialog.close();
-            MessageToast.show("Backup restaurado com sucesso.");
+            MessageToast.show(getText(view, "backupRestored"));
             await (view.getController() as Home).bootstrap();
         } catch (error) {
-            MessageBox.error("Não foi possível restaurar o backup. Verifique se o arquivo é um backup válido.");
+            if (isSessionExpiredError(error)) {
+                return;
+            }
+            MessageBox.error(getText(view, "errorImportBackup"));
         } finally {
             uiModel.setProperty("/busy", false);
         }

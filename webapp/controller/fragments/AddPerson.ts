@@ -9,6 +9,8 @@ import JSONModel from "sap/ui/model/json/JSONModel";
 import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import { createEntity, uploadImage } from "../../util/entityApi";
+import { isSessionExpiredError } from "../../util/http";
+import { getText } from "../../util/i18n";
 import type Home from "../../controller/Home.controller";
 
 interface NewPerson {
@@ -55,7 +57,7 @@ const AdicionarPessoa = {
         const person = uiModel.getProperty("/newPerson") as NewPerson;
 
         if (!person.name || !person.email || !person.income || !person.currency || !person.target) {
-            MessageBox.warning("Preencha nome, e-mail, renda, moeda e meta de gasto para continuar.");
+            MessageBox.warning(getText(view, "errorFillRequiredFields"));
             return;
         }
 
@@ -78,10 +80,13 @@ const AdicionarPessoa = {
             }
 
             dialog.close();
-            MessageToast.show("Pessoa criada com sucesso.");
+            MessageToast.show(getText(view, "personCreated"));
             await (view.getController() as Home).bootstrap();
         } catch (error) {
-            MessageBox.error("Não foi possível criar a pessoa. Verifique sua conexão e tente novamente.");
+            if (isSessionExpiredError(error)) {
+                return;
+            }
+            MessageBox.error(getText(view, "errorCreatePerson"));
         } finally {
             uiModel.setProperty("/busy", false);
         }

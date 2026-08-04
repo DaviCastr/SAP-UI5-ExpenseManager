@@ -4,6 +4,8 @@ import XMLView from "sap/ui/core/mvc/XMLView";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import MessageBox from "sap/m/MessageBox";
 import { simulateExpenses } from "../../util/expenseApi";
+import { isSessionExpiredError } from "../../util/http";
+import { getText } from "../../util/i18n";
 
 interface SimulationState {
     month: string;
@@ -24,7 +26,7 @@ const Simulation = {
         const person = uiModel.getProperty("/selectedPerson") as { ID: string } | undefined;
 
         if (!person?.ID) {
-            MessageBox.warning("Selecione uma pessoa para simular os gastos.");
+            MessageBox.warning(getText(view, "errorMissingPerson"));
             return;
         }
 
@@ -32,7 +34,7 @@ const Simulation = {
         const month = Number(simulation.month);
 
         if (!year || !month) {
-            MessageBox.warning("Informe um mês e um ano válidos.");
+            MessageBox.warning(getText(view, "errorInvalidMonthYear"));
             return;
         }
 
@@ -42,7 +44,10 @@ const Simulation = {
             const result = await simulateExpenses(person.ID, year, month);
             uiModel.setProperty("/simulationResult", result);
         } catch (error) {
-            MessageBox.error("Não foi possível simular os gastos. Verifique sua conexão.");
+            if (isSessionExpiredError(error)) {
+                return;
+            }
+            MessageBox.error(getText(view, "errorSimulate"));
         } finally {
             uiModel.setProperty("/busy", false);
         }

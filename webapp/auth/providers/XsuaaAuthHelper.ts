@@ -36,6 +36,14 @@ export class XsuaaAuthHelper {
         };
     }
 
+    public static setServiceUrl(url: string): void {
+        const globalWindow = window as Window & typeof globalThis & { __EXPENSE_MANAGER_CONFIG__?: RuntimeConfig };
+        if (!globalWindow.__EXPENSE_MANAGER_CONFIG__) {
+            globalWindow.__EXPENSE_MANAGER_CONFIG__ = { btpHost: "", odataService: "" };
+        }
+        globalWindow.__EXPENSE_MANAGER_CONFIG__.odataService = url;
+    }
+
     public static createAuthorizationFlow(): { authorizeUrl: string; state: string } {
         const config = this.getConfig().auth;
 

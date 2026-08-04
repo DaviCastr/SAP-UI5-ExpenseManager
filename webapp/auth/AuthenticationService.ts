@@ -6,6 +6,8 @@ export class AuthenticationService {
 
     private static provider: IAuthenticationProvider;
 
+    private static sessionExpiredHandler: (() => void) | null = null;
+
     public static initialize(provider: IAuthenticationProvider): void {
 
         this.provider = provider;
@@ -37,6 +39,20 @@ export class AuthenticationService {
     public static async isAuthenticated(): Promise<boolean> {
 
         return this.provider.isAuthenticated();
+
+    }
+
+    public static onSessionExpired(handler: () => void): void {
+
+        this.sessionExpiredHandler = handler;
+
+    }
+
+    public static notifySessionExpired(): void {
+
+        SessionStorage.clear();
+
+        this.sessionExpiredHandler?.();
 
     }
 

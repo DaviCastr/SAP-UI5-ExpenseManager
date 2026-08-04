@@ -5,6 +5,8 @@ import JSONModel from "sap/ui/model/json/JSONModel";
 import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import { addCardExpense } from "../../util/expenseApi";
+import { isSessionExpiredError } from "../../util/http";
+import { getText } from "../../util/i18n";
 import type Home from "../../controller/Home.controller";
 
 interface NewExpense {
@@ -27,7 +29,7 @@ const AdicionarGasto = {
         const expense = uiModel.getProperty("/newExpense") as NewExpense;
 
         if (!expense.description || !expense.amount || !expense.cardId || !expense.categoryId) {
-            MessageBox.warning("Preencha descrição, valor, cartão e categoria para continuar.");
+            MessageBox.warning(getText(view, "errorFillRequiredFields"));
             return;
         }
 
@@ -46,10 +48,13 @@ const AdicionarGasto = {
             });
 
             dialog.close();
-            MessageToast.show("Gasto registrado com sucesso.");
+            MessageToast.show(getText(view, "expenseRegistered"));
             await (view.getController() as Home).refresh();
         } catch (error) {
-            MessageBox.error("Não foi possível registrar o gasto. Verifique sua conexão e tente novamente.");
+            if (isSessionExpiredError(error)) {
+                return;
+            }
+            MessageBox.error(getText(view, "errorRegisterExpense"));
         } finally {
             uiModel.setProperty("/busy", false);
         }

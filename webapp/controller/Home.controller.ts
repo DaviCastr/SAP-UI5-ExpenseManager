@@ -25,6 +25,7 @@ import {
     deleteBackupRow,
     downloadBlob
 } from "../util/backupApi";
+import { isSessionExpiredError } from "../util/http";
 
 interface Person {
     ID: string;
@@ -95,7 +96,7 @@ export default class Home extends BaseController {
 
         if (!model) {
             if (Environment.current() !== EnvironmentType.GITHUB) {
-                MessageBox.error("Não foi possível conectar ao serviço financeiro.");
+                MessageBox.error(this.getText("backendUnavailable"));
             }
             return;
         }
@@ -195,8 +196,11 @@ export default class Home extends BaseController {
                 return this._categoryDetailDialog;
             })
             .then((dialog) => dialog.open())
-            .catch(() => {
-                MessageBox.error("Não foi possível carregar os detalhes da categoria.");
+            .catch((error) => {
+                if (isSessionExpiredError(error)) {
+                    return;
+                }
+                MessageBox.error(this.getText("errorLoadCategoryDetail"));
             })
             .finally(() => {
                 ui.setProperty("/busy", false);
@@ -243,9 +247,12 @@ export default class Home extends BaseController {
             const blob = await fetchBackupStream(guid);
             downloadBlob(blob, `meu-fluxo-backup-${new Date().toISOString().slice(0, 10)}.zip`);
             await deleteBackupRow(guid);
-            MessageToast.show("Backup exportado com sucesso.");
+            MessageToast.show(this.getText("backupExported"));
         } catch (error) {
-            MessageBox.error("Não foi possível exportar o backup. Verifique sua conexão.");
+            if (isSessionExpiredError(error)) {
+                return;
+            }
+            MessageBox.error(this.getText("errorExportBackup"));
         } finally {
             ui.setProperty("/busy", false);
         }
@@ -328,7 +335,10 @@ export default class Home extends BaseController {
                 await this.loadPeriodData();
             }
         } catch (error) {
-            MessageBox.error("Não foi possível carregar suas pessoas. Verifique sua conexão.");
+            if (isSessionExpiredError(error)) {
+                return;
+            }
+            MessageBox.error(this.getText("errorLoadPersons"));
         }
     }
 
@@ -387,7 +397,10 @@ export default class Home extends BaseController {
 
             this.buildCategories(invoice);
         } catch (error) {
-            MessageBox.error("Não foi possível carregar os dados do período. Verifique sua conexão.");
+            if (isSessionExpiredError(error)) {
+                return;
+            }
+            MessageBox.error(this.getText("errorLoadPeriod"));
         } finally {
             ui.setProperty("/busy", false);
         }

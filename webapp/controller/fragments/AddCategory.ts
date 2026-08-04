@@ -9,6 +9,8 @@ import JSONModel from "sap/ui/model/json/JSONModel";
 import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import { createEntity, uploadImage } from "../../util/entityApi";
+import { isSessionExpiredError } from "../../util/http";
+import { getText } from "../../util/i18n";
 import type Home from "../../controller/Home.controller";
 
 interface NewCategory {
@@ -51,12 +53,12 @@ const AdicionarCategoria = {
         const personId = uiModel.getProperty("/selectedPerson/ID") as string;
 
         if (!category.name) {
-            MessageBox.warning("Informe o nome da categoria.");
+            MessageBox.warning(getText(view, "errorFillRequiredFields"));
             return;
         }
 
         if (!personId) {
-            MessageBox.warning("Selecione uma pessoa antes de adicionar uma categoria.");
+            MessageBox.warning(getText(view, "errorMissingPerson"));
             return;
         }
 
@@ -75,10 +77,13 @@ const AdicionarCategoria = {
             }
 
             dialog.close();
-            MessageToast.show("Categoria criada com sucesso.");
+            MessageToast.show(getText(view, "categoryCreated"));
             await (view.getController() as Home).refresh();
         } catch (error) {
-            MessageBox.error("Não foi possível criar a categoria. Verifique sua conexão e tente novamente.");
+            if (isSessionExpiredError(error)) {
+                return;
+            }
+            MessageBox.error(getText(view, "errorCreateCategory"));
         } finally {
             uiModel.setProperty("/busy", false);
         }
