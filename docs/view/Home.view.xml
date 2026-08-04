@@ -129,17 +129,26 @@
                 </HBox>
 
                 <HBox class="dashboardGrid" wrap="Wrap" visible="{= !${ui>/personsEmpty} }">
-                    <VBox id="periodSection" class="surfaceCard transactionsPanel">
+                    <VBox class="surfaceCard transactionsPanel">
                         <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
                             <VBox><Title text="{i18n>recentTransactionsTitle}" level="H3" /><Text text="{i18n>recentTransactionsHint}" class="sectionHint" /></VBox>
                             <Button icon="sap-icon://add" type="Transparent" press=".onOpenCategoryDialog" tooltip="{i18n>categoryAddButton}" />
                         </HBox>
                         <List
-                            items="{Transactions}"
+                            id="transactionsList"
+                            items="{
+                                path: '/Transactions',
+                                parameters: { $orderby: 'Date desc' },
+                                filters: [
+                                    { path: 'Category/Person/ID', operator: 'EQ', value: '{ui>/selectedPersonId}' },
+                                    { path: 'Invoice/Year', operator: 'EQ', value: '{ui>/period/year}' },
+                                    { path: 'Invoice/Month', operator: 'EQ', value: '{ui>/period/month}' }
+                                ]
+                            }"
                             showSeparators="None"
                             class="transactionList"
                             noDataText="{i18n>transactionsNoData}"
-                            dataReceived=".onTransactionsDataReceived"
+                            updateFinished=".onTransactionsDataReceived"
                         >
                             <CustomListItem>
                                 <HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="transactionItem">
@@ -154,7 +163,7 @@
                                         number="{
                                             parts: [
                                                 { path: 'Amount' },
-                                                { path: '../Currency/code' }
+                                                { path: 'Currency' }
                                             ],
                                             formatter: 'formatter.formatCurrency'
                                         }"

@@ -237,7 +237,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
     setupPersonSelector() {
       const select = this.byId("personSelect");
       const binding = select.getBinding("items");
-      binding?.attachDataReceived(() => {
+      const applyLoaded = () => {
         const contexts = binding.getContexts(0, 50);
         const empty = contexts.length === 0;
         if (empty) {
@@ -255,7 +255,11 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         } else if (!this.byId("personSection").getBindingContext()) {
           this.applyPersonSelection(current);
         }
-      });
+      };
+
+      // The /Persons list may already be resolved (earlyRequests); check now and attach as fallback.
+      binding?.attachDataReceived(applyLoaded);
+      applyLoaded();
     }
     applyPersonSelection(id) {
       const ui = this.uiModel;
@@ -279,34 +283,26 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       const period = ui.getProperty("/period") || this.currentPeriod();
       ui.setProperty("/period", period);
       ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
-      const section = this.byId("periodSection");
-      section.bindElement({
-        path: `/RetrieveCompleteInvoice(PersonId='${encodeURIComponent(personId)}',Year=${period.year},Month=${period.month})`,
-        events: {
-          dataRequested: () => ui.setProperty("/busy", true),
-          dataReceived: () => {
-            void this.refreshDerived();
-          }
-        }
-      });
+
+      // The /Transactions list binding re-applies its filters (person + period) and
+      // recomputes the summary via onTransactionsDataReceived.
+      ui.setProperty("/busy", true);
     }
     onTransactionsDataReceived() {
-      void this.refreshDerived();
+      this.refreshDerived();
     }
     refreshDerived() {
       const ui = this.uiModel;
       const personContext = this.byId("personSection").getBindingContext();
-      const periodContext = this.byId("periodSection").getBindingContext();
       const person = personContext?.getObject();
-      const invoice = periodContext?.getObject();
-      if (!person?.ID || !invoice) {
-        return;
-      }
+      const list = this.byId("transactionsList");
+      const binding = list.getBinding("items");
+      const transactions = binding ? binding.getContexts(0, 500).map(ctx => ctx.getObject()) : [];
       const period = ui.getProperty("/period") || this.currentPeriod();
-      const currency = invoice.Currency?.code || resolveCurrency(person.Currency) || "BRL";
-      const income = Number(person.Income) || 0;
-      const expenses = Number(invoice.TotalAmount) || 0;
-      const target = Number(person.ExpenseTarget) || 0;
+      const currency = person ? resolveCurrency(person.Currency) || "BRL" : "BRL";
+      const income = Number(person?.Income) || 0;
+      const target = Number(person?.ExpenseTarget) || 0;
+      const expenses = transactions.reduce((sum, tx) => sum + (Number(tx.Amount) || 0), 0);
       const available = income - expenses;
       const savings = income - expenses;
       const targetPercent = target > 0 ? Math.round(expenses / target * 100) : 0;
@@ -322,17 +318,18 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         trendIcon: "sap-icon://trend-up"
       });
       ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
-      this.buildCategories(invoice);
+      this.buildCategories(transactions, expenses, currency);
       ui.setProperty("/busy", false);
-      void this.loadTrend(person.ID, period);
+      if (person?.ID) {
+        void this.loadTrend(person.ID, period, expenses);
+      }
     }
-    async loadTrend(personId, period) {
+    async loadTrend(personId, period, expenses) {
       if (!this._invoiceService) {
         return;
       }
       const previous = this.shiftMonth(period.year, period.month, -1);
       try {
-        const expenses = Number(this.byId("periodSection").getBindingContext()?.getProperty("TotalAmount")) || 0;
         const previousInvoice = await this._invoiceService.getCompleteInvoice(personId, previous);
         const previousExpenses = Number(previousInvoice.TotalAmount) || 0;
         const trend = previousExpenses > 0 ? (expenses - previousExpenses) / previousExpenses * 100 : expenses > 0 ? 100 : 0;
@@ -352,30 +349,27 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         }
       }
     }
-    buildCategories(invoice) {
+    buildCategories(transactions, expenses, currency) {
       const map = new Map();
-      const total = Number(invoice.TotalAmount) || 0;
-      for (const transaction of invoice.Transactions || []) {
-        if (!transaction.Category) {
+      for (const transaction of transactions) {
+        const category = transaction.Category;
+        if (!category) {
           continue;
         }
-        const category = transaction.Category;
         const entry = map.get(category.ID) || {
           ID: category.ID,
           Name: category.Name,
-          CategoryImagePath: category.ImagePath,
           Total: 0
         };
         entry.Total += Number(transaction.Amount) || 0;
         map.set(category.ID, entry);
       }
-      const currency = invoice.Currency?.code || "BRL";
       const categories = Array.from(map.values()).map(item => ({
         ID: item.ID,
         Name: item.Name,
         CategoryImagePath: item.CategoryImagePath,
         Total: item.Total,
-        Percent: total > 0 ? Math.round(item.Total / total * 100) : 0,
+        Percent: expenses > 0 ? Math.round(item.Total / expenses * 100) : 0,
         CurrencyCode: currency
       })).sort((a, b) => b.Total - a.Total);
       this.uiModel.setProperty("/categories", categories);

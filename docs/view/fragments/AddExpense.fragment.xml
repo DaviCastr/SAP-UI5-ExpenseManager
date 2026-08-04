@@ -24,7 +24,7 @@
                     items="{
                         path: '/Cards',
                         filters: [
-                            { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPerson/ID}' }
+                            { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPersonId}' }
                         ]
                     }"
                 ><core:Item key="{ID}" text="{Name}" /></Select>
@@ -35,7 +35,7 @@
                     items="{
                         path: '/Categories',
                         filters: [
-                            { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPerson/ID}' }
+                            { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPersonId}' }
                         ]
                     }"
                 ><core:Item key="{ID}" text="{Name}" /></Select>

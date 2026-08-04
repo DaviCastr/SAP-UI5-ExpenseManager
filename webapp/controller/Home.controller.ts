@@ -3,6 +3,7 @@ import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import Dialog from "sap/m/Dialog";
 import Select from "sap/m/Select";
+import List from "sap/m/List";
 import Control from "sap/ui/core/Control";
 import Event from "sap/ui/base/Event";
 import Context from "sap/ui/model/Context";
@@ -13,7 +14,7 @@ import { AuthenticationService } from "../auth/AuthenticationService";
 import Environment, { EnvironmentType } from "../util/Environment";
 import { formatCurrency } from "../util/format";
 import { ODataService } from "../service/ODataService";
-import { InvoiceService, type CompleteInvoice, type Period } from "../service/InvoiceService";
+import { InvoiceService, type Period } from "../service/InvoiceService";
 import type ListBinding from "sap/ui/model/ListBinding";
 import {
     getTransactionsByCategory,
@@ -36,6 +37,14 @@ function resolveCurrency(currency: unknown, fallback = "BRL"): string {
         return (currency as { code?: string }).code || fallback;
     }
     return fallback;
+}
+
+interface TransactionRow {
+    ID: string;
+    Description?: string;
+    Date?: string;
+    Amount?: number;
+    Category?: { ID: string; Name: string };
 }
 
 export default class Home extends BaseController {
@@ -278,7 +287,7 @@ export default class Home extends BaseController {
         const select = this.byId("personSelect") as Select;
         const binding = select.getBinding("items") as ListBinding;
 
-        binding?.attachDataReceived(() => {
+        const applyLoaded = () => {
             const contexts = binding.getContexts(0, 50);
             const empty = contexts.length === 0;
 
@@ -300,7 +309,11 @@ export default class Home extends BaseController {
             } else if (!(this.byId("personSection") as Control).getBindingContext()) {
                 this.applyPersonSelection(current);
             }
-        });
+        };
+
+        // The /Persons list may already be resolved (earlyRequests); check now and attach as fallback.
+        binding?.attachDataReceived(applyLoaded);
+        applyLoaded();
     }
 
     private applyPersonSelection(id: string): void {
@@ -333,26 +346,18 @@ export default class Home extends BaseController {
         ui.setProperty("/period", period);
         ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
 
-        const section = this.byId("periodSection") as Control;
-        section.bindElement({
-            path: `/RetrieveCompleteInvoice(PersonId='${encodeURIComponent(personId)}',Year=${period.year},Month=${period.month})`,
-            events: {
-                dataRequested: () => ui.setProperty("/busy", true),
-                dataReceived: () => {
-                    void this.refreshDerived();
-                }
-            }
-        });
+        // The /Transactions list binding re-applies its filters (person + period) and
+        // recomputes the summary via onTransactionsDataReceived.
+        ui.setProperty("/busy", true);
     }
 
     public onTransactionsDataReceived(): void {
-        void this.refreshDerived();
+        this.refreshDerived();
     }
 
     private refreshDerived(): void {
         const ui = this.uiModel;
         const personContext = (this.byId("personSection") as Control).getBindingContext();
-        const periodContext = (this.byId("periodSection") as Control).getBindingContext();
         const person = personContext?.getObject() as {
             ID: string;
             Name?: string;
@@ -360,18 +365,18 @@ export default class Home extends BaseController {
             ExpenseTarget?: number;
             Currency?: string | { code?: string };
         } | undefined;
-        const invoice = periodContext?.getObject() as CompleteInvoice | undefined;
 
-        if (!person?.ID || !invoice) {
-            return;
-        }
+        const list = this.byId("transactionsList") as List;
+        const binding = list.getBinding("items") as ListBinding;
+        const transactions = binding
+            ? binding.getContexts(0, 500).map((ctx) => ctx.getObject() as TransactionRow)
+            : [];
 
         const period = (ui.getProperty("/period") as Period) || this.currentPeriod();
-
-        const currency = invoice.Currency?.code || resolveCurrency(person.Currency) || "BRL";
-        const income = Number(person.Income) || 0;
-        const expenses = Number(invoice.TotalAmount) || 0;
-        const target = Number(person.ExpenseTarget) || 0;
+        const currency = person ? resolveCurrency(person.Currency) || "BRL" : "BRL";
+        const income = Number(person?.Income) || 0;
+        const target = Number(person?.ExpenseTarget) || 0;
+        const expenses = transactions.reduce((sum, tx) => sum + (Number(tx.Amount) || 0), 0);
         const available = income - expenses;
         const savings = income - expenses;
         const targetPercent = target > 0 ? Math.round((expenses / target) * 100) : 0;
@@ -393,13 +398,15 @@ export default class Home extends BaseController {
         });
         ui.setProperty("/monthLabel", this.periodLabel(period.year, period.month));
 
-        this.buildCategories(invoice);
+        this.buildCategories(transactions, expenses, currency);
         ui.setProperty("/busy", false);
 
-        void this.loadTrend(person.ID, period);
+        if (person?.ID) {
+            void this.loadTrend(person.ID, period, expenses);
+        }
     }
 
-    private async loadTrend(personId: string, period: Period): Promise<void> {
+    private async loadTrend(personId: string, period: Period, expenses: number): Promise<void> {
         if (!this._invoiceService) {
             return;
         }
@@ -407,7 +414,6 @@ export default class Home extends BaseController {
         const previous = this.shiftMonth(period.year, period.month, -1);
 
         try {
-            const expenses = Number((this.byId("periodSection") as Control).getBindingContext()?.getProperty("TotalAmount")) || 0;
             const previousInvoice = await this._invoiceService.getCompleteInvoice(personId, previous);
             const previousExpenses = Number(previousInvoice.TotalAmount) || 0;
 
@@ -437,33 +443,30 @@ export default class Home extends BaseController {
         }
     }
 
-    private buildCategories(invoice: CompleteInvoice): void {
+    private buildCategories(transactions: TransactionRow[], expenses: number, currency: string): void {
         const map = new Map<string, { ID: string; Name: string; CategoryImagePath?: string; Total: number }>();
-        const total = Number(invoice.TotalAmount) || 0;
 
-        for (const transaction of invoice.Transactions || []) {
-            if (!transaction.Category) {
+        for (const transaction of transactions) {
+            const category = transaction.Category;
+            if (!category) {
                 continue;
             }
-            const category = transaction.Category;
             const entry = map.get(category.ID) || {
                 ID: category.ID,
                 Name: category.Name,
-                CategoryImagePath: category.ImagePath,
                 Total: 0
             };
             entry.Total += Number(transaction.Amount) || 0;
             map.set(category.ID, entry);
         }
 
-        const currency = invoice.Currency?.code || "BRL";
         const categories: CategoryBreakdownItem[] = Array.from(map.values())
             .map((item) => ({
                 ID: item.ID,
                 Name: item.Name,
                 CategoryImagePath: item.CategoryImagePath,
                 Total: item.Total,
-                Percent: total > 0 ? Math.round((item.Total / total) * 100) : 0,
+                Percent: expenses > 0 ? Math.round((item.Total / expenses) * 100) : 0,
                 CurrencyCode: currency
             }))
             .sort((a, b) => b.Total - a.Total);
