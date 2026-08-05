@@ -35,7 +35,6 @@
     "start": "fiori run --config ./ui5-local.yaml --open \"index.html\"",
     "start-local": "fiori run --config ./ui5-local.yaml --open \"index.html\"",
     "build": "ui5 build --config=ui5.yaml --clean-dest --dest dist",
-    "build:github-pages": "ui5 build --config=ui5.yaml --clean-dest --dest docs",
     "lint": "eslint ./",
     "ts-typecheck": "tsc --noEmit",
     "prestart": "npm run ts-typecheck",

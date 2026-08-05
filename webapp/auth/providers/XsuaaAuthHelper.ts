@@ -26,42 +26,28 @@ interface TokenResponse {
     error_description?: string;
 }
 
-type RuntimeConfigWindow = Window & typeof globalThis & {
-    __EXPENSE_MANAGER_CONFIG__?: RuntimeConfig;
+let runtimeConfig: RuntimeConfig = {
+    btpHost: "",
+    odataService: ""
 };
-
-function getConfigWindow(): RuntimeConfigWindow {
-    return window as RuntimeConfigWindow;
-}
 
 export class XsuaaAuthHelper {
 
     public static getConfig(): RuntimeConfig {
-        return getConfigWindow().__EXPENSE_MANAGER_CONFIG__ ?? {
-            btpHost: "",
-            odataService: ""
-        };
+        return runtimeConfig;
     }
 
     public static setServiceUrl(url: string): void {
-        const globalWindow = getConfigWindow();
-        if (!globalWindow.__EXPENSE_MANAGER_CONFIG__) {
-            globalWindow.__EXPENSE_MANAGER_CONFIG__ = { btpHost: "", odataService: "" };
-        }
-        globalWindow.__EXPENSE_MANAGER_CONFIG__.odataService = url;
+        runtimeConfig.odataService = url;
     }
 
     public static setLocalOverrides(): void {
-        const globalWindow = getConfigWindow();
-        const config = globalWindow.__EXPENSE_MANAGER_CONFIG__ ?? { btpHost: "", odataService: "" };
-        globalWindow.__EXPENSE_MANAGER_CONFIG__ = config;
+        runtimeConfig.odataService = "/api/service/ExpenseManager/";
 
-        config.odataService = "/api/service/ExpenseManager/";
-
-        if (config.auth) {
-            config.auth.tokenEndpoint = "/auth/login";
-            config.auth.refreshEndpoint = "/auth/refresh";
-            config.auth.redirectUri = "";
+        if (runtimeConfig.auth) {
+            runtimeConfig.auth.tokenEndpoint = "/auth/login";
+            runtimeConfig.auth.refreshEndpoint = "/auth/refresh";
+            runtimeConfig.auth.redirectUri = "";
         }
     }
 
@@ -69,7 +55,7 @@ export class XsuaaAuthHelper {
         const config = this.getConfig().auth;
 
         if (!config || !config.clientId || !config.authDomain) {
-            throw new Error("XSUAA client configuration is missing in runtime-config.js");
+            throw new Error("XSUAA client configuration is missing in runtime-config.json");
         }
 
         const state = this.generateRandomString(32);
@@ -171,21 +157,24 @@ export class XsuaaAuthHelper {
     }
 
     public static async loadRuntimeConfig(): Promise<void> {
-        if (getConfigWindow().__EXPENSE_MANAGER_CONFIG__?.auth) {
+        if (runtimeConfig.auth) {
             return;
         }
 
-        await new Promise<void>((resolve, reject) => {
-            const script = document.createElement("script");
-            script.src = sap.ui.require.toUrl("apps/dflc/expensemanager/config/runtime-config.js");
+        const url = sap.ui.require.toUrl("apps/dflc/expensemanager/config/runtime-config.json");
+        const response = await fetch(url);
 
-            const onLoad = () => resolve();
-            const onError = () => reject(new Error("Falha ao carregar a configuração de runtime."));
+        if (!response.ok) {
+            throw new Error("Falha ao carregar a configuração de runtime.");
+        }
 
-            script.addEventListener("load", onLoad);
-            script.addEventListener("error", onError);
-            document.head.appendChild(script);
-        });
+        const payload = await response.json() as Partial<RuntimeConfig>;
+
+        runtimeConfig = {
+            btpHost: payload.btpHost ?? "",
+            odataService: payload.odataService ?? "",
+            auth: payload.auth
+        };
     }
 
     private static generateRandomString(length: number): string {

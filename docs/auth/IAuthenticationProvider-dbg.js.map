@@ -1,1 +1,0 @@
-{"version":3,"file":"IAuthenticationProvider-dbg.js","names":[],"sources":["IAuthenticationProvider.ts"],"sourcesContent":["import { UserSession } from \"./models/UserSession\";\n\nexport interface IAuthenticationProvider {\n\n    login(): Promise<UserSession>;\n\n    logout(): Promise<void>;\n\n    isAuthenticated(): Promise<boolean>;\n\n}"],"mappings":"","ignoreList":[]}

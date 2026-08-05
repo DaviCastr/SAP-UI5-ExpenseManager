@@ -1,2 +1,0 @@
-sap.ui.define([],function(){"use strict";const e=["ID","Name","Income","ExpenseTarget","Currency","Email","Phone","ImageType"];class t{constructor(e){this.odata=e}async fetchAll(){return this.odata.requestEntitySet("Persons",{select:e})}getImageUrl(e){if(!e.ImageType){return""}return this.odata.getMediaUrl(`Persons(ID='${e.ID}',IsActiveEntity=true)/Image`)}}var r={__esModule:true};r.PersonService=t;return r});
-//# sourceMappingURL=PersonService.js.map

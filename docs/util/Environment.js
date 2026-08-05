@@ -1,2 +1,0 @@
-sap.ui.define([],function(){"use strict";var n=function(n){n["LOCAL"]="LOCAL";n["GITHUB"]="GITHUB";n["BTP"]="BTP";return n}(n||{});class t{static current(){const t=window.location.hostname;if(t.includes("github.io")){return n.GITHUB}if(t.includes("cfapps")){return n.BTP}return n.LOCAL}}t.EnvironmentType=n;return t});
-//# sourceMappingURL=Environment.js.map

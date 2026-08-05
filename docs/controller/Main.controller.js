@@ -1,2 +1,0 @@
-sap.ui.define(["sap/ui/core/mvc/Controller"],function(n){"use strict";const e=n.extend("apps.dflc.expensemanager.controller.Main",{onInit:function n(){}});return e});
-//# sourceMappingURL=Main.controller.js.map

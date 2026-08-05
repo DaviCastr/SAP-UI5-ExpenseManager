@@ -1,2 +1,0 @@
-sap.ui.define([],function(){"use strict";class s{static STORAGE_KEY="expenseManager.session";static save(s){window.sessionStorage.setItem(this.STORAGE_KEY,JSON.stringify(s))}static load(){const s=window.sessionStorage.getItem(this.STORAGE_KEY);if(!s){return null}return JSON.parse(s)}static clear(){window.sessionStorage.removeItem(this.STORAGE_KEY)}}var e={__esModule:true};e.SessionStorage=s;return e});
-//# sourceMappingURL=SessionStorage.js.map

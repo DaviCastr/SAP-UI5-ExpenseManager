@@ -1,2 +1,0 @@
-sap.ui.define(["../AuthenticationService"],function(e){"use strict";const t=e["AuthenticationService"];class n{async login(){return{accessToken:"mock-token",expiresAt:Date.now()+36e5,userName:"Davi"}}async logout(){await t.logout()}async isAuthenticated(){const e=t.getSession();return!!e&&e.expiresAt>Date.now()}}var i={__esModule:true};i.MockAuthenticationProvider=n;return i});
-//# sourceMappingURL=MockAuthenticationProvider.js.map
