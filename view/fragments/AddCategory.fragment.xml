@@ -1,0 +1,43 @@
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m"
+    xmlns:u="sap.ui.unified"
+    id="AdicionarCategoria"
+>
+    <Dialog
+        id="categoryDialog"
+        title="{i18n>categoryDialogTitle}"
+        class="financeDialog"
+        contentWidth="28rem"
+        beforeOpen="handler.onDialogBeforeOpen"
+        core:require="{ handler: 'apps/dflc/expensemanager/controller/fragments/AddCategory' }"
+    >
+        <content>
+            <VBox class="dialogContent">
+                <Text text="{i18n>categoryDialogIntro}" class="dialogIntro" />
+                <Avatar
+                    id="categoryAvatar"
+                    displaySize="Custom"
+                    customDisplaySize="5.5rem"
+                    displayShape="Circle"
+                    initials="C"
+                    class="sapUiTinyMarginBottom"
+                />
+                <u:FileUploader
+                    id="categoryFileUploader"
+                    buttonText="{i18n>categoryPhotoButton}"
+                    placeholder="{i18n>categoryPhotoPlaceholder}"
+                    fileType="png,jpg,jpeg"
+                    uploadOnChange="false"
+                    multiple="false"
+                    change="handler.onModificaArquivo"
+                    width="100%"
+                />
+                <Label text="{i18n>categoryNameLabel}" labelFor="categoryName" />
+                <Input id="categoryName" value="{ui>/newCategory/name}" maxLength="20" placeholder="{i18n>categoryNamePlaceholder}" />
+            </VBox>
+        </content>
+        <beginButton><Button text="{i18n>categorySaveButton}" type="Emphasized" press="handler.onAdicionarCategoria" /></beginButton>
+        <endButton><Button text="{i18n>categoryCancelButton}" press="handler.onCancelarCategoria" /></endButton>
+    </Dialog>
+</core:FragmentDefinition>

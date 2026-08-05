@@ -1,0 +1,2 @@
+sap.ui.define([],function(){"use strict";function e(e){const n=e.getModel("i18n");if(!n){return null}const t=n.getResourceBundle();return t instanceof Promise?null:t}function n(n,t,u){return e(n)?.getText(t,u)??t}var t={__esModule:true};t.getResourceBundle=e;t.getText=n;return t});
+//# sourceMappingURL=i18n.js.map
