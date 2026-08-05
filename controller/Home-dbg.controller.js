@@ -278,69 +278,55 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         this._persons = [];
         this.getServiceModel().refresh();
       } catch {
-        // The /Persons binding re-fires dataReceived and re-picks the selection.
+        // ignore transient refresh errors; setupPersonSelector re-fetches the list.
       }
-      this.applyPersonSelection(this.getSelectedPersonId());
+      void this.setupPersonSelector();
     }
     getSelectedPersonId() {
       return this.uiModel.getProperty("/selectedPersonId") || "";
     }
     async setupPersonSelector() {
-      const select = this.byId("personSelect");
-      const binding = select.getBinding("items");
-      if (!binding) {
+      if (!this._odata) {
         return;
       }
-      const applyLoaded = contexts => {
-        let persons;
-        if (contexts && contexts.length > 0) {
-          persons = contexts.map(context => context.getObject()).filter(person => !!person?.ID);
-        } else {
-          persons = this.getPersonsFromBinding();
-        }
-        this._persons = persons;
-        if (persons.length === 0) {
-          this.uiModel.setProperty("/personsEmpty", true);
-          this.uiModel.setProperty("/selectedPersonId", "");
-          select.setSelectedKey("");
+      let persons = [];
+
+      // Do NOT pass $select here: a "$select" that includes the key property is
+      // rejected on draft bindings; omitting it returns every property (incl. ID).
+      try {
+        const result = await this._odata.requestEntitySet("/Persons", {
+          filterExpression: DRAFT_FILTER,
+          expand: DRAFT_EXPAND
+        });
+        persons = result.filter(person => !!person.ID).map(person => ({
+          ID: person.ID,
+          Name: person.Name + (person.IsActiveEntity === false ? " (rascunho)" : ""),
+          Income: person.Income,
+          ExpenseTarget: person.ExpenseTarget,
+          Currency: person.Currency,
+          ImageType: person.ImageType
+        }));
+      } catch (error) {
+        if (isSessionExpiredError(error)) {
           return;
         }
-        this.uiModel.setProperty("/personsEmpty", false);
-        const current = this.getSelectedPersonId();
-        const currentExists = persons.some(person => person.ID === current);
-        if (!current || !currentExists) {
-          this.applyPersonSelection(persons[0].ID);
-        } else if (!this.uiModel.getProperty("/selectedPerson")?.ID) {
-          this.applyPersonSelection(current);
-        }
-      };
-
-      // The /Persons list may fire again after reload (new person added); keep selection in sync.
-      binding.attachDataReceived(() => applyLoaded());
-
-      // Wait for the list to be loaded before evaluating the empty state to avoid
-      // racing with the OData response (e.g. on a hard refresh with a valid session).
-      const contexts = await this.waitForPersons(binding);
-      if (contexts.length === 0) {
-        select.setSelectedKey("");
+        // eslint-disable-next-line no-console
+        console.error("[setupPersonSelector] requestEntitySet /Persons failed:", error);
       }
-      applyLoaded(contexts);
-    }
-    async waitForPersons(binding, attempts = 3, delayMs = 500) {
-      let last = [];
-      for (let attempt = 0; attempt < attempts; attempt++) {
-        try {
-          last = await binding.requestContexts(0, 100);
-          if (last.length > 0) {
-            return last;
-          }
-        } catch {
-          // transient state before the list settles; retry below
+      this._persons = persons;
+      const select = this.byId("personSelect");
+      if (persons.length === 0) {
+        this.uiModel.setProperty("/personsEmpty", true);
+        this.uiModel.setProperty("/selectedPersonId", "");
+        if (select) {
+          select.setSelectedKey("");
         }
-        // eslint-disable-next-line fiori-custom/sap-timeout-usage
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        return;
       }
-      return last;
+      this.uiModel.setProperty("/personsEmpty", false);
+      const current = this.getSelectedPersonId();
+      const currentExists = persons.some(person => person.ID === current);
+      this.applyPersonSelection(current && currentExists ? current : persons[0].ID);
     }
     getPersonsFromBinding() {
       if (this._persons.length > 0) {
@@ -355,6 +341,8 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
     }
     applyPersonSelection(id) {
       const ui = this.uiModel;
+      // eslint-disable-next-line no-console
+      console.log("[applyPersonSelection] id:", id);
       if (!id) {
         ui.setProperty("/selectedPersonId", "");
         ui.setProperty("/selectedPerson", {});
@@ -387,6 +375,9 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       const ui = this.uiModel;
       const personId = this.getSelectedPersonId();
       const period = ui.getProperty("/period") || this.currentPeriod();
+
+      // eslint-disable-next-line no-console
+      console.log("[loadDashboard] personId:", personId, "period:", period.year, period.month);
       if (!personId) {
         return;
       }
@@ -397,6 +388,8 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         }
         const invoice = await this._invoiceService.getCompleteInvoice(personId, period);
         this.renderInvoice(invoice);
+        // eslint-disable-next-line no-console
+        console.log("[loadDashboard] invoice TotalAmount:", invoice.TotalAmount);
         const cards = await this._odata.requestEntitySet("Cards", {
           select: ["ID", "Name", "Limit", "Currency", "DueDay", "ClosingDay"],
           filters: [new Filter({
@@ -417,6 +410,8 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         if (isSessionExpiredError(error)) {
           return;
         }
+        // eslint-disable-next-line no-console
+        console.error("[loadDashboard] ERROR:", error);
         if (Environment.current() !== EnvironmentType.GITHUB) {
           MessageBox.error(this.getText("backendUnavailable"));
         }
