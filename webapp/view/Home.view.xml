@@ -30,13 +30,20 @@
                             />
                             <Select
                                 id="personSelect"
-                                items="{/Persons}"
+                                items="{
+                                    path: '/Persons',
+                                    parameters: {
+                                        '$select': 'ID,Name,Income,ExpenseTarget,Currency,ImageType,IsActiveEntity',
+                                        '$expand': 'DraftAdministrativeData($select=DraftUUID,InProcessByUser)',
+                                        '$filter': '(IsActiveEntity eq true or SiblingEntity/IsActiveEntity eq null)'
+                                    }
+                                }"
                                 selectedKey="{ui>/selectedPersonId}"
                                 change=".onPersonChange"
                                 class="personSelect"
                                 width="12rem"
                             >
-                                <core:Item key="{ID}" text="{Name}" />
+                                <core:Item key="{ID}" text="{= ${Name} + (${IsActiveEntity} === false ? ' (rascunho)' : '')}" />
                             </Select>
                             <Button
                                 icon="sap-icon://add"
@@ -132,7 +139,7 @@
                     <VBox class="surfaceCard transactionsPanel">
                         <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
                             <VBox><Title text="{i18n>recentTransactionsTitle}" level="H3" /><Text text="{i18n>recentTransactionsHint}" class="sectionHint" /></VBox>
-                            <Button icon="sap-icon://add" type="Transparent" press=".onOpenCategoryDialog" tooltip="{i18n>categoryAddButton}" />
+                            <Button icon="sap-icon://add" type="Transparent" press=".onOpenExpenseDialog" tooltip="{i18n>expenseAddButton}" />
                         </HBox>
                         <List
                             id="transactionsList"

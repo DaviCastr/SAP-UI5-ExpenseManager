@@ -15,7 +15,18 @@ interface NewExpense {
     amount: string;
     cardId: string;
     categoryId: string;
+    installments: number;
+    fixedExpense: boolean;
+    transactionDate: string;
 }
+
+interface ExpenseOption {
+    key: string;
+    text: string;
+    isDraft?: boolean;
+}
+
+const DRAFT_BLOCK_MESSAGE = "Este item está como rascunho. Salve-o primeiro antes de registrar um gasto.";
 
 const AdicionarGasto = {
     onCancelarGasto: function (this: Control): void {
@@ -34,6 +45,18 @@ const AdicionarGasto = {
             return;
         }
 
+        const selectedCard = (uiModel.getProperty("/expenseCardOptions") as ExpenseOption[] | undefined)?.find((option) => option.key === expense.cardId);
+        const selectedCategory = (uiModel.getProperty("/expenseCategoryOptions") as ExpenseOption[] | undefined)?.find((option) => option.key === expense.categoryId);
+
+        if (selectedCard?.isDraft) {
+            MessageBox.warning(DRAFT_BLOCK_MESSAGE);
+            return;
+        }
+        if (selectedCategory?.isDraft) {
+            MessageBox.warning(DRAFT_BLOCK_MESSAGE);
+            return;
+        }
+
         uiModel.setProperty("/busy", true);
 
         try {
@@ -43,9 +66,9 @@ const AdicionarGasto = {
                 Description: expense.description,
                 Value: Number(expense.amount.replace(",", ".")),
                 Currency: "BRL",
-                TransactionDate: new Date().toISOString().slice(0, 10),
-                Installments: 1,
-                FixedExpense: false
+                TransactionDate: expense.transactionDate || new Date().toISOString().slice(0, 10),
+                Installments: Number(expense.installments) || 1,
+                FixedExpense: !!expense.fixedExpense
             });
 
             dialog.close();

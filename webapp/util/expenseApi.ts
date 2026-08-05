@@ -1,5 +1,19 @@
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 
+/**
+ * CAP controllers reply with a `{ data, status }` envelope (BaseControllerResponse).
+ * Unwraps the payload so callers receive the actual function/action result.
+ *
+ * @param {unknown} value the raw value returned by the OData model
+ * @returns {unknown} the unwrapped payload (or the original value when not an envelope)
+ */
+function unwrapControllerResult(value: unknown): unknown {
+    if (value && typeof value === "object" && "data" in value && "status" in value) {
+        return (value as { data?: unknown }).data;
+    }
+    return value;
+}
+
 export interface CompleteInvoiceTransaction {
     ID: string;
     Identifier?: string;
@@ -105,7 +119,7 @@ export async function getCompleteInvoice(
 
     await binding.invoke();
 
-    return binding.getBoundContext()?.getObject() as CompleteInvoiceReturnProperties;
+    return unwrapControllerResult(binding.getBoundContext()?.getObject()) as CompleteInvoiceReturnProperties;
 }
 
 export async function getTransactionsByCategory(
@@ -126,7 +140,7 @@ export async function getTransactionsByCategory(
 
     await binding.invoke();
 
-    return binding.getBoundContext()?.getObject() as CategoryTransactionsProperties;
+    return unwrapControllerResult(binding.getBoundContext()?.getObject()) as CategoryTransactionsProperties;
 }
 
 export async function simulateExpenses(
@@ -143,7 +157,7 @@ export async function simulateExpenses(
 
     await binding.invoke();
 
-    return binding.getBoundContext()?.getObject() as SimulateExpenseReturnProperties;
+    return unwrapControllerResult(binding.getBoundContext()?.getObject()) as SimulateExpenseReturnProperties;
 }
 
 export async function addCardExpense(

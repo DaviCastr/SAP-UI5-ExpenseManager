@@ -17,28 +17,41 @@
                 <Input id="expenseDescription" value="{ui>/newExpense/description}" placeholder="{i18n>expenseDescriptionPlaceholder}" />
                 <Label text="{i18n>expenseAmountLabel}" labelFor="expenseAmount" />
                 <Input id="expenseAmount" value="{ui>/newExpense/amount}" type="Number" placeholder="{i18n>expenseAmountPlaceholder}" />
+                <Label text="{i18n>expenseDateLabel}" labelFor="expenseDate" />
+                <DatePicker
+                    id="expenseDate"
+                    value="{ui>/newExpense/transactionDate}"
+                    displayFormat="dd/MM/yyyy"
+                    valueFormat="yyyy-MM-dd"
+                    width="100%"
+                />
+                <Label text="{i18n>expenseInstallmentsLabel}" labelFor="expenseInstallments" />
+                <StepInput
+                    id="expenseInstallments"
+                    value="{ui>/newExpense/installments}"
+                    min="1"
+                    max="60"
+                    step="1"
+                    width="100%"
+                />
+                <CheckBox
+                    id="expenseFixed"
+                    text="{i18n>expenseFixedLabel}"
+                    selected="{ui>/newExpense/fixedExpense}"
+                    class="sapUiTinyMarginTopBottom"
+                />
                 <Label text="{i18n>expenseCardLabel}" labelFor="expenseCard" />
                 <Select
                     id="expenseCard"
                     selectedKey="{ui>/newExpense/cardId}"
-                    items="{
-                        path: '/Cards',
-                        filters: [
-                            { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPersonId}' }
-                        ]
-                    }"
-                ><core:Item key="{ID}" text="{Name}" /></Select>
+                    items="{ path: 'ui>/expenseCardOptions' }"
+                ><core:Item key="{key}" text="{text}" /></Select>
                 <Label text="{i18n>expenseCategoryLabel}" labelFor="expenseCategory" />
                 <Select
                     id="expenseCategory"
                     selectedKey="{ui>/newExpense/categoryId}"
-                    items="{
-                        path: '/Categories',
-                        filters: [
-                            { path: 'Person/ID', operator: 'EQ', value: '{ui>/selectedPersonId}' }
-                        ]
-                    }"
-                ><core:Item key="{ID}" text="{Name}" /></Select>
+                    items="{ path: 'ui>/expenseCategoryOptions' }"
+                ><core:Item key="{key}" text="{text}" /></Select>
             </VBox>
         </content>
         <beginButton><Button text="{i18n>expenseSaveButton}" type="Emphasized" press="handler.onAddExpense" /></beginButton>
