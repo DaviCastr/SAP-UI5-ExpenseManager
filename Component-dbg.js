@@ -138,6 +138,7 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
         monthLabel: "",
         selectedPerson: {},
         selectedPersonId: "",
+        selectedPersonImage: "",
         personsEmpty: false,
         busy: false,
         transactions: [],

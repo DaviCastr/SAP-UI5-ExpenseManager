@@ -173,6 +173,7 @@ export default class Component extends BaseComponent {
             monthLabel: "",
             selectedPerson: {},
             selectedPersonId: "",
+            selectedPersonImage: "",
             personsEmpty: false,
             busy: false,
             transactions: [],

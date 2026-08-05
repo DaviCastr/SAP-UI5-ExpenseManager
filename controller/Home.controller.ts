@@ -28,7 +28,7 @@ import {
     deleteBackupRow,
     downloadBlob
 } from "../util/backupApi";
-import { isSessionExpiredError } from "../util/http";
+import { isSessionExpiredError, buildHeaders, getOdataServiceUrl } from "../util/http";
 
 function resolveCurrency(currency: unknown, fallback = "BRL"): string {
     if (typeof currency === "string" && currency) {
@@ -431,6 +431,7 @@ export default class Home extends BaseController {
         if (!id) {
             ui.setProperty("/selectedPersonId", "");
             ui.setProperty("/selectedPerson", {});
+            ui.setProperty("/selectedPersonImage", "");
             return;
         }
 
@@ -448,9 +449,31 @@ export default class Home extends BaseController {
                 Currency: person.Currency,
                 ImageType: person.ImageType
             });
+            void this.loadSelectedPersonImage(person);
         }
 
         this.applyPeriodData();
+    }
+
+    private async loadSelectedPersonImage(person: UiPerson): Promise<void> {
+        if (!person?.ID || !person.ImageType) {
+            this.uiModel.setProperty("/selectedPersonImage", "");
+            return;
+        }
+
+        try {
+            const url = `${getOdataServiceUrl()}Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=true)/Image`;
+            const response = await fetch(url, { headers: buildHeaders({}) });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const blob = await response.blob();
+            this.uiModel.setProperty("/selectedPersonImage", URL.createObjectURL(blob));
+        } catch {
+            // avatar stays with initials when the image cannot be loaded
+        }
     }
 
     private applyPeriodData(): void {

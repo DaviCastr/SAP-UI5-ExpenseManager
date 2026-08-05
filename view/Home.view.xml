@@ -22,7 +22,7 @@
                         <HBox alignItems="Center" class="topActions" wrap="Wrap">
                             <Text text="{i18n>personManageLabel}" class="personLabel" />
                             <Avatar
-                                src="{ parts: [ { path: 'ui>/selectedPerson/ID' }, { path: 'ui>/selectedPerson/ImageType' } ], formatter: 'formatter.personImage' }"
+                                src="{ui>/selectedPersonImage}"
                                 initials="{ path: 'ui>/selectedPerson/Name', formatter: 'formatter.initials' }"
                                 displaySize="XS"
                                 displayShape="Circle"

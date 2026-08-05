@@ -19,6 +19,8 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
   const deleteBackupRow = ___util_backupApi["deleteBackupRow"];
   const downloadBlob = ___util_backupApi["downloadBlob"];
   const isSessionExpiredError = ___util_http["isSessionExpiredError"];
+  const buildHeaders = ___util_http["buildHeaders"];
+  const getOdataServiceUrl = ___util_http["getOdataServiceUrl"];
   function resolveCurrency(currency, fallback = "BRL") {
     if (typeof currency === "string" && currency) {
       return currency;
@@ -346,6 +348,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       if (!id) {
         ui.setProperty("/selectedPersonId", "");
         ui.setProperty("/selectedPerson", {});
+        ui.setProperty("/selectedPersonImage", "");
         return;
       }
       ui.setProperty("/selectedPersonId", id);
@@ -361,8 +364,28 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
           Currency: person.Currency,
           ImageType: person.ImageType
         });
+        void this.loadSelectedPersonImage(person);
       }
       this.applyPeriodData();
+    }
+    async loadSelectedPersonImage(person) {
+      if (!person?.ID || !person.ImageType) {
+        this.uiModel.setProperty("/selectedPersonImage", "");
+        return;
+      }
+      try {
+        const url = `${getOdataServiceUrl()}Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=true)/Image`;
+        const response = await fetch(url, {
+          headers: buildHeaders({})
+        });
+        if (!response.ok) {
+          return;
+        }
+        const blob = await response.blob();
+        this.uiModel.setProperty("/selectedPersonImage", URL.createObjectURL(blob));
+      } catch {
+        // avatar stays with initials when the image cannot be loaded
+      }
     }
     applyPeriodData() {
       const ui = this.uiModel;
