@@ -15,7 +15,6 @@ import { formatCurrency } from "../util/format";
 import { ODataService, DRAFT_FILTER, DRAFT_EXPAND } from "../service/ODataService";
 import { InvoiceService, type CompleteInvoice, type Period } from "../service/InvoiceService";
 import type ListBinding from "sap/ui/model/ListBinding";
-import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
 import Filter from "sap/ui/model/Filter";
 import FilterOperator from "sap/ui/model/FilterOperator";
 import {
@@ -342,10 +341,10 @@ export default class Home extends BaseController {
             this._persons = [];
             this.getServiceModel().refresh();
         } catch {
-            // The /Persons binding re-fires dataReceived and re-picks the selection.
+            // ignore transient refresh errors; setupPersonSelector re-fetches the list.
         }
 
-        this.applyPersonSelection(this.getSelectedPersonId());
+        void this.setupPersonSelector();
     }
 
     private getSelectedPersonId(): string {
@@ -353,68 +352,57 @@ export default class Home extends BaseController {
     }
 
     private async setupPersonSelector(): Promise<void> {
-        const select = this.byId("personSelect") as Select;
-        const binding = select.getBinding("items") as ODataListBinding;
-
-        if (!binding) {
+        if (!this._odata) {
             return;
         }
 
-        const applyLoaded = (contexts?: Context[]) => {
-            let persons: UiPerson[];
-            if (contexts && contexts.length > 0) {
-                persons = contexts.map((context) => context.getObject() as UiPerson).filter((person) => !!person?.ID);
-            } else {
-                persons = this.getPersonsFromBinding();
-            }
-            this._persons = persons;
+        let persons: UiPerson[] = [];
 
-            if (persons.length === 0) {
-                this.uiModel.setProperty("/personsEmpty", true);
-                this.uiModel.setProperty("/selectedPersonId", "");
-                select.setSelectedKey("");
+        // Do NOT pass $select here: a "$select" that includes the key property is
+        // rejected on draft bindings; omitting it returns every property (incl. ID).
+        try {
+            const result = await this._odata.requestEntitySet<UiPerson & { IsActiveEntity?: boolean }>("/Persons", {
+                filterExpression: DRAFT_FILTER,
+                expand: DRAFT_EXPAND
+            });
+
+            persons = result
+                .filter((person) => !!person.ID)
+                .map((person) => ({
+                    ID: person.ID,
+                    Name: person.Name + (person.IsActiveEntity === false ? " (rascunho)" : ""),
+                    Income: person.Income,
+                    ExpenseTarget: person.ExpenseTarget,
+                    Currency: person.Currency,
+                    ImageType: person.ImageType
+                }));
+        } catch (error) {
+            if (isSessionExpiredError(error)) {
                 return;
             }
-
-            this.uiModel.setProperty("/personsEmpty", false);
-
-            const current = this.getSelectedPersonId();
-            const currentExists = persons.some((person) => person.ID === current);
-
-            if (!current || !currentExists) {
-                this.applyPersonSelection(persons[0].ID);
-            } else if (!(this.uiModel.getProperty("/selectedPerson") as UiPerson)?.ID) {
-                this.applyPersonSelection(current);
-            }
-        };
-
-        // The /Persons list may fire again after reload (new person added); keep selection in sync.
-        binding.attachDataReceived(() => applyLoaded());
-
-        // Wait for the list to be loaded before evaluating the empty state to avoid
-        // racing with the OData response (e.g. on a hard refresh with a valid session).
-        const contexts = await this.waitForPersons(binding);
-        if (contexts.length === 0) {
-            select.setSelectedKey("");
+            // eslint-disable-next-line no-console
+            console.error("[setupPersonSelector] requestEntitySet /Persons failed:", error);
         }
-        applyLoaded(contexts);
-    }
 
-    private async waitForPersons(binding: ODataListBinding, attempts = 3, delayMs = 500): Promise<Context[]> {
-        let last: Context[] = [];
-        for (let attempt = 0; attempt < attempts; attempt++) {
-            try {
-                last = await binding.requestContexts(0, 100);
-                if (last.length > 0) {
-                    return last;
-                }
-            } catch {
-                // transient state before the list settles; retry below
+        this._persons = persons;
+
+        const select = this.byId("personSelect") as Select;
+
+        if (persons.length === 0) {
+            this.uiModel.setProperty("/personsEmpty", true);
+            this.uiModel.setProperty("/selectedPersonId", "");
+            if (select) {
+                select.setSelectedKey("");
             }
-            // eslint-disable-next-line fiori-custom/sap-timeout-usage
-            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            return;
         }
-        return last;
+
+        this.uiModel.setProperty("/personsEmpty", false);
+
+        const current = this.getSelectedPersonId();
+        const currentExists = persons.some((person) => person.ID === current);
+
+        this.applyPersonSelection(current && currentExists ? current : persons[0].ID);
     }
 
     private getPersonsFromBinding(): UiPerson[] {
@@ -437,6 +425,8 @@ export default class Home extends BaseController {
 
     private applyPersonSelection(id: string): void {
         const ui = this.uiModel;
+        // eslint-disable-next-line no-console
+        console.log("[applyPersonSelection] id:", id);
 
         if (!id) {
             ui.setProperty("/selectedPersonId", "");
@@ -476,6 +466,9 @@ export default class Home extends BaseController {
         const personId = this.getSelectedPersonId();
         const period = (ui.getProperty("/period") as Period) || this.currentPeriod();
 
+        // eslint-disable-next-line no-console
+        console.log("[loadDashboard] personId:", personId, "period:", period.year, period.month);
+
         if (!personId) {
             return;
         }
@@ -489,6 +482,8 @@ export default class Home extends BaseController {
 
             const invoice = await this._invoiceService.getCompleteInvoice(personId, period);
             this.renderInvoice(invoice);
+            // eslint-disable-next-line no-console
+            console.log("[loadDashboard] invoice TotalAmount:", invoice.TotalAmount);
 
             const cards = await this._odata.requestEntitySet<CardRow & { IsActiveEntity?: boolean }>("Cards", {
                 select: ["ID", "Name", "Limit", "Currency", "DueDay", "ClosingDay"],
@@ -506,6 +501,8 @@ export default class Home extends BaseController {
             if (isSessionExpiredError(error)) {
                 return;
             }
+            // eslint-disable-next-line no-console
+            console.error("[loadDashboard] ERROR:", error);
             if (Environment.current() !== EnvironmentType.GITHUB) {
                 MessageBox.error(this.getText("backendUnavailable"));
             }
