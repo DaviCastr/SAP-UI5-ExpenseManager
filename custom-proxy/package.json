@@ -1,0 +1,7 @@
+{
+  "name": "expense-manager-local-proxy",
+  "version": "1.0.0",
+  "description": "Local reverse proxy for the ExpenseManager CAP backend (OData + auth)",
+  "main": "index.js",
+  "private": true
+}

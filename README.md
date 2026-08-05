@@ -13,7 +13,8 @@ Aplicativo financeiro responsivo construído em SAPUI5 Freestyle e TypeScript. A
 ## Executar e validar
 
 ```sh
-npm run start-mock
+npm run start          # roda localmente contra o CAP remoto (ui5-local.yaml)
+npm run start-mock     # roda com mock data (ui5-mock.yaml)
 npm run ts-typecheck
 npm run build
 npm run build:github-pages
@@ -25,7 +26,16 @@ O build do GitHub Pages é publicado na pasta `docs/`.
 
 No BTP, o app chama o serviço por `/api/service/ExpenseManager/`. A rota `/api` é encaminhada pelo destination `ExpenseManager` e protegida por XSUAA em `xs-app.json`; o HTML5 Application Router cuida do redirecionamento de login. Não há token, senha ou segredo no navegador.
 
-Para desenvolvimento local, `ui5-local.yaml` encaminha a mesma rota `/api` ao serviço CAP remoto. Se o serviço exigir login, execute-o através de um approuter local ou use o mock durante o desenvolvimento visual.
+## Proxy local (`npm run start`)
+
+`ui5-local.yaml` usa um middleware próprio (`custom-proxy/`) que encaminha as rotas do app ao serviço CAP remoto pelo mesmo endpoint que o fluxo real de login (XSUAA):
+
+- `/api/...` → prefixo removido → `/service/...` do CAP (OData V4)
+- `/auth/...` → repassado como está (troca de código e refresh de token)
+
+O endereço do backend fica em `server.customMiddleware[*].configuration.backend` no `ui5-local.yaml`. Com isso, o fluxo de autenticação roda inteiro no `localhost` (redirect para o XSUAA e retorno).
+
+Se preferir não tocar no backend remoto durante o desenvolvimento visual, use `npm run start-mock`.
 
 ## GitHub Pages: limite de autenticação
 

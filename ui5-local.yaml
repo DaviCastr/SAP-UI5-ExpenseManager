@@ -6,20 +6,10 @@ metadata:
 type: application
 server:
   customMiddleware:
-    - name: fiori-tools-proxy
+    - name: expense-manager-local-proxy
       afterMiddleware: compression
       configuration:
-        ignoreCertErrors: false # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
-        ui5:
-          path:
-            - /resources
-            - /test-resources
-          url: https://ui5.sap.com
-        backend:
-          - path: /api
-            url: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
-          - path: /auth
-            url: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
+        backend: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
     - name: fiori-tools-appreload
       afterMiddleware: compression
       configuration:
