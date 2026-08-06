@@ -8,6 +8,10 @@ export class AuthenticationService {
 
     private static sessionExpiredHandler: (() => void) | null = null;
 
+    private static authErrorHandler: ((message: string) => void) | null = null;
+
+    private static authErrorPending = false;
+
     public static initialize(provider: IAuthenticationProvider): void {
 
         this.provider = provider;
@@ -53,6 +57,32 @@ export class AuthenticationService {
         SessionStorage.clear();
 
         this.sessionExpiredHandler?.();
+
+    }
+
+    public static onAuthError(handler: (message: string) => void): void {
+
+        this.authErrorHandler = handler;
+
+    }
+
+    public static notifyAuthError(message: string): void {
+
+        this.authErrorPending = true;
+
+        this.authErrorHandler?.(message);
+
+    }
+
+    public static isAuthErrorPending(): boolean {
+
+        return this.authErrorPending;
+
+    }
+
+    public static clearAuthError(): void {
+
+        this.authErrorPending = false;
 
     }
 

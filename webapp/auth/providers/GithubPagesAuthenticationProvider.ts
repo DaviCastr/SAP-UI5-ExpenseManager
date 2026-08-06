@@ -75,7 +75,11 @@ export class GithubPagesAuthenticationProvider implements IAuthenticationProvide
             return true;
         } catch (error) {
             this.cleanUpAuthorizationParams();
-            throw error;
+
+            const message = error instanceof Error ? error.message : String(error);
+            AuthenticationService.notifyAuthError(message);
+
+            return false;
         }
     }
 
