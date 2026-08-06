@@ -12,12 +12,7 @@ import { createEntity, uploadImage } from "../../util/entityApi";
 import { isSessionExpiredError } from "../../util/http";
 import { getText } from "../../util/i18n";
 import type Home from "../../controller/Home.controller";
-
-interface NewCard {
-    name: string;
-    limit: string;
-    currency: string;
-}
+import type { NewCard } from "../../model/UiModel";
 
 let cardPhoto: File | null = null;
 

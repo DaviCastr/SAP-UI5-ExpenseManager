@@ -12,10 +12,7 @@ import { createEntity, uploadImage } from "../../util/entityApi";
 import { isSessionExpiredError } from "../../util/http";
 import { getText } from "../../util/i18n";
 import type Home from "../../controller/Home.controller";
-
-interface NewCategory {
-    name: string;
-}
+import type { NewCategory } from "../../model/UiModel";
 
 let categoryPhoto: File | null = null;
 

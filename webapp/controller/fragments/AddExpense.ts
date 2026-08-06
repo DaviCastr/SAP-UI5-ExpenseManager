@@ -9,22 +9,7 @@ import { addCardExpense } from "../../util/expenseApi";
 import { isSessionExpiredError } from "../../util/http";
 import { getText } from "../../util/i18n";
 import type Home from "../../controller/Home.controller";
-
-interface NewExpense {
-    description: string;
-    amount: string;
-    cardId: string;
-    categoryId: string;
-    installments: number;
-    fixedExpense: boolean;
-    transactionDate: string;
-}
-
-interface ExpenseOption {
-    key: string;
-    text: string;
-    isDraft?: boolean;
-}
+import type { NewExpense, UiOption } from "../../model/UiModel";
 
 const DRAFT_BLOCK_MESSAGE = "Este item está como rascunho. Salve-o primeiro antes de registrar um gasto.";
 
@@ -45,8 +30,8 @@ const AdicionarGasto = {
             return;
         }
 
-        const selectedCard = (uiModel.getProperty("/expenseCardOptions") as ExpenseOption[] | undefined)?.find((option) => option.key === expense.cardId);
-        const selectedCategory = (uiModel.getProperty("/expenseCategoryOptions") as ExpenseOption[] | undefined)?.find((option) => option.key === expense.categoryId);
+        const selectedCard = (uiModel.getProperty("/expenseCardOptions") as UiOption[] | undefined)?.find((option) => option.key === expense.cardId);
+        const selectedCategory = (uiModel.getProperty("/expenseCategoryOptions") as UiOption[] | undefined)?.find((option) => option.key === expense.categoryId);
 
         if (selectedCard?.isDraft) {
             MessageBox.warning(DRAFT_BLOCK_MESSAGE);

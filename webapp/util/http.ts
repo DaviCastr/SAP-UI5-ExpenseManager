@@ -52,7 +52,7 @@ async function fetchCsrfToken(): Promise<string> {
     const headers = buildHeaders({});
     headers.set("x-csrf-token", "Fetch");
 
-    const response = await fetch(getOdataServiceUrl(), { method: "GET", headers });
+    const response = await fetch(`${getOdataServiceUrl()}Persons`, { method: "GET", headers });
     csrfToken = response.headers.get("x-csrf-token") || null;
 
     return csrfToken || "";

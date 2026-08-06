@@ -29,6 +29,7 @@ import {
     downloadBlob
 } from "../util/backupApi";
 import { isSessionExpiredError, buildHeaders, getOdataServiceUrl } from "../util/http";
+import type { UiPerson } from "../model/UiModel";
 
 function resolveCurrency(currency: unknown, fallback = "BRL"): string {
     if (typeof currency === "string" && currency) {
@@ -58,15 +59,6 @@ interface CardRow {
     ClosingDay: number;
 }
 
-interface UiPerson {
-    ID: string;
-    Name: string;
-    Income?: number;
-    ExpenseTarget?: number;
-    Currency?: string | { code?: string };
-    ImageType?: string;
-}
-
 export default class Home extends BaseController {
     private _odata?: ODataService;
     private _invoiceService?: InvoiceService;
@@ -91,7 +83,9 @@ export default class Home extends BaseController {
         const model = await this.ensureServiceModel();
 
         if (!model) {
-            this.navTo("Login");
+            if (!AuthenticationService.isAuthErrorPending()) {
+                this.navTo("Login");
+            }
             return;
         }
 

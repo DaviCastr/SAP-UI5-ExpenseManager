@@ -7,11 +7,7 @@ import MessageBox from "sap/m/MessageBox";
 import { simulateExpenses } from "../../util/expenseApi";
 import { isSessionExpiredError } from "../../util/http";
 import { getText } from "../../util/i18n";
-
-interface SimulationState {
-    month: string;
-    year: string;
-}
+import type { UiSimulation } from "../../model/UiModel";
 
 const Simulation = {
     onCancelarSimulacao: function (this: Control): void {
@@ -23,7 +19,7 @@ const Simulation = {
         const view = dialog.getParent() as XMLView;
         const uiModel = view.getModel("ui") as JSONModel;
 
-        const simulation = uiModel.getProperty("/simulation") as SimulationState;
+        const simulation = uiModel.getProperty("/simulation") as UiSimulation;
         const personId = uiModel.getProperty("/selectedPersonId") as string;
 
         if (!personId) {

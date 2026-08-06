@@ -5,12 +5,12 @@ import type { Router$BeforeRouteMatchedEvent } from "sap/ui/core/routing/Router"
 import ResourceModel from "sap/ui/model/resource/ResourceModel";
 import ResourceBundle from "sap/base/i18n/ResourceBundle";
 import { createDeviceModel } from "./model/models";
+import UiModel from "./model/UiModel";
 import { AuthenticationService } from "./auth/AuthenticationService";
 import { AuthenticatedProviderFactory } from "./auth/providers/AuthenticatedProviderFactory";
 import { XsuaaAuthHelper } from "./auth/providers/XsuaaAuthHelper";
 import { SessionStorage } from "./auth/storage/SessionStorage";
 import Environment, { EnvironmentType } from "./util/Environment";
-import JSONModel from "sap/ui/model/json/JSONModel";
 
 /**
  * @namespace apps.dflc.expensemanager
@@ -37,9 +37,10 @@ export default class Component extends BaseComponent {
         );
 
         AuthenticationService.onSessionExpired(() => this.handleSessionExpired());
+        AuthenticationService.onAuthError((message) => this.handleAuthError(message));
 
         this.setModel(createDeviceModel(), "device");
-        this.setModel(this.createUiModel(), "ui");
+        this.setModel(new UiModel(), "ui");
 
         const environment = Environment.current();
 
@@ -108,7 +109,9 @@ export default class Component extends BaseComponent {
         const authenticated = !!session?.accessToken && session.expiresAt > Date.now();
 
         if (target === "Home" && !authenticated) {
-            this.getRouter().navTo("Login");
+            if (!AuthenticationService.isAuthErrorPending()) {
+                this.getRouter().navTo("Login");
+            }
         } else if (target === "Login" && authenticated) {
             this.getRouter().navTo("Home");
         }
@@ -165,36 +168,6 @@ export default class Component extends BaseComponent {
         }
     }
 
-    private createUiModel(): JSONModel {
-        const now = new Date();
-
-        return new JSONModel({
-            period: { year: now.getFullYear(), month: now.getMonth() + 1 },
-            monthLabel: "",
-            selectedPerson: {},
-            selectedPersonId: "",
-            selectedPersonImage: "",
-            personsEmpty: false,
-            busy: false,
-            transactions: [],
-            cards: [],
-            summary: {
-                available: "",
-                income: "",
-                expenses: "",
-                savings: "",
-                target: "",
-                expenseHint: "",
-                targetHint: "",
-                trendText: "",
-                trendIcon: "sap-icon://trend-up"
-            },
-            categories: [],
-            newExpense: {},
-            newCard: {}
-        });
-    }
-
     private handleSessionExpired(): void {
         if (this._sessionExpiredShown) {
             return;
@@ -212,6 +185,20 @@ export default class Component extends BaseComponent {
             icon: MessageBox.Icon.WARNING,
             onClose: () => {
                 this._sessionExpiredShown = false;
+                this.getRouter().navTo("Login");
+            }
+        });
+    }
+
+    private handleAuthError(message: string): void {
+        const bundle = (this.getModel("i18n") as ResourceModel)?.getResourceBundle() as ResourceBundle | undefined;
+        const prefix = bundle?.getText("authErrorPrefix") ?? "Erro ao autenticar, motivo";
+
+        this._sessionExpiredShown = true;
+        MessageBox.error(`${prefix}: ${message}`, {
+            onClose: () => {
+                this._sessionExpiredShown = false;
+                AuthenticationService.clearAuthError();
                 this.getRouter().navTo("Login");
             }
         });
