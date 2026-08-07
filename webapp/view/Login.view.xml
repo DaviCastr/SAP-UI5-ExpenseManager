@@ -25,6 +25,7 @@
                     <Button
                         id="loginButton"
                         text="{i18n>loginButton}"
+                        icon="sap-icon://log"
                         press=".onLogin"
                         type="Emphasized"
                         class="loginPrimary"

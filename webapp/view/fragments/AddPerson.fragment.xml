@@ -52,7 +52,7 @@
                 </VBox>
             </ScrollContainer>
         </content>
-        <beginButton><Button text="{i18n>personSaveButton}" type="Emphasized" press="handler.onAdicionarPessoa" /></beginButton>
-        <endButton><Button text="{i18n>personCancelButton}" press="handler.onCancelarPessoa" /></endButton>
+        <beginButton><Button text="{i18n>personSaveButton}" icon="sap-icon://accept" type="Emphasized" press="handler.onAdicionarPessoa" /></beginButton>
+        <endButton><Button text="{i18n>personCancelButton}" icon="sap-icon://decline" press="handler.onCancelarPessoa" /></endButton>
     </Dialog>
 </core:FragmentDefinition>

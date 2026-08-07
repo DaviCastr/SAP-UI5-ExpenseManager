@@ -37,7 +37,7 @@
                 <Input id="categoryName" value="{ui>/newCategory/name}" maxLength="20" placeholder="{i18n>categoryNamePlaceholder}" />
             </VBox>
         </content>
-        <beginButton><Button text="{i18n>categorySaveButton}" type="Emphasized" press="handler.onAdicionarCategoria" /></beginButton>
-        <endButton><Button text="{i18n>categoryCancelButton}" press="handler.onCancelarCategoria" /></endButton>
+        <beginButton><Button text="{i18n>categorySaveButton}" icon="sap-icon://save" type="Emphasized" press="handler.onAdicionarCategoria" /></beginButton>
+        <endButton><Button text="{i18n>categoryCancelButton}" icon="sap-icon://decline" press="handler.onCancelarCategoria" /></endButton>
     </Dialog>
 </core:FragmentDefinition>

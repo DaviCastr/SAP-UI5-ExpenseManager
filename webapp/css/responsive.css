@@ -1,0 +1,13 @@
+@media (max-width: 600px) {
+    .financeShell { padding: 1rem; }
+    .topBar { align-items: flex-start; }
+    .personLabel { display: none; }
+    .primaryAction .sapMBtnContent { font-size: .78rem; }
+    .balanceHero { padding: 1.4rem; }
+    .heroTitle { font-size: 1.55rem; }
+    .balanceCard { min-width: 100%; }
+    .surfaceCard { flex-basis: 100%; }
+    .financePage .sapMPageEnableScrolling { overflow-x: hidden; }
+    .loginCard { padding: 2rem 1.4rem; }
+    .loginShell { padding: 1rem; }
+}

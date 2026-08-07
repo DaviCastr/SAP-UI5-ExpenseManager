@@ -26,7 +26,7 @@
                 />
             </VBox>
         </content>
-        <beginButton><Button text="{i18n>backupRestoreButton}" type="Emphasized" press="handler.onImportarBackup" /></beginButton>
-        <endButton><Button text="{i18n>backupCancelButton}" press="handler.onCancelarBackup" /></endButton>
+        <beginButton><Button text="{i18n>backupRestoreButton}" icon="sap-icon://download" type="Emphasized" press="handler.onImportarBackup" /></beginButton>
+        <endButton><Button text="{i18n>backupCancelButton}" icon="sap-icon://decline" press="handler.onCancelarBackup" /></endButton>
     </Dialog>
 </core:FragmentDefinition>

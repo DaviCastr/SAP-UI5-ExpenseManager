@@ -44,7 +44,7 @@
                 </Select>
             </VBox>
         </content>
-        <beginButton><Button text="{i18n>cardSaveButton}" type="Emphasized" press="handler.onAdicionarCartao" /></beginButton>
-        <endButton><Button text="{i18n>cardCancelButton}" press="handler.onCancelarCartao" /></endButton>
+        <beginButton><Button text="{i18n>cardSaveButton}" icon="sap-icon://save" type="Emphasized" press="handler.onAdicionarCartao" /></beginButton>
+        <endButton><Button text="{i18n>cardCancelButton}" icon="sap-icon://decline" press="handler.onCancelarCartao" /></endButton>
     </Dialog>
 </core:FragmentDefinition>
