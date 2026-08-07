@@ -17,10 +17,21 @@ npm run start          # roda localmente contra o CAP remoto (ui5-local.yaml)
 npm run start-mock     # roda com mock data (ui5-mock.yaml)
 npm run ts-typecheck
 npm run build
-npm run build:github-pages
 ```
 
-O build do GitHub Pages é publicado na pasta `docs/`.
+O build do GitHub Pages é publicado automaticamente em `dist/` pela Action `.github/workflows/deploy.yml` (branch `gh-pages`). A pasta `docs/` é reservada à documentação deste repositório.
+
+## Documentação
+
+O repositório contém uma pasta [`docs/`](./docs/README.md) com guias técnicos. Para entender **como a autenticação funciona em cada ambiente**, leia nesta ordem:
+
+1. [**Visão geral da autenticação**](./docs/auth-overview.md) — arquitetura dos providers, OAuth/XSUAA e detecção de ambiente.
+2. [**Ambiente LOCAL (com proxy)**](./docs/auth-local.md) — `npm run start` / `start-local`: URL relativa + proxy local.
+3. [**Ambiente GITHUB Pages (direto)**](./docs/auth-github-pages.md) — OAuth direto, sem proxy, CORS.
+4. [**Ambiente BTP (APP Router)**](./docs/auth-btp.md) — autenticação via HTML5 forwarder/ForwardAuthToken.
+5. [**Ambiente MOCK (`start-mock`)**](./docs/auth-mock.md) — dados falsos e autenticação simulada.
+
+O índice de toda a documentação está em **[docs/](docs/README.md)**.
 
 ## Integração com CAP e BTP
 
