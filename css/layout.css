@@ -1,0 +1,26 @@
+.financePage, .financePage .sapMPageBgStandard { background: radial-gradient(circle at 83% -10%, #d8fff0 0, transparent 30rem), var(--surface); }
+
+.financeShell { max-width: 76rem; margin: 0 auto; padding: 1.5rem 2rem 3rem; gap: 1.25rem; }
+.topBar { min-height: 3.5rem; }
+.brandGroup { gap: .75rem; }
+.brandMark { color: var(--teal-700); font-size: 2rem; background: #d8f7ed; border-radius: .85rem; padding: .55rem; }
+.brandTitle { color: var(--ink); font-weight: 700; }
+.topActions, .heroActions { gap: .5rem; align-items: center; }
+.personLabel { color: var(--muted); font-size: .8rem; }
+.personAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); border: 1px solid #d8f7ed; }
+.personSelect { background: var(--white); border-radius: .7rem; }
+.personSelect .sapMSltInner { border-radius: .7rem; border-color: var(--line-soft); background: var(--white); color: var(--ink); }
+.iconAction .sapMBtnInner, .linkAction .sapMBtnInner { border-radius: .7rem; }
+
+.metricGrid, .dashboardGrid { gap: 1rem; }
+.surfaceCard { flex: 1 1 22rem; min-width: 0; padding: 1.4rem; border-radius: 1.2rem; background: var(--white); box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid var(--line); }
+.sectionHeader { margin-bottom: .4rem; }
+
+.periodNav { gap: 1rem; padding: 1rem 1.15rem; border-radius: 1rem; background: var(--white); box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid var(--line); }
+.periodNavActions { gap: .35rem; }
+.periodNavLabel .sapMBtnInner { font-weight: 700; color: var(--ink); border-radius: .7rem; }
+
+.emptyState { gap: .6rem; padding: 3rem 1.5rem; border-radius: 1.4rem; background: var(--white); border: 1px dashed #c9dbd9; text-align: center; }
+.emptyStateIcon { font-size: 2.6rem; color: #9fbbb7; }
+.emptyStateTitle { color: var(--ink); }
+.emptyStateText { color: var(--muted); max-width: 28rem; }

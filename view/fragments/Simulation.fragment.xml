@@ -68,7 +68,7 @@
                     </VBox>
             </VBox>
         </content>
-        <beginButton><Button text="{i18n>simulationRunButton}" type="Emphasized" press="handler.onSimularGastos" /></beginButton>
-        <endButton><Button text="{i18n>simulationCancelButton}" press="handler.onCancelarSimulacao" /></endButton>
+        <beginButton><Button text="{i18n>simulationRunButton}" icon="sap-icon://customer-view" type="Emphasized" press="handler.onSimularGastos" /></beginButton>
+        <endButton><Button text="{i18n>simulationCancelButton}" icon="sap-icon://decline" press="handler.onCancelarSimulacao" /></endButton>
     </Dialog>
 </core:FragmentDefinition>

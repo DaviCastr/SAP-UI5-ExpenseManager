@@ -91,7 +91,22 @@
 		"resources": {
 			"css": [
 				{
-					"uri": "css/style.css"
+					"uri": "css/base.css"
+				},
+				{
+					"uri": "css/layout.css"
+				},
+				{
+					"uri": "css/home.css"
+				},
+				{
+					"uri": "css/components.css"
+				},
+				{
+					"uri": "css/login.css"
+				},
+				{
+					"uri": "css/responsive.css"
 				}
 			]
 		},

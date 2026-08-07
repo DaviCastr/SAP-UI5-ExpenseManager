@@ -1,0 +1,54 @@
+:root {
+    --teal-900: #073d3a;
+    --teal-800: #0b5d52;
+    --teal-700: #087c67;
+    --teal-600: #14a582;
+    --teal-050: #eafaf4;
+    --ink: #102a2b;
+    --muted: #687b7c;
+    --surface: #f4f7f8;
+    --line: #e7eeee;
+    --line-soft: #d5e3e1;
+    --white: #ffffff;
+}
+
+html, body, .sapUiBody { background: var(--surface); font-family: "72", "Segoe UI", sans-serif; }
+
+.brandCaption, .sectionHint, .metricHint, .transactionDate, .dialogIntro { color: var(--muted); font-size: .8rem; }
+
+.sapMBtnInner.sapMBtnDefault,
+.sapMBtnInner.sapMBtnDefault .sapUiIcon,
+.sapMBtnBack.sapMBtnInner,
+.sapMBtnBack.sapMBtnInner .sapUiIcon,
+.sapMBtnInner.sapMBtnTransparent,
+.sapMBtnInner.sapMBtnTransparent .sapUiIcon,
+.sapMBtnInner.sapMBtnLite,
+.sapMBtnInner.sapMBtnGhost,
+.sapMBtnInner.sapMBtnGhost .sapUiIcon { color: var(--teal-600) !important; }
+.sapMBtnInner.sapMBtnDefault:hover,
+.sapMBtnBack.sapMBtnInner:hover,
+.sapMBtnInner.sapMBtnTransparent:hover,
+.sapMBtnInner.sapMBtnGhost:hover { color: var(--teal-700) !important; }
+.sapMBtnInner.sapMBtnDefault:focus,
+.sapMBtnInner.sapMBtnDefault.sapMBtnActive { color: var(--teal-800) !important; }
+
+span.sapMBtnInner.sapMBtnEmphasized,
+.sapMBtnInner.sapMBtnEmphasized {
+    background: var(--teal-800) !important;
+    border-color: var(--teal-800) !important;
+    color: var(--white) !important;
+    background-image: none !important;
+}
+span.sapMBtnInner.sapMBtnEmphasized:hover,
+.sapMBtnInner.sapMBtnEmphasized:hover {
+    background: var(--teal-700) !important;
+    border-color: var(--teal-700) !important;
+    color: var(--white) !important;
+}
+span.sapMBtnInner.sapMBtnEmphasized.sapMBtnActive,
+.sapMBtnInner.sapMBtnEmphasized.sapMBtnActive,
+.sapMBtnInner.sapMBtnEmphasized:active {
+    background: var(--teal-900) !important;
+    border-color: var(--teal-900) !important;
+    color: var(--white) !important;
+}

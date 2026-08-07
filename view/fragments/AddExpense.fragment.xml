@@ -6,18 +6,39 @@
     <Dialog
         id="expenseDialog"
         title="{i18n>expenseDialogTitle}"
-        class="financeDialog"
+        class="financeDialog expenseDialog"
         contentWidth="28rem"
         core:require="{ handler: 'apps/dflc/expensemanager/controller/fragments/AddExpense' }"
     >
         <content>
             <VBox class="dialogContent">
-                <Text text="{i18n>expenseDialogIntro}" class="dialogIntro" />
-                <Label text="{i18n>expenseDescriptionLabel}" labelFor="expenseDescription" />
-                <Input id="expenseDescription" value="{ui>/newExpense/description}" placeholder="{i18n>expenseDescriptionPlaceholder}" />
-                <Label text="{i18n>expenseAmountLabel}" labelFor="expenseAmount" />
-                <Input id="expenseAmount" value="{ui>/newExpense/amount}" type="Number" placeholder="{i18n>expenseAmountPlaceholder}" />
-                <Label text="{i18n>expenseDateLabel}" labelFor="expenseDate" />
+                <Text
+                    text="{i18n>expenseDialogIntro}"
+                    class="dialogIntro"
+                />
+                <Label
+                    text="{i18n>expenseDescriptionLabel}"
+                    labelFor="expenseDescription"
+                />
+                <Input
+                    id="expenseDescription"
+                    value="{ui>/newExpense/description}"
+                    placeholder="{i18n>expenseDescriptionPlaceholder}"
+                />
+                <Label
+                    text="{i18n>expenseAmountLabel}"
+                    labelFor="expenseAmount"
+                />
+                <Input
+                    id="expenseAmount"
+                    value="{ui>/newExpense/amount}"
+                    type="Number"
+                    placeholder="{i18n>expenseAmountPlaceholder}"
+                />
+                <Label
+                    text="{i18n>expenseDateLabel}"
+                    labelFor="expenseDate"
+                />
                 <DatePicker
                     id="expenseDate"
                     value="{ui>/newExpense/transactionDate}"
@@ -25,7 +46,10 @@
                     valueFormat="yyyy-MM-dd"
                     width="100%"
                 />
-                <Label text="{i18n>expenseInstallmentsLabel}" labelFor="expenseInstallments" />
+                <Label
+                    text="{i18n>expenseInstallmentsLabel}"
+                    labelFor="expenseInstallments"
+                />
                 <StepInput
                     id="expenseInstallments"
                     value="{ui>/newExpense/installments}"
@@ -34,27 +58,60 @@
                     step="1"
                     width="100%"
                 />
+
                 <CheckBox
                     id="expenseFixed"
                     text="{i18n>expenseFixedLabel}"
                     selected="{ui>/newExpense/fixedExpense}"
                     class="sapUiTinyMarginTopBottom"
                 />
-                <Label text="{i18n>expenseCardLabel}" labelFor="expenseCard" />
+
+                <Label
+                    text="{i18n>expenseCardLabel}"
+                    labelFor="expenseCard"
+                />
                 <Select
                     id="expenseCard"
+                    width="auto"
                     selectedKey="{ui>/newExpense/cardId}"
                     items="{ path: 'ui>/expenseCardOptions' }"
-                ><core:Item key="{key}" text="{text}" /></Select>
-                <Label text="{i18n>expenseCategoryLabel}" labelFor="expenseCategory" />
+                >
+                    <core:Item
+                        key="{key}"
+                        text="{text}"
+                    />
+                </Select>
+                <Label
+                    text="{i18n>expenseCategoryLabel}"
+                    labelFor="expenseCategory"
+                />
                 <Select
                     id="expenseCategory"
+                    width="auto"
                     selectedKey="{ui>/newExpense/categoryId}"
                     items="{ path: 'ui>/expenseCategoryOptions' }"
-                ><core:Item key="{key}" text="{text}" /></Select>
+                >
+                    <core:Item
+                        key="{key}"
+                        text="{text}"
+                    />
+                </Select>
             </VBox>
         </content>
-        <beginButton><Button text="{i18n>expenseSaveButton}" type="Emphasized" press="handler.onAddExpense" /></beginButton>
-        <endButton><Button text="{i18n>expenseCancelButton}" press="handler.onCancelarGasto" /></endButton>
+        <beginButton>
+            <Button
+                text="{i18n>expenseSaveButton}"
+                icon="sap-icon://save"
+                type="Emphasized"
+                press="handler.onAddExpense"
+            />
+        </beginButton>
+        <endButton>
+            <Button
+                text="{i18n>expenseCancelButton}"
+                icon="sap-icon://decline"
+                press="handler.onCancelarGasto"
+            />
+        </endButton>
     </Dialog>
 </core:FragmentDefinition>

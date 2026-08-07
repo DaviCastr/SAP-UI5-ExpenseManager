@@ -1,0 +1,13 @@
+.loginPage, .loginPage .sapMPageBgStandard { background: linear-gradient(135deg, #062e2c 0%, #0b5d52 55%, #12856e 100%); }
+.loginShell { width: 100%; min-height: 100vh; align-items: center; justify-content: center; padding: 1.5rem; box-sizing: border-box; }
+.loginCard { max-width: 26rem; width: 100%; background: var(--white); border-radius: 1.6rem; padding: 2.5rem 2.2rem; box-shadow: 0 30px 60px rgba(3, 32, 30, .35); gap: 1rem; box-sizing: border-box; }
+.loginBrand { gap: .7rem; }
+.loginBrandIcon { color: var(--teal-700); font-size: 1.8rem; background: #d8f7ed; border-radius: .9rem; padding: .6rem; }
+.loginBrandTitle { color: var(--ink); font-weight: 700; }
+.loginHeadline { color: var(--ink); line-height: 1.2; }
+.loginSubtitle { color: #5b6f70; }
+.loginPrimary { width: 100%; margin-top: .35rem; }
+.loginPrimary .sapMBtnInner { border-radius: .9rem; background: var(--teal-800); border-color: var(--teal-800); height: 3rem; }
+.loginPrimary .sapMBtnInner:active, .loginPrimary .sapMBtnInner:hover { background: #0a6b5c; border-color: #0a6b5c; }
+.loginPrimary .sapMBtnContent { font-weight: 600; letter-spacing: .01rem; }
+.loginNote { color: #9aabab; font-size: .78rem; text-align: center; margin-top: .35rem; }

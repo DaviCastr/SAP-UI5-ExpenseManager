@@ -1,0 +1,65 @@
+.balanceHero { gap: 1.5rem; border-radius: 1.5rem; padding: 2.2rem; background: linear-gradient(125deg, var(--teal-900), var(--teal-700) 65%, var(--teal-600)); box-shadow: 0 18px 36px rgba(5, 70, 60, .2); }
+.balanceCopy { max-width: 36rem; gap: .45rem; }
+.eyebrow, .balanceLabel, .metricLabel { font-weight: 700; letter-spacing: .12em; font-size: .68rem; }
+.eyebrow, .balanceLabel { color: #a7f4d7; }
+.heroTitle, .heroSubtitle, .balanceNumber .sapMObjectNumberText, .balanceNumber .sapMObjectNumberUnit, .balanceTrend { color: var(--white) !important; }
+.heroTitle { font-size: 2rem; line-height: 1.15; }
+.heroSubtitle { max-width: 31rem; opacity: .88; }
+.primaryAction.sapMBtnInner.sapMBtnEmphasized { border-radius: .7rem; background: var(--teal-800) !important; border-color: var(--teal-800) !important; }
+.primaryAction .sapMBtnContent { font-weight: 700; }
+.commonAction .sapMBtnInner, .actionButton .sapMBtnInner { border-radius: .7rem; }
+.secondaryAction .sapMBtnInner,
+.secondaryAction.sapMBtnInner.sapMBtnTransparent,
+.secondaryAction.sapMBtnInner.sapMBtnTransparent .sapUiIcon { color: var(--white) !important; border-color: rgba(255,255,255,.5) !important; border-radius: .65rem; }
+.secondaryAction.sapMBtnInner.sapMBtnTransparent:hover,
+.secondaryAction.sapMBtnInner.sapMBtnTransparent:hover .sapUiIcon { color: #d7f7ea !important; }
+.balanceCard { min-width: 16rem; justify-content: center; padding: 1.6rem 1.6rem; background: rgba(0,0,0,.13); border: 1px solid rgba(255,255,255,.16); border-radius: 1rem; }
+.balanceNumber { margin: .5rem 0; }
+.balanceNumber .sapMObjectNumberText { font-size: 2.2rem; line-height: 1.25; }
+.balanceTrend { gap: .35rem; font-size: .8rem; }
+
+.metricCard { flex: 1 1 12rem; min-width: 0; padding: 1.15rem; border-radius: 1rem; background: var(--white); box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid var(--line); }
+.metricCard .sapUiIcon { padding: .5rem; border-radius: .6rem; }
+.incomeMetric .sapUiIcon { background: #d9f8ec; color: var(--teal-700); }
+.expenseMetric .sapUiIcon { background: #fff0e5; color: #d98e3d; }
+.saveMetric .sapUiIcon { background: #e6eefb; color: #3d6ad9; }
+.targetMetric .sapUiIcon { background: #efe8fd; color: #7a3dd9; }
+.metricCard .sapMObjectNumberText { font-size: 1.35rem; font-weight: 700; color: var(--ink); }
+
+.transactionList, .cardList, .categoryList { background: transparent; max-height: 26rem; overflow-y: auto; }
+.transactionItem { padding: .7rem 0; }
+.transactionIcon { background: var(--teal-050); color: var(--teal-700); border-radius: .7rem; padding: .6rem; margin-right: .8rem; }
+.transactionTitle { font-weight: 600; color: var(--ink); }
+.transactionAmount .sapMObjectNumberText { font-weight: 700; color: var(--ink); }
+
+.categoryItem { padding: .55rem 0; }
+.categoryItemMain { gap: .85rem; }
+.categoryItemAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.categoryProgress { margin-top: .3rem; }
+.categoryProgress .sapMProgressIndicator { background: var(--teal-050); border-radius: .5rem; height: .45rem; }
+.categoryProgress .sapMProgressIndicator .sapMProgressBar { background: var(--teal-700); border-radius: .5rem; }
+
+.creditCardItem { padding: .6rem 0; }
+.creditCardName { font-weight: 700; color: var(--ink); }
+.creditCardLabel { color: var(--muted); font-size: .75rem; }
+.creditCardValue .sapMObjectNumberText { font-size: 1.4rem; font-weight: 700; color: var(--ink); }
+.creditCardFoot { color: var(--muted); font-size: .78rem; }
+
+.categoryDetailHeader { gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #eef3f3; }
+.categoryDetailAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.categoryDetailTotal .sapMObjectNumberText { font-size: 1.35rem; font-weight: 700; color: var(--ink); margin-left: auto; }
+.categoryInvoiceList { gap: .5rem; padding: .35rem 0; }
+.categoryInvoiceItem { padding: .5rem 0; }
+.categoryEmpty { gap: .4rem; align-items: center; padding: 1.5rem; }
+.categoryEmptyIcon { font-size: 1.8rem; color: #9fbbb7; }
+
+.simulationInputs { gap: 1rem; }
+.simulationField { flex: 1 1 9rem; }
+.simulationResult { gap: .5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eef3f3; }
+.simulationMetricRow { padding: .35rem 0; }
+.simulationMetricLabel { color: var(--muted); font-size: .85rem; }
+.simulationMetricValue .sapMObjectNumberText { font-weight: 700; color: var(--ink); }
+.simulationBreakdown { gap: .4rem; margin-top: .4rem; }
+.simulationBarRow { gap: .75rem; }
+.simulationBarLabel { min-width: 8rem; }
+.simulationBar .sapMProgressIndicator { height: .6rem; border-radius: .5rem; }
