@@ -10,7 +10,7 @@ import Fragment from "sap/ui/core/Fragment";
 import XMLView from "sap/ui/core/mvc/XMLView";
 import { BaseController } from "./BaseController";
 import { AuthenticationService } from "../auth/AuthenticationService";
-import Environment, { EnvironmentType } from "../util/Environment";
+import { SessionStorage } from "../auth/storage/SessionStorage";
 import { formatCurrency } from "../util/format";
 import { ODataService, DRAFT_FILTER, DRAFT_EXPAND } from "../service/ODataService";
 import { InvoiceService, type CompleteInvoice, type Period } from "../service/InvoiceService";
@@ -70,6 +70,7 @@ export default class Home extends BaseController {
     private _categoryDetailDialog?: Promise<Dialog>;
     private _simulationDialog?: Promise<Dialog>;
     private _persons: UiPerson[] = [];
+    private _backendErrorShown = false;
 
     private get uiModel(): JSONModel {
         return this.getOwnerComponent()?.getModel("ui") as JSONModel;
@@ -99,9 +100,7 @@ export default class Home extends BaseController {
             if (isSessionExpiredError(error)) {
                 return;
             }
-            if (Environment.current() !== EnvironmentType.GITHUB) {
-                MessageBox.error(this.getText("backendUnavailable"));
-            }
+            this.showBackendError();
         }
     }
 
@@ -119,6 +118,21 @@ export default class Home extends BaseController {
     public async onLogout(): Promise<void> {
         await AuthenticationService.logout();
         this.navTo("Login");
+    }
+
+    private showBackendError(): void {
+        if (this._backendErrorShown) {
+            return;
+        }
+
+        this._backendErrorShown = true;
+        SessionStorage.clear();
+        MessageBox.error(this.getText("backendUnavailableLogin"), {
+            onClose: () => {
+                this._backendErrorShown = false;
+                this.navTo("Login");
+            }
+        });
     }
 
     public onOpenExpenseDialog(): void {
@@ -374,8 +388,7 @@ export default class Home extends BaseController {
             if (isSessionExpiredError(error)) {
                 return;
             }
-            // eslint-disable-next-line no-console
-            console.error("[setupPersonSelector] requestEntitySet /Persons failed:", error);
+            this.showBackendError();
         }
 
         this._persons = persons;
@@ -520,9 +533,7 @@ export default class Home extends BaseController {
             }
             // eslint-disable-next-line no-console
             console.error("[loadDashboard] ERROR:", error);
-            if (Environment.current() !== EnvironmentType.GITHUB) {
-                MessageBox.error(this.getText("backendUnavailable"));
-            }
+            this.showBackendError();
         } finally {
             ui.setProperty("/busy", false);
         }
