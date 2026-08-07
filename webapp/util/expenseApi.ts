@@ -93,6 +93,7 @@ export interface CategoryBreakdownItem {
     ID: string;
     Name: string;
     CategoryImagePath?: string;
+    CategoryImageBase64?: string;
     Total: number;
     Percent: number;
     CurrencyCode: string;

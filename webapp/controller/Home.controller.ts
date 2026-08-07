@@ -47,7 +47,7 @@ interface TransactionRow {
     Date?: string;
     Amount?: number;
     Currency?: string;
-    Category?: { ID: string; Name: string; ImagePath?: string };
+    Category?: { ID: string; Name: string; ImagePath?: string; ImageBase64?: string };
 }
 
 interface CardRow {
@@ -574,6 +574,8 @@ export default class Home extends BaseController {
 
         this.buildCategories(transactions, expenses, currency);
 
+        void this.resolveCategoryImages(transactions);
+
         void this.loadTrend(this.getSelectedPersonId(), this.currentPeriodDefault(), expenses);
     }
 
@@ -641,6 +643,7 @@ export default class Home extends BaseController {
                 ID: item.ID,
                 Name: item.Name,
                 CategoryImagePath: item.CategoryImagePath,
+                CategoryImageBase64: undefined,
                 Total: item.Total,
                 Percent: expenses > 0 ? Math.round((item.Total / expenses) * 100) : 0,
                 CurrencyCode: currency
@@ -648,6 +651,53 @@ export default class Home extends BaseController {
             .sort((a, b) => b.Total - a.Total);
 
         this.uiModel.setProperty("/categories", categories);
+    }
+
+    /**
+     * Resolves the image of each distinct category and stores its base64
+     * representation in the ui model, so avatars can render it without a
+     * browser-side request that would lack the Authorization header.
+     *
+     * @param {TransactionRow[]} transactions the transactions to enrich (Category/ImageBase64)
+     */
+    private async resolveCategoryImages(transactions: TransactionRow[]): Promise<void> {
+        const ui = this.uiModel;
+        const odata = this._odata;
+
+        if (!odata) {
+            return;
+        }
+
+        const byId = new Map<string, { path?: string; txIndexes: number[] }>();
+        transactions.forEach((transaction, index) => {
+            const category = transaction.Category;
+            if (!category) {
+                return;
+            }
+            const entry = byId.get(category.ID) || { path: category.ImagePath, txIndexes: [] };
+            entry.txIndexes.push(index);
+            byId.set(category.ID, entry);
+        });
+
+        const categories = (ui.getProperty("/categories") as CategoryBreakdownItem[] | undefined) || [];
+        const catIndex = new Map<string, number>();
+        categories.forEach((category, index) => catIndex.set(category.ID, index));
+
+        await Promise.all(
+            Array.from(byId.entries()).map(async ([categoryId, entry]) => {
+                const base64 = await odata.getMediaAsBase64(entry.path);
+                if (!base64) {
+                    return;
+                }
+                for (const txIndex of entry.txIndexes) {
+                    ui.setProperty(`/transactions/${txIndex}/Category/ImageBase64`, base64);
+                }
+                const index = catIndex.get(categoryId);
+                if (index !== undefined) {
+                    ui.setProperty(`/categories/${index}/CategoryImageBase64`, base64);
+                }
+            })
+        );
     }
 
     private navigateMonth(delta: number): void {
