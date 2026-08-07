@@ -40,7 +40,7 @@ html, body, .sapUiBody { background: #f4f7f8; font-family: "72", "Segoe UI", san
 
 .surfaceCard { flex: 1 1 22rem; min-width: 0; padding: 1.4rem; border-radius: 1.2rem; background: #fff; box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid #e7eeee; }
 .sectionHeader { margin-bottom: .4rem; }
-.transactionList, .cardList, .categoryList { background: transparent; }
+.transactionList, .cardList, .categoryList { background: transparent; max-height: 26rem; overflow-y: auto; }
 .transactionItem { padding: .7rem 0; }
 .transactionIcon { background: #eafaf4; color: #087c67; border-radius: .7rem; padding: .6rem; margin-right: .8rem; }
 .transactionTitle { font-weight: 600; color: #102a2b; }
