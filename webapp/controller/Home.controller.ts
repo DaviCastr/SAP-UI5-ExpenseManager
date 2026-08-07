@@ -57,6 +57,7 @@ interface CardRow {
     Currency: string;
     DueDay: number;
     ClosingDay: number;
+    CardImageBase64?: string;
 }
 
 export default class Home extends BaseController {
@@ -527,6 +528,7 @@ export default class Home extends BaseController {
                 ...card,
                 Currency: resolveCurrency(card.Currency)
             })));
+            void this.resolveCardImages(cards);
         } catch (error) {
             if (isSessionExpiredError(error)) {
                 return;
@@ -696,6 +698,34 @@ export default class Home extends BaseController {
                 if (index !== undefined) {
                     ui.setProperty(`/categories/${index}/CategoryImageBase64`, base64);
                 }
+            })
+        );
+    }
+
+    /**
+     * Resolves the image of each card and stores its base64 representation in
+     * the ui model, so the avatar renders without a browser-side request that
+     * would lack the Authorization header. Each card is fetched once via the
+     * authenticated OData model media support.
+     *
+     * @param {CardRow[]} cards the cards to enrich (CardImageBase64)
+     */
+    private async resolveCardImages(cards: CardRow[]): Promise<void> {
+        const ui = this.uiModel;
+        const odata = this._odata;
+
+        if (!odata) {
+            return;
+        }
+
+        await Promise.all(
+            cards.map(async (card, index) => {
+                const mediaPath = `Cards(ID='${encodeURIComponent(card.ID)}',IsActiveEntity=true)/Image`;
+                const base64 = await odata.getMediaAsBase64(mediaPath);
+                if (!base64) {
+                    return;
+                }
+                ui.setProperty(`/cards/${index}/CardImageBase64`, base64);
             })
         );
     }

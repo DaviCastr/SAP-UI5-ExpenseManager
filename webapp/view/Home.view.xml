@@ -544,11 +544,18 @@
                                         alignItems="Center"
                                     >
                                         <Text
-                                            text="{Name}"
+                                            text="{ui>Name}"
                                             class="creditCardName"
                                         />
-                                        <core:Icon
+                                        <!-- <core:Icon
                                             src="sap-icon://credit-card"
+                                        /> -->
+                                        <Avatar
+                                            src="{ui>CardImageBase64}"
+                                            displaySize="XS"
+                                            customDisplaySize="2.75rem"
+                                            displayShape="Circle"
+                                            initials="{ui>Name}"
                                         />
                                     </HBox>
                                     <Text
@@ -558,8 +565,8 @@
                                     <ObjectNumber
                                         number="{
                                             parts: [
-                                                { path: 'Limit' },
-                                                { path: 'Currency' }
+                                                { path: 'ui>Limit' },
+                                                { path: 'ui>Currency' }
                                             ],
                                             formatter: 'formatter.formatCurrency'
                                         }"
@@ -567,11 +574,11 @@
                                     />
                                     <HBox justifyContent="SpaceBetween">
                                         <Text
-                                            text="{ parts: [ { path: 'i18n>cardClosingDay' }, { path: 'ClosingDay' } ], formatter: 'formatter.formatTemplate' }"
+                                            text="{ parts: [ { path: 'i18n>cardClosingDay' }, { path: 'ui>ClosingDay' } ], formatter: 'formatter.formatTemplate' }"
                                             class="creditCardFoot"
                                         />
                                         <Text
-                                            text="{ parts: [ { path: 'i18n>cardDueDay' }, { path: 'DueDay' } ], formatter: 'formatter.formatTemplate' }"
+                                            text="{ parts: [ { path: 'i18n>cardDueDay' }, { path: 'ui>DueDay' } ], formatter: 'formatter.formatTemplate' }"
                                             class="creditCardFoot"
                                         />
                                     </HBox>
