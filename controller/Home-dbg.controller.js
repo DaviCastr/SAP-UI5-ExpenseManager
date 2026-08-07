@@ -1,13 +1,9 @@
-sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../util/Environment", "../util/format", "../service/ODataService", "../service/InvoiceService", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageBox, MessageToast, Fragment, ___BaseController, ___auth_AuthenticationService, __Environment, ___util_format, ___service_ODataService, ___service_InvoiceService, Filter, FilterOperator, ___util_expenseApi, ___util_backupApi, ___util_http) {
+sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../auth/storage/SessionStorage", "../util/format", "../service/ODataService", "../service/InvoiceService", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageBox, MessageToast, Fragment, ___BaseController, ___auth_AuthenticationService, ___auth_storage_SessionStorage, ___util_format, ___service_ODataService, ___service_InvoiceService, Filter, FilterOperator, ___util_expenseApi, ___util_backupApi, ___util_http) {
   "use strict";
 
-  function _interopRequireDefault(obj) {
-    return obj && obj.__esModule && typeof obj.default !== "undefined" ? obj.default : obj;
-  }
   const BaseController = ___BaseController["BaseController"];
   const AuthenticationService = ___auth_AuthenticationService["AuthenticationService"];
-  const Environment = _interopRequireDefault(__Environment);
-  const EnvironmentType = __Environment["EnvironmentType"];
+  const SessionStorage = ___auth_storage_SessionStorage["SessionStorage"];
   const formatCurrency = ___util_format["formatCurrency"];
   const ODataService = ___service_ODataService["ODataService"];
   const DRAFT_FILTER = ___service_ODataService["DRAFT_FILTER"];
@@ -32,6 +28,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
   }
   class Home extends BaseController {
     _persons = [];
+    _backendErrorShown = false;
     get uiModel() {
       return this.getOwnerComponent()?.getModel("ui");
     }
@@ -41,7 +38,9 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
     async initView() {
       const model = await this.ensureServiceModel();
       if (!model) {
-        this.navTo("Login");
+        if (!AuthenticationService.isAuthErrorPending()) {
+          this.navTo("Login");
+        }
         return;
       }
       this._odata = new ODataService(model);
@@ -53,9 +52,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         if (isSessionExpiredError(error)) {
           return;
         }
-        if (Environment.current() !== EnvironmentType.GITHUB) {
-          MessageBox.error(this.getText("backendUnavailable"));
-        }
+        this.showBackendError();
       }
     }
     onPersonChange(oEvent) {
@@ -69,6 +66,19 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
     async onLogout() {
       await AuthenticationService.logout();
       this.navTo("Login");
+    }
+    showBackendError() {
+      if (this._backendErrorShown) {
+        return;
+      }
+      this._backendErrorShown = true;
+      SessionStorage.clear();
+      MessageBox.error(this.getText("backendUnavailableLogin"), {
+        onClose: () => {
+          this._backendErrorShown = false;
+          this.navTo("Login");
+        }
+      });
     }
     onOpenExpenseDialog() {
       const oView = this.getView();
@@ -312,8 +322,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         if (isSessionExpiredError(error)) {
           return;
         }
-        // eslint-disable-next-line no-console
-        console.error("[setupPersonSelector] requestEntitySet /Persons failed:", error);
+        this.showBackendError();
       }
       this._persons = persons;
       const select = this.byId("personSelect");
@@ -435,9 +444,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         }
         // eslint-disable-next-line no-console
         console.error("[loadDashboard] ERROR:", error);
-        if (Environment.current() !== EnvironmentType.GITHUB) {
-          MessageBox.error(this.getText("backendUnavailable"));
-        }
+        this.showBackendError();
       } finally {
         ui.setProperty("/busy", false);
       }

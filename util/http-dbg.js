@@ -43,7 +43,7 @@ sap.ui.define(["../auth/AuthenticationService", "../auth/providers/XsuaaAuthHelp
     }
     const headers = buildHeaders({});
     headers.set("x-csrf-token", "Fetch");
-    const response = await fetch(getOdataServiceUrl(), {
+    const response = await fetch(`${getOdataServiceUrl()}Persons`, {
       method: "GET",
       headers
     });

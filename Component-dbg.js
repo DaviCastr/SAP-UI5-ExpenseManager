@@ -1,10 +1,11 @@
-sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "sap/m/MessageBox", "./model/models", "./auth/AuthenticationService", "./auth/providers/AuthenticatedProviderFactory", "./auth/providers/XsuaaAuthHelper", "./auth/storage/SessionStorage", "./util/Environment", "sap/ui/model/json/JSONModel"], function (BaseComponent, ODataModel, MessageBox, ___model_models, ___auth_AuthenticationService, ___auth_providers_AuthenticatedProviderFactory, ___auth_providers_XsuaaAuthHelper, ___auth_storage_SessionStorage, __Environment, JSONModel) {
+sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "sap/m/MessageBox", "./model/models", "./model/UiModel", "./auth/AuthenticationService", "./auth/providers/AuthenticatedProviderFactory", "./auth/providers/XsuaaAuthHelper", "./auth/storage/SessionStorage", "./util/Environment"], function (BaseComponent, ODataModel, MessageBox, ___model_models, __UiModel, ___auth_AuthenticationService, ___auth_providers_AuthenticatedProviderFactory, ___auth_providers_XsuaaAuthHelper, ___auth_storage_SessionStorage, __Environment) {
   "use strict";
 
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule && typeof obj.default !== "undefined" ? obj.default : obj;
   }
   const createDeviceModel = ___model_models["createDeviceModel"];
+  const UiModel = _interopRequireDefault(__UiModel);
   const AuthenticationService = ___auth_AuthenticationService["AuthenticationService"];
   const AuthenticatedProviderFactory = ___auth_providers_AuthenticatedProviderFactory["AuthenticatedProviderFactory"];
   const XsuaaAuthHelper = ___auth_providers_XsuaaAuthHelper["XsuaaAuthHelper"];
@@ -29,8 +30,9 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
       await XsuaaAuthHelper.loadRuntimeConfig();
       AuthenticationService.initialize(AuthenticatedProviderFactory.create());
       AuthenticationService.onSessionExpired(() => this.handleSessionExpired());
+      AuthenticationService.onAuthError(message => this.handleAuthError(message));
       this.setModel(createDeviceModel(), "device");
-      this.setModel(this.createUiModel(), "ui");
+      this.setModel(new UiModel(), "ui");
       const environment = Environment.current();
       if (environment === EnvironmentType.GITHUB) {
         // The service model is provisioned lazily by the route guard and the controllers.
@@ -84,7 +86,9 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
       const session = AuthenticationService.getSession();
       const authenticated = !!session?.accessToken && session.expiresAt > Date.now();
       if (target === "Home" && !authenticated) {
-        this.getRouter().navTo("Login");
+        if (!AuthenticationService.isAuthErrorPending()) {
+          this.getRouter().navTo("Login");
+        }
       } else if (target === "Login" && authenticated) {
         this.getRouter().navTo("Home");
       }
@@ -128,37 +132,6 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
         XsuaaAuthHelper.setServiceUrl(uri);
       }
     },
-    createUiModel: function _createUiModel() {
-      const now = new Date();
-      return new JSONModel({
-        period: {
-          year: now.getFullYear(),
-          month: now.getMonth() + 1
-        },
-        monthLabel: "",
-        selectedPerson: {},
-        selectedPersonId: "",
-        selectedPersonImage: "",
-        personsEmpty: false,
-        busy: false,
-        transactions: [],
-        cards: [],
-        summary: {
-          available: "",
-          income: "",
-          expenses: "",
-          savings: "",
-          target: "",
-          expenseHint: "",
-          targetHint: "",
-          trendText: "",
-          trendIcon: "sap-icon://trend-up"
-        },
-        categories: [],
-        newExpense: {},
-        newCard: {}
-      });
-    },
     handleSessionExpired: function _handleSessionExpired() {
       if (this._sessionExpiredShown) {
         return;
@@ -173,6 +146,18 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
         icon: MessageBox.Icon.WARNING,
         onClose: () => {
           this._sessionExpiredShown = false;
+          this.getRouter().navTo("Login");
+        }
+      });
+    },
+    handleAuthError: function _handleAuthError(message) {
+      const bundle = this.getModel("i18n")?.getResourceBundle();
+      const prefix = bundle?.getText("authErrorPrefix") ?? "Erro ao autenticar, motivo";
+      this._sessionExpiredShown = true;
+      MessageBox.error(`${prefix}: ${message}`, {
+        onClose: () => {
+          this._sessionExpiredShown = false;
+          AuthenticationService.clearAuthError();
           this.getRouter().navTo("Login");
         }
       });

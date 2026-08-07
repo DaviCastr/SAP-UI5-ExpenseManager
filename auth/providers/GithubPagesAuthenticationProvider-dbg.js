@@ -64,7 +64,9 @@ sap.ui.define(["../AuthenticationService", "../storage/SessionStorage", "./Xsuaa
         return true;
       } catch (error) {
         this.cleanUpAuthorizationParams();
-        throw error;
+        const message = error instanceof Error ? error.message : String(error);
+        AuthenticationService.notifyAuthError(message);
+        return false;
       }
     }
     cleanUpAuthorizationParams() {

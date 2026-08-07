@@ -12,15 +12,7 @@ import { createEntity, uploadImage } from "../../util/entityApi";
 import { isSessionExpiredError } from "../../util/http";
 import { getText } from "../../util/i18n";
 import type Home from "../../controller/Home.controller";
-
-interface NewPerson {
-    name: string;
-    email: string;
-    phone: string;
-    income: string;
-    currency: string;
-    target: string;
-}
+import type { NewPerson } from "../../model/UiModel";
 
 let personPhoto: File | null = null;
 

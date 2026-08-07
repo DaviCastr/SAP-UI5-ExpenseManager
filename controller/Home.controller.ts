@@ -10,7 +10,7 @@ import Fragment from "sap/ui/core/Fragment";
 import XMLView from "sap/ui/core/mvc/XMLView";
 import { BaseController } from "./BaseController";
 import { AuthenticationService } from "../auth/AuthenticationService";
-import Environment, { EnvironmentType } from "../util/Environment";
+import { SessionStorage } from "../auth/storage/SessionStorage";
 import { formatCurrency } from "../util/format";
 import { ODataService, DRAFT_FILTER, DRAFT_EXPAND } from "../service/ODataService";
 import { InvoiceService, type CompleteInvoice, type Period } from "../service/InvoiceService";
@@ -29,6 +29,7 @@ import {
     downloadBlob
 } from "../util/backupApi";
 import { isSessionExpiredError, buildHeaders, getOdataServiceUrl } from "../util/http";
+import type { UiPerson } from "../model/UiModel";
 
 function resolveCurrency(currency: unknown, fallback = "BRL"): string {
     if (typeof currency === "string" && currency) {
@@ -58,15 +59,6 @@ interface CardRow {
     ClosingDay: number;
 }
 
-interface UiPerson {
-    ID: string;
-    Name: string;
-    Income?: number;
-    ExpenseTarget?: number;
-    Currency?: string | { code?: string };
-    ImageType?: string;
-}
-
 export default class Home extends BaseController {
     private _odata?: ODataService;
     private _invoiceService?: InvoiceService;
@@ -78,6 +70,7 @@ export default class Home extends BaseController {
     private _categoryDetailDialog?: Promise<Dialog>;
     private _simulationDialog?: Promise<Dialog>;
     private _persons: UiPerson[] = [];
+    private _backendErrorShown = false;
 
     private get uiModel(): JSONModel {
         return this.getOwnerComponent()?.getModel("ui") as JSONModel;
@@ -91,7 +84,9 @@ export default class Home extends BaseController {
         const model = await this.ensureServiceModel();
 
         if (!model) {
-            this.navTo("Login");
+            if (!AuthenticationService.isAuthErrorPending()) {
+                this.navTo("Login");
+            }
             return;
         }
 
@@ -105,9 +100,7 @@ export default class Home extends BaseController {
             if (isSessionExpiredError(error)) {
                 return;
             }
-            if (Environment.current() !== EnvironmentType.GITHUB) {
-                MessageBox.error(this.getText("backendUnavailable"));
-            }
+            this.showBackendError();
         }
     }
 
@@ -125,6 +118,21 @@ export default class Home extends BaseController {
     public async onLogout(): Promise<void> {
         await AuthenticationService.logout();
         this.navTo("Login");
+    }
+
+    private showBackendError(): void {
+        if (this._backendErrorShown) {
+            return;
+        }
+
+        this._backendErrorShown = true;
+        SessionStorage.clear();
+        MessageBox.error(this.getText("backendUnavailableLogin"), {
+            onClose: () => {
+                this._backendErrorShown = false;
+                this.navTo("Login");
+            }
+        });
     }
 
     public onOpenExpenseDialog(): void {
@@ -380,8 +388,7 @@ export default class Home extends BaseController {
             if (isSessionExpiredError(error)) {
                 return;
             }
-            // eslint-disable-next-line no-console
-            console.error("[setupPersonSelector] requestEntitySet /Persons failed:", error);
+            this.showBackendError();
         }
 
         this._persons = persons;
@@ -526,9 +533,7 @@ export default class Home extends BaseController {
             }
             // eslint-disable-next-line no-console
             console.error("[loadDashboard] ERROR:", error);
-            if (Environment.current() !== EnvironmentType.GITHUB) {
-                MessageBox.error(this.getText("backendUnavailable"));
-            }
+            this.showBackendError();
         } finally {
             ui.setProperty("/busy", false);
         }

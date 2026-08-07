@@ -4,6 +4,8 @@ sap.ui.define(["./storage/SessionStorage"], function (___storage_SessionStorage)
   const SessionStorage = ___storage_SessionStorage["SessionStorage"];
   class AuthenticationService {
     static sessionExpiredHandler = null;
+    static authErrorHandler = null;
+    static authErrorPending = false;
     static initialize(provider) {
       this.provider = provider;
     }
@@ -27,6 +29,19 @@ sap.ui.define(["./storage/SessionStorage"], function (___storage_SessionStorage)
     static notifySessionExpired() {
       SessionStorage.clear();
       this.sessionExpiredHandler?.();
+    }
+    static onAuthError(handler) {
+      this.authErrorHandler = handler;
+    }
+    static notifyAuthError(message) {
+      this.authErrorPending = true;
+      this.authErrorHandler?.(message);
+    }
+    static isAuthErrorPending() {
+      return this.authErrorPending;
+    }
+    static clearAuthError() {
+      this.authErrorPending = false;
     }
   }
   var __exports = {
