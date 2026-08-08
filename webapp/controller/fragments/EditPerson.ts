@@ -63,7 +63,10 @@ const PersonDetail = {
             Income?: string | number;
             ExpenseTarget?: string | number;
             AmountToSave?: string | number;
+            // eslint-disable-next-line camelcase
             Currency_code?: string;
+            // eslint-disable-next-line camelcase
+            ImageType?: string;
             IsActiveEntity?: boolean;
         };
 
@@ -83,7 +86,9 @@ const PersonDetail = {
                 ExpenseTarget: toNumber(person.ExpenseTarget),
                 AmountToSave: toNumber(person.AmountToSave),
                 // eslint-disable-next-line camelcase
-                Currency_code: person.Currency_code || "BRL"
+                Currency_code: person.Currency_code || "BRL",
+                // eslint-disable-next-line camelcase
+                ImageType: (person.ImageType as string) || personPhoto?.type || ""
             });
 
             if (personPhoto) {
