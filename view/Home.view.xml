@@ -80,6 +80,13 @@
                                 />
                             </Select>
                             <Button
+                                icon="sap-icon://edit"
+                                type="Transparent"
+                                tooltip="{i18n>personEditTooltip}"
+                                press=".onOpenPersonDetailDialog"
+                                class="iconAction"
+                            />
+                            <Button
                                 icon="sap-icon://add"
                                 type="Transparent"
                                 tooltip="{i18n>personAddButton}"

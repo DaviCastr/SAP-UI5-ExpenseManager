@@ -2,13 +2,38 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   "use strict";
 
   const XsuaaAuthHelper = ___auth_providers_XsuaaAuthHelper["XsuaaAuthHelper"];
+  function currencyCode(currency, fallback = "BRL") {
+    if (typeof currency === "string" && currency) {
+      return currency;
+    }
+    if (currency && typeof currency === "object") {
+      return currency.code || fallback;
+    }
+    return fallback;
+  }
+  function toNumber(value) {
+    if (typeof value === "number") {
+      return value;
+    }
+    if (typeof value !== "string" || !value.trim()) {
+      return 0;
+    }
+    const text = value.trim();
+    const hasComma = text.includes(",");
+    const normalized = hasComma ? text.replace(/\./g, "").replace(",", ".") : text.replace(/\s/g, "");
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
   function formatCurrency(value, currency) {
-    const amount = Number(value) || 0;
+    const amount = toNumber(value);
     const code = currency || "BRL";
     return amount.toLocaleString("pt-BR", {
       style: "currency",
       currency: code
     });
+  }
+  function formatCardAmount(limit, currency) {
+    return formatCurrency(toNumber(limit ?? 0), currencyCode(currency));
   }
   function formatDate(dateValue) {
     if (!dateValue) {
@@ -72,18 +97,6 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
     const second = parts[1]?.[0] ?? parts[0]?.[1] ?? "";
     return (first + second).toUpperCase();
   }
-  function currencyCode(currency, fallback = "BRL") {
-    if (typeof currency === "string" && currency) {
-      return currency;
-    }
-    if (currency && typeof currency === "object") {
-      return currency.code || fallback;
-    }
-    return fallback;
-  }
-  function formatCardAmount(limit, currency) {
-    return formatCurrency(Number(limit) || 0, currencyCode(currency));
-  }
   function cardImageValue(id, images) {
     if (!id || !images) {
       return "";
@@ -93,7 +106,9 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   var __exports = {
     __esModule: true
   };
+  __exports.currencyCode = currencyCode;
   __exports.formatCurrency = formatCurrency;
+  __exports.formatCardAmount = formatCardAmount;
   __exports.formatDate = formatDate;
   __exports.imageUrl = imageUrl;
   __exports.formatMonth = formatMonth;
@@ -102,8 +117,6 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   __exports.transactionSubtle = transactionSubtle;
   __exports.formatTemplate = formatTemplate;
   __exports.initials = initials;
-  __exports.currencyCode = currencyCode;
-  __exports.formatCardAmount = formatCardAmount;
   __exports.cardImageValue = cardImageValue;
   return __exports;
 });

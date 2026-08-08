@@ -91,6 +91,18 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController",
       });
       void this.openPreparedDialog("AddPerson", dialog => dialog.open());
     }
+    onOpenPersonDetailDialog() {
+      const personId = this.getSelectedPersonId();
+      if (!personId) {
+        this.showErrorMessage("errorMissingPerson");
+        return;
+      }
+      void this.openPreparedDialog("PersonDetail", dialog => {
+        dialog.setModel(this.getView()?.getModel());
+        dialog.bindObject(this.personPathFor(personId));
+        dialog.open();
+      });
+    }
     onOpenCardDialog() {
       const ui = this.getUiModel();
       ui.setProperty("/newCard", {
