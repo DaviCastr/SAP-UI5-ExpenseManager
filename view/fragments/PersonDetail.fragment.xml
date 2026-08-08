@@ -29,6 +29,10 @@
                             customDisplaySize="5rem"
                             displayShape="Circle"
                             initials="{Name}"
+                            src="{
+                                parts: [ { path: 'ID' }, { path: 'ImageType' } ],
+                                formatter: 'formatter.personImage'
+                            }"
                             class="sapUiTinyMarginEnd"
                         />
                         <VBox>
