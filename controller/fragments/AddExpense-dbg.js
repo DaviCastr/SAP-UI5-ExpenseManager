@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "../../util/expenseApi", "../../util/http", "../../util/i18n"], function (MessageBox, MessageToast, ____util_expenseApi, ____util_http, ____util_i18n) {
+sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast", "../../util/expenseApi", "../../util/http", "../../util/i18n"], function (Fragment, MessageBox, MessageToast, ____util_expenseApi, ____util_http, ____util_i18n) {
   "use strict";
 
   const addCardExpense = ____util_expenseApi["addCardExpense"];
@@ -14,25 +14,23 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "../../util/expenseApi"
       const view = dialog.getParent();
       const uiModel = view.getModel("ui");
       const expense = uiModel.getProperty("/newExpense");
-      if (!expense.description || !expense.amount || !expense.cardId || !expense.categoryId) {
+      const selectedCard = Fragment.byId("AddExpense", "expenseCard")?.getSelectedItem();
+      const selectedCategory = Fragment.byId("AddExpense", "expenseCategory")?.getSelectedItem();
+      const card = selectedCard?.getBindingContext()?.getObject();
+      const category = selectedCategory?.getBindingContext()?.getObject();
+      if (!expense.description || !expense.amount || !card?.ID || !category?.ID) {
         MessageBox.warning(getText(view, "errorFillRequiredFields"));
         return;
       }
-      const selectedCard = uiModel.getProperty("/expenseCardOptions")?.find(option => option.key === expense.cardId);
-      const selectedCategory = uiModel.getProperty("/expenseCategoryOptions")?.find(option => option.key === expense.categoryId);
-      if (selectedCard?.isDraft) {
-        MessageBox.warning(DRAFT_BLOCK_MESSAGE);
-        return;
-      }
-      if (selectedCategory?.isDraft) {
+      if (card.IsActiveEntity === false || category.IsActiveEntity === false) {
         MessageBox.warning(DRAFT_BLOCK_MESSAGE);
         return;
       }
       uiModel.setProperty("/busy", true);
       try {
         await addCardExpense(view.getModel(), {
-          CardId: expense.cardId,
-          CategoryId: expense.categoryId,
+          CardId: card.ID,
+          CategoryId: category.ID,
           Description: expense.description,
           Value: Number(expense.amount.replace(",", ".")),
           Currency: "BRL",

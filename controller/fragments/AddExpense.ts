@@ -1,6 +1,8 @@
 import Control from "sap/ui/core/Control";
 import Dialog from "sap/m/Dialog";
 import XMLView from "sap/ui/core/mvc/XMLView";
+import Fragment from "sap/ui/core/Fragment";
+import Select from "sap/m/Select";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import MessageBox from "sap/m/MessageBox";
@@ -9,7 +11,7 @@ import { addCardExpense } from "../../util/expenseApi";
 import { isSessionExpiredError } from "../../util/http";
 import { getText } from "../../util/i18n";
 import type Home from "../../controller/Home.controller";
-import type { NewExpense, UiOption } from "../../model/UiModel";
+import type { NewExpense } from "../../model/UiModel";
 
 const DRAFT_BLOCK_MESSAGE = "Este item está como rascunho. Salve-o primeiro antes de registrar um gasto.";
 
@@ -24,20 +26,22 @@ const AdicionarGasto = {
         const uiModel = view.getModel("ui") as JSONModel;
 
         const expense = uiModel.getProperty("/newExpense") as NewExpense;
+        const selectedCard = (Fragment.byId("AddExpense", "expenseCard") as Select | undefined)?.getSelectedItem();
+        const selectedCategory = (Fragment.byId("AddExpense", "expenseCategory") as Select | undefined)?.getSelectedItem();
 
-        if (!expense.description || !expense.amount || !expense.cardId || !expense.categoryId) {
+        const card = selectedCard?.getBindingContext()?.getObject() as
+            | { ID?: string; Name?: string; IsActiveEntity?: boolean }
+            | undefined;
+        const category = selectedCategory?.getBindingContext()?.getObject() as
+            | { ID?: string; Name?: string; IsActiveEntity?: boolean }
+            | undefined;
+
+        if (!expense.description || !expense.amount || !card?.ID || !category?.ID) {
             MessageBox.warning(getText(view, "errorFillRequiredFields"));
             return;
         }
 
-        const selectedCard = (uiModel.getProperty("/expenseCardOptions") as UiOption[] | undefined)?.find((option) => option.key === expense.cardId);
-        const selectedCategory = (uiModel.getProperty("/expenseCategoryOptions") as UiOption[] | undefined)?.find((option) => option.key === expense.categoryId);
-
-        if (selectedCard?.isDraft) {
-            MessageBox.warning(DRAFT_BLOCK_MESSAGE);
-            return;
-        }
-        if (selectedCategory?.isDraft) {
+        if (card.IsActiveEntity === false || category.IsActiveEntity === false) {
             MessageBox.warning(DRAFT_BLOCK_MESSAGE);
             return;
         }
@@ -46,8 +50,8 @@ const AdicionarGasto = {
 
         try {
             await addCardExpense(view.getModel() as ODataModel, {
-                CardId: expense.cardId,
-                CategoryId: expense.categoryId,
+                CardId: card.ID,
+                CategoryId: category.ID,
                 Description: expense.description,
                 Value: Number(expense.amount.replace(",", ".")),
                 Currency: "BRL",

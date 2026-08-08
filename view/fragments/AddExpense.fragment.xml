@@ -73,12 +73,11 @@
                 <Select
                     id="expenseCard"
                     width="auto"
-                    selectedKey="{ui>/newExpense/cardId}"
-                    items="{ path: 'ui>/expenseCardOptions' }"
+                    items="{ path: 'Cards' }"
                 >
                     <core:Item
-                        key="{key}"
-                        text="{text}"
+                        key="{ID}"
+                        text="{Name}"
                     />
                 </Select>
                 <Label
@@ -88,12 +87,11 @@
                 <Select
                     id="expenseCategory"
                     width="auto"
-                    selectedKey="{ui>/newExpense/categoryId}"
-                    items="{ path: 'ui>/expenseCategoryOptions' }"
+                    items="{ path: 'Categories' }"
                 >
                     <core:Item
-                        key="{key}"
-                        text="{text}"
+                        key="{ID}"
+                        text="{Name}"
                     />
                 </Select>
             </VBox>

@@ -72,6 +72,24 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
     const second = parts[1]?.[0] ?? parts[0]?.[1] ?? "";
     return (first + second).toUpperCase();
   }
+  function currencyCode(currency, fallback = "BRL") {
+    if (typeof currency === "string" && currency) {
+      return currency;
+    }
+    if (currency && typeof currency === "object") {
+      return currency.code || fallback;
+    }
+    return fallback;
+  }
+  function formatCardAmount(limit, currency) {
+    return formatCurrency(Number(limit) || 0, currencyCode(currency));
+  }
+  function cardImageValue(id, images) {
+    if (!id || !images) {
+      return "";
+    }
+    return images[id] || "";
+  }
   var __exports = {
     __esModule: true
   };
@@ -84,6 +102,9 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   __exports.transactionSubtle = transactionSubtle;
   __exports.formatTemplate = formatTemplate;
   __exports.initials = initials;
+  __exports.currencyCode = currencyCode;
+  __exports.formatCardAmount = formatCardAmount;
+  __exports.cardImageValue = cardImageValue;
   return __exports;
 });
 //# sourceMappingURL=format-dbg.js.map

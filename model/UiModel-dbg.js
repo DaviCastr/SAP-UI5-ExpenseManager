@@ -19,7 +19,6 @@ sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
         personsEmpty: false,
         busy: false,
         transactions: [],
-        cards: [],
         categories: [],
         categoryDetail: null,
         summary: {
@@ -33,13 +32,9 @@ sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
           trendText: "",
           trendIcon: "sap-icon://trend-up"
         },
-        expenseCardOptions: [],
-        expenseCategoryOptions: [],
         newExpense: {
           description: "",
           amount: "",
-          cardId: "",
-          categoryId: "",
           installments: 1,
           fixedExpense: false,
           transactionDate: new Date().toISOString().slice(0, 10)

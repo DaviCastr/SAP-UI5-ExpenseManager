@@ -77,3 +77,24 @@ export function initials(name?: string): string {
 
     return (first + second).toUpperCase();
 }
+
+export function currencyCode(currency: unknown, fallback = "BRL"): string {
+    if (typeof currency === "string" && currency) {
+        return currency;
+    }
+    if (currency && typeof currency === "object") {
+        return (currency as { code?: string }).code || fallback;
+    }
+    return fallback;
+}
+
+export function formatCardAmount(limit?: number, currency?: unknown): string {
+    return formatCurrency(Number(limit) || 0, currencyCode(currency));
+}
+
+export function cardImageValue(id?: string, images?: Record<string, string>): string {
+    if (!id || !images) {
+        return "";
+    }
+    return images[id] || "";
+}

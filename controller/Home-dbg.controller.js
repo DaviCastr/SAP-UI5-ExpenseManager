@@ -47,7 +47,6 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       this._invoiceService = new InvoiceService(this._odata);
       try {
         await this.setupPersonSelector();
-        this.applyPersonSelection(this.getSelectedPersonId());
       } catch (error) {
         if (isSessionExpiredError(error)) {
           return;
@@ -55,12 +54,9 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         this.showBackendError();
       }
     }
-    onPersonChange(oEvent) {
-      const selectedItem = oEvent.getParameters().selectedItem;
-      const id = selectedItem?.getKey?.();
-      if (!id) {
-        return;
-      }
+    onPersonChange() {
+      const selectPersons = this.byId("personSelect");
+      const id = selectPersons.getSelectedItem()?.getKey?.() || "";
       this.applyPersonSelection(id);
     }
     async onLogout() {
@@ -80,15 +76,34 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         }
       });
     }
+
+    /**
+     * Derives the person binding path from the stored person metadata instead of
+     * reading the Select's binding context, which may not be hydrated yet during
+     * startup. Avoids the race where an empty path cleared the selected person.
+     *
+     * @param {string} id the person id; empty when the selection is cleared
+     * @returns {string} the absolute OData path of the person, or "" when id is empty
+     */
+    personPathFor(id) {
+      if (!id) {
+        return "";
+      }
+      const person = this.getPersonsFromBinding().find(candidate => candidate.ID === id);
+      const isActiveEntity = person?.IsActiveEntity === false ? "false" : "true";
+      return `/Persons(ID='${encodeURIComponent(id)}',IsActiveEntity=${isActiveEntity})`;
+    }
+    bindPersonContext(id) {
+      const path = this.personPathFor(id);
+      this.byId("personDetails")?.bindObject(path);
+      this.byId("cardsList")?.bindObject(path);
+    }
     onOpenExpenseDialog() {
       const oView = this.getView();
       const ui = this.uiModel;
-      const personId = this.getSelectedPersonId();
       ui.setProperty("/newExpense", {
         description: "",
         amount: "",
-        cardId: "",
-        categoryId: "",
         installments: 1,
         fixedExpense: false,
         transactionDate: new Date().toISOString().slice(0, 10)
@@ -96,61 +111,20 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       if (!this._expenseDialog) {
         this._expenseDialog = this.loadFragmentDialog(oView, "AddExpense");
       }
-      void this._expenseDialog.then(dialog => dialog.open());
-      if (personId) {
-        void this.loadExpenseOptions(personId);
-      }
+      void this._expenseDialog.then(dialog => {
+        this.bindExpenseSelects();
+        Fragment.byId("AddExpense", "expenseCard")?.setSelectedItem(null);
+        Fragment.byId("AddExpense", "expenseCategory")?.setSelectedItem(null);
+        dialog.open();
+      });
     }
-    async loadExpenseOptions(personId) {
-      if (!this._odata) {
-        return;
-      }
-      try {
-        const [cards, categories] = await Promise.all([this._odata.requestEntitySet("Cards", {
-          select: ["ID", "Name"],
-          filters: [new Filter({
-            path: "Person/ID",
-            operator: FilterOperator.EQ,
-            value1: personId
-          })],
-          filterExpression: DRAFT_FILTER,
-          expand: DRAFT_EXPAND
-        }), this._odata.requestEntitySet("Categories", {
-          select: ["ID", "Name"],
-          filters: [new Filter({
-            path: "Person/ID",
-            operator: FilterOperator.EQ,
-            value1: personId
-          })],
-          filterExpression: DRAFT_FILTER,
-          expand: DRAFT_EXPAND
-        })]);
-        const cardOptions = cards.map(card => ({
-          key: card.ID,
-          text: card.Name,
-          isDraft: card.IsActiveEntity === false
-        }));
-        const categoryOptions = categories.map(category => ({
-          key: category.ID,
-          text: category.Name,
-          isDraft: category.IsActiveEntity === false
-        }));
-
-        // eslint-disable-next-line no-console
-        console.log("[expenseOptions] first card:", cards[0]);
-        // eslint-disable-next-line no-console
-        console.log("[expenseOptions] first category:", categories[0]);
-        // eslint-disable-next-line no-console
-        console.log("[expenseOptions] cardOptions[0]:", cardOptions[0], "categoryOptions[0]:", categoryOptions[0]);
-        this.uiModel.setProperty("/expenseCardOptions", cardOptions);
-        this.uiModel.setProperty("/expenseCategoryOptions", categoryOptions);
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("[expenseOptions] failed to load options:", error);
-        if (isSessionExpiredError(error)) {
-          return;
-        }
-      }
+    bindExpenseSelects() {
+      const selectPersons = this.byId("personSelect");
+      const selectedPerson = selectPersons.getSelectedItem();
+      const contextSelected = selectedPerson?.getBindingContext();
+      const personPath = contextSelected?.getPath() || "";
+      Fragment.byId("AddExpense", "expenseCard")?.bindObject(personPath);
+      Fragment.byId("AddExpense", "expenseCategory")?.bindObject(personPath);
     }
     onOpenPersonDialog() {
       const oView = this.getView();
@@ -279,6 +253,13 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       }
     }
     refresh() {
+      const cardsList = this.byId("cardsListItems");
+      if (cardsList) {
+        const binding = cardsList.getBinding("items");
+        if (binding) {
+          binding.refresh();
+        }
+      }
       void this.loadDashboard();
     }
 
@@ -316,7 +297,8 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
           Income: person.Income,
           ExpenseTarget: person.ExpenseTarget,
           Currency: person.Currency,
-          ImageType: person.ImageType
+          ImageType: person.ImageType,
+          IsActiveEntity: person.IsActiveEntity
         }));
       } catch (error) {
         if (isSessionExpiredError(error)) {
@@ -352,8 +334,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
     }
     applyPersonSelection(id) {
       const ui = this.uiModel;
-      // eslint-disable-next-line no-console
-      console.log("[applyPersonSelection] id:", id);
+      this.bindPersonContext(id);
       if (!id) {
         ui.setProperty("/selectedPersonId", "");
         ui.setProperty("/selectedPerson", {});
@@ -363,8 +344,6 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       ui.setProperty("/selectedPersonId", id);
       const person = this.getPersonsFromBinding().find(candidate => candidate.ID === id);
       if (person) {
-        // eslint-disable-next-line no-console
-        console.log("[applyPersonSelection] selected person:", person);
         ui.setProperty("/selectedPerson", {
           ID: person.ID,
           Name: person.Name,
@@ -423,7 +402,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
         // eslint-disable-next-line no-console
         console.log("[loadDashboard] invoice TotalAmount:", invoice.TotalAmount);
         const cards = await this._odata.requestEntitySet("Cards", {
-          select: ["ID", "Name", "Limit", "Currency", "DueDay", "ClosingDay"],
+          select: ["ID"],
           filters: [new Filter({
             path: "Person/ID",
             operator: FilterOperator.EQ,
@@ -432,12 +411,6 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
           filterExpression: DRAFT_FILTER,
           expand: DRAFT_EXPAND
         });
-        // eslint-disable-next-line no-console
-        console.log("[dashboard] first card:", cards[0]);
-        ui.setProperty("/cards", cards.map(card => ({
-          ...card,
-          Currency: resolveCurrency(card.Currency)
-        })));
         void this.resolveCardImages(cards);
       } catch (error) {
         if (isSessionExpiredError(error)) {
@@ -581,9 +554,10 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
 
     /**
      * Resolves the image of each card and stores its base64 representation in
-     * the ui model, so the avatar renders without a browser-side request that
-     * would lack the Authorization header. Each card is fetched once via the
-     * authenticated OData model media support.
+     * the `ui>/cardImages` map (keyed by card ID), so the cards list avatar
+     * renders without a browser-side request that would lack the Authorization
+     * header. Each card is fetched once via the authenticated OData model media
+     * support.
      *
      * @param {CardRow[]} cards the cards to enrich (CardImageBase64)
      */
@@ -593,14 +567,15 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
       if (!odata) {
         return;
       }
-      await Promise.all(cards.map(async (card, index) => {
+      const images = {};
+      await Promise.all(cards.map(async card => {
         const mediaPath = `Cards(ID='${encodeURIComponent(card.ID)}',IsActiveEntity=true)/Image`;
         const base64 = await odata.getMediaAsBase64(mediaPath);
-        if (!base64) {
-          return;
+        if (base64) {
+          images[card.ID] = base64;
         }
-        ui.setProperty(`/cards/${index}/CardImageBase64`, base64);
       }));
+      ui.setProperty("/cardImages", images);
     }
     navigateMonth(delta) {
       const period = this.currentPeriodDefault();
@@ -630,6 +605,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "sap/ui/core/Fragment",
     }
     loadFragmentDialog(oView, fragmentName) {
       return Fragment.load({
+        id: fragmentName,
         name: `apps.dflc.expensemanager.view.fragments.${fragmentName}`
       }).then(dialog => {
         oView.addDependent(dialog);
