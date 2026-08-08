@@ -1,0 +1,178 @@
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m"
+    xmlns:u="sap.ui.unified"
+    xmlns:f="sap.ui.layout.form"
+    xmlns:l="sap.ui.layout"
+    xmlns:mvc="sap.ui.core.mvc"
+    id="PersonDetail"
+    core:require="{
+        formatter: 'apps/dflc/expensemanager/util/format',
+        handler: 'apps/dflc/expensemanager/controller/fragments/EditPerson'
+    }"
+>
+    <Dialog
+        id="personDetailDialog"
+        title="{i18n>personDetailTitle}"
+        class="financeDialog"
+        contentWidth="38rem"
+        contentHeight="70%"
+        beforeOpen="handler.onDialogBeforeOpen"
+    >
+        <content>
+            <ScrollContainer vertical="true" focusable="false">
+                <VBox class="dialogContent">
+                    <HBox alignItems="Center" class="personDetailHeader">
+                        <Avatar
+                            id="editPersonAvatar"
+                            displaySize="Custom"
+                            customDisplaySize="5rem"
+                            displayShape="Circle"
+                            initials="{Name}"
+                            class="sapUiTinyMarginEnd"
+                        />
+                        <VBox>
+                            <Title text="{Name}" level="H2" />
+                            <Text text="{i18n>personDetailIntro}" class="sectionHint" />
+                        </VBox>
+                    </HBox>
+                    <u:FileUploader
+                        id="editPersonFileUploader"
+                        buttonText="{i18n>personPhotoButton}"
+                        placeholder="{i18n>personPhotoPlaceholder}"
+                        fileType="png,jpg,jpeg"
+                        uploadOnChange="false"
+                        multiple="false"
+                        change="handler.onModificaArquivo"
+                        width="100%"
+                    />
+                    <f:Form editable="true">
+                        <f:layout>
+                            <f:ResponsiveGridLayout labelSpanL="12" labelSpanM="12" emptySpanL="0" emptySpanM="0" columnsL="1" columnsM="1" />
+                        </f:layout>
+                        <f:formContainers>
+                            <f:FormContainer title="{i18n>personFormBasicTitle}">
+                                <f:formElements>
+                                    <f:FormElement label="{i18n>personNameLabel}">
+                                        <f:fields>
+                                            <Input value="{Name}" placeholder="{i18n>personNamePlaceholder}" />
+                                        </f:fields>
+                                    </f:FormElement>
+                                    <f:FormElement label="{i18n>personEmailLabel}">
+                                        <f:fields>
+                                            <Input value="{Email}" type="Email" placeholder="{i18n>personEmailPlaceholder}" />
+                                        </f:fields>
+                                    </f:FormElement>
+                                    <f:FormElement label="{i18n>personPhoneLabel}">
+                                        <f:fields>
+                                            <Input value="{Phone}" placeholder="{i18n>personPhonePlaceholder}" />
+                                        </f:fields>
+                                    </f:FormElement>
+                                </f:formElements>
+                            </f:FormContainer>
+                            <f:FormContainer title="{i18n>personFormFinanceTitle}">
+                                <f:formElements>
+                                    <f:FormElement label="{i18n>personIncomeLabel}">
+                                        <f:fields>
+                                            <Input value="{Income}" placeholder="{i18n>personIncomePlaceholder}" />
+                                        </f:fields>
+                                    </f:FormElement>
+                                    <f:FormElement label="{i18n>personTargetLabel}">
+                                        <f:fields>
+                                            <Input value="{ExpenseTarget}" placeholder="{i18n>personTargetPlaceholder}" />
+                                        </f:fields>
+                                    </f:FormElement>
+                                    <f:FormElement label="{i18n>personAmountToSaveLabel}">
+                                        <f:fields>
+                                            <Input
+                                                value="{AmountToSave}"
+                                                placeholder="{i18n>personAmountToSavePlaceholder}"
+                                            />
+                                        </f:fields>
+                                    </f:FormElement>
+                                    <f:FormElement label="{i18n>personCurrencyLabel}">
+                                        <f:fields>
+                                            <Select
+                                                id="editPersonCurrency"
+                                                selectedKey="{Currency_code}"
+                                            >
+                                                <core:Item key="BRL" text="Real brasileiro (BRL)" />
+                                                <core:Item key="USD" text="Dólar americano (USD)" />
+                                            </Select>
+                                        </f:fields>
+                                    </f:FormElement>
+                                </f:formElements>
+                            </f:FormContainer>
+                            <f:FormContainer title="{i18n>personFormTotalsTitle}">
+                                <f:formElements>
+                                    <f:FormElement label="{i18n>personTotalExpensesLabel}">
+                                        <f:fields>
+                                            <ObjectNumber
+                                                number="{
+                                                    parts: [ { path: 'TotalExpenses' }, { path: 'Currency_code' } ],
+                                                    formatter: 'formatter.formatCardAmount'
+                                                }"
+                                            />
+                                        </f:fields>
+                                    </f:FormElement>
+                                    <f:FormElement label="{i18n>personTotalExpensesMonthLabel}">
+                                        <f:fields>
+                                            <ObjectNumber
+                                                number="{
+                                                    parts: [ { path: 'TotalExpensesMonth' }, { path: 'Currency_code' } ],
+                                                    formatter: 'formatter.formatCardAmount'
+                                                }"
+                                            />
+                                        </f:fields>
+                                    </f:FormElement>
+                                    <f:FormElement label="{i18n>personTotalExpensesClosedLabel}">
+                                        <f:fields>
+                                            <ObjectNumber
+                                                number="{
+                                                    parts: [ { path: 'TotalExpensesClosed' }, { path: 'Currency_code' } ],
+                                                    formatter: 'formatter.formatCardAmount'
+                                                }"
+                                            />
+                                        </f:fields>
+                                    </f:FormElement>
+                                    <f:FormElement label="{i18n>personTotalExpensesPayedLabel}">
+                                        <f:fields>
+                                            <ObjectNumber
+                                                number="{
+                                                    parts: [ { path: 'TotalExpensesPayed' }, { path: 'Currency_code' } ],
+                                                    formatter: 'formatter.formatCardAmount'
+                                                }"
+                                            />
+                                        </f:fields>
+                                    </f:FormElement>
+                                    <f:FormElement label="{i18n>personTotalExpensesToPayLabel}">
+                                        <f:fields>
+                                            <ObjectNumber
+                                                number="{
+                                                    parts: [ { path: 'TotalExpensesToPay' }, { path: 'Currency_code' } ],
+                                                    formatter: 'formatter.formatCardAmount'
+                                                }"
+                                            />
+                                        </f:fields>
+                                    </f:FormElement>
+                                    <f:FormElement label="{i18n>personMonthCriticallityLabel}">
+                                        <f:fields>
+                                            <ObjectNumber number="{MonthCriticallity}" />
+                                        </f:fields>
+                                    </f:FormElement>
+                                    <f:FormElement label="{i18n>personCriticallityToPayLabel}">
+                                        <f:fields>
+                                            <ObjectNumber number="{CriticallityToPay}" />
+                                        </f:fields>
+                                    </f:FormElement>
+                                </f:formElements>
+                            </f:FormContainer>
+                        </f:formContainers>
+                    </f:Form>
+                </VBox>
+            </ScrollContainer>
+        </content>
+        <beginButton><Button text="{i18n>personSaveButtonEdit}" icon="sap-icon://accept" type="Emphasized" press="handler.onSalvarPessoa" /></beginButton>
+        <endButton><Button text="{i18n>personCancelButton}" icon="sap-icon://decline" press="handler.onCancelarEdicao" /></endButton>
+    </Dialog>
+</core:FragmentDefinition>

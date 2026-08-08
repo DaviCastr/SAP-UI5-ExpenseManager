@@ -1,9 +1,37 @@
 import { XsuaaAuthHelper } from "../auth/providers/XsuaaAuthHelper";
 
+export function currencyCode(currency: unknown, fallback = "BRL"): string {
+    if (typeof currency === "string" && currency) {
+        return currency;
+    }
+    if (currency && typeof currency === "object") {
+        return (currency as { code?: string }).code || fallback;
+    }
+    return fallback;
+}
+
+function toNumber(value: number | string): number {
+    if (typeof value === "number") {
+        return value;
+    }
+    if (typeof value !== "string" || !value.trim()) {
+        return 0;
+    }
+    const text = value.trim();
+    const hasComma = text.includes(",");
+    const normalized = hasComma ? text.replace(/\./g, "").replace(",", ".") : text.replace(/\s/g, "");
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export function formatCurrency(value: number | string, currency?: string): string {
-    const amount = Number(value) || 0;
+    const amount = toNumber(value);
     const code = currency || "BRL";
     return amount.toLocaleString("pt-BR", { style: "currency", currency: code });
+}
+
+export function formatCardAmount(limit?: number | string, currency?: unknown): string {
+    return formatCurrency(toNumber(limit ?? 0), currencyCode(currency));
 }
 
 export function formatDate(dateValue: string | number | Date): string {
@@ -76,20 +104,6 @@ export function initials(name?: string): string {
     const second = parts[1]?.[0] ?? parts[0]?.[1] ?? "";
 
     return (first + second).toUpperCase();
-}
-
-export function currencyCode(currency: unknown, fallback = "BRL"): string {
-    if (typeof currency === "string" && currency) {
-        return currency;
-    }
-    if (currency && typeof currency === "object") {
-        return (currency as { code?: string }).code || fallback;
-    }
-    return fallback;
-}
-
-export function formatCardAmount(limit?: number, currency?: unknown): string {
-    return formatCurrency(Number(limit) || 0, currencyCode(currency));
 }
 
 export function cardImageValue(id?: string, images?: Record<string, string>): string {

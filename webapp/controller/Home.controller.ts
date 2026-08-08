@@ -7,6 +7,7 @@ import Event from "sap/ui/base/Event";
 import Context from "sap/ui/model/Context";
 import Fragment from "sap/ui/core/Fragment";
 import XMLView from "sap/ui/core/mvc/XMLView";
+import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import { BaseController } from "./BaseController";
 import { AuthenticationService } from "../auth/AuthenticationService";
 import { ODataService, DRAFT_FILTER, DRAFT_EXPAND } from "../service/ODataService";
@@ -120,6 +121,21 @@ export default class Home extends BaseController {
         const ui = this.getUiModel();
         ui.setProperty("/newPerson", { name: "", email: "", phone: "", income: "", currency: "BRL", target: "" });
         void this.openPreparedDialog("AddPerson", (dialog) => dialog.open());
+    }
+
+    public onOpenPersonDetailDialog(): void {
+        const personId = this.getSelectedPersonId();
+
+        if (!personId) {
+            this.showErrorMessage("errorMissingPerson");
+            return;
+        }
+
+        void this.openPreparedDialog("PersonDetail", (dialog) => {
+            dialog.setModel(this.getView()?.getModel() as ODataModel);
+            dialog.bindObject(this.personPathFor(personId));
+            dialog.open();
+        });
     }
 
     public onOpenCardDialog(): void {
