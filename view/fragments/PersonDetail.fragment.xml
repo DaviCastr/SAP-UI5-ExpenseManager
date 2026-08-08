@@ -20,7 +20,7 @@
         beforeOpen="handler.onDialogBeforeOpen"
     >
         <content>
-            <ScrollContainer vertical="true" focusable="false">
+            <ScrollContainer height="100%" vertical="true" focusable="false">
                 <VBox class="dialogContent">
                     <HBox alignItems="Center" class="personDetailHeader">
                         <Avatar
