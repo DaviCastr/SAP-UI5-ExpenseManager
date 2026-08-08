@@ -11,6 +11,10 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
     }
     return fallback;
   }
+  function toFinite(value) {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
   function toNumber(value) {
     if (typeof value === "number") {
       return value;
@@ -18,11 +22,15 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
     if (typeof value !== "string" || !value.trim()) {
       return 0;
     }
-    const text = value.trim();
-    const hasComma = text.includes(",");
-    const normalized = hasComma ? text.replace(/\./g, "").replace(",", ".") : text.replace(/\s/g, "");
-    const parsed = Number.parseFloat(normalized);
-    return Number.isFinite(parsed) ? parsed : 0;
+    const text = value.trim().replace(/\s/g, "");
+    if (text.includes(",")) {
+      const normalized = text.replace(/\./g, "").replace(",", ".");
+      return toFinite(normalized);
+    }
+    if (/^\d{1,3}(\.\d{3})+$/.test(text)) {
+      return toFinite(text.replace(/\./g, ""));
+    }
+    return toFinite(text);
   }
   function formatCurrency(value, currency) {
     const amount = toNumber(value);
@@ -34,6 +42,19 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   }
   function formatCardAmount(limit, currency) {
     return formatCurrency(toNumber(limit ?? 0), currencyCode(currency));
+  }
+  function criticalityState(value) {
+    const criticality = typeof value === "string" ? Number.parseInt(value, 10) : Number(value);
+    if (criticality === 1) {
+      return "Error";
+    }
+    if (criticality === 2) {
+      return "Warning";
+    }
+    if (criticality === 3) {
+      return "Success";
+    }
+    return "None";
   }
   function formatDate(dateValue) {
     if (!dateValue) {
@@ -109,6 +130,7 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   __exports.currencyCode = currencyCode;
   __exports.formatCurrency = formatCurrency;
   __exports.formatCardAmount = formatCardAmount;
+  __exports.criticalityState = criticalityState;
   __exports.formatDate = formatDate;
   __exports.imageUrl = imageUrl;
   __exports.formatMonth = formatMonth;

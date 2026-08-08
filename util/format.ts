@@ -10,6 +10,11 @@ export function currencyCode(currency: unknown, fallback = "BRL"): string {
     return fallback;
 }
 
+function toFinite(value: string): number {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function toNumber(value: number | string): number {
     if (typeof value === "number") {
         return value;
@@ -17,11 +22,15 @@ function toNumber(value: number | string): number {
     if (typeof value !== "string" || !value.trim()) {
         return 0;
     }
-    const text = value.trim();
-    const hasComma = text.includes(",");
-    const normalized = hasComma ? text.replace(/\./g, "").replace(",", ".") : text.replace(/\s/g, "");
-    const parsed = Number.parseFloat(normalized);
-    return Number.isFinite(parsed) ? parsed : 0;
+    const text = value.trim().replace(/\s/g, "");
+    if (text.includes(",")) {
+        const normalized = text.replace(/\./g, "").replace(",", ".");
+        return toFinite(normalized);
+    }
+    if (/^\d{1,3}(\.\d{3})+$/.test(text)) {
+        return toFinite(text.replace(/\./g, ""));
+    }
+    return toFinite(text);
 }
 
 export function formatCurrency(value: number | string, currency?: string): string {
@@ -32,6 +41,20 @@ export function formatCurrency(value: number | string, currency?: string): strin
 
 export function formatCardAmount(limit?: number | string, currency?: unknown): string {
     return formatCurrency(toNumber(limit ?? 0), currencyCode(currency));
+}
+
+export function criticalityState(value?: number | string): string {
+    const criticality = typeof value === "string" ? Number.parseInt(value, 10) : Number(value);
+    if (criticality === 1) {
+        return "Error";
+    }
+    if (criticality === 2) {
+        return "Warning";
+    }
+    if (criticality === 3) {
+        return "Success";
+    }
+    return "None";
 }
 
 export function formatDate(dateValue: string | number | Date): string {

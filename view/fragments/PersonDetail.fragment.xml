@@ -115,6 +115,7 @@
                                                     parts: [ { path: 'TotalExpensesMonth' }, { path: 'Currency_code' } ],
                                                     formatter: 'formatter.formatCardAmount'
                                                 }"
+                                                state="{ path: 'MonthCriticallity', formatter: 'formatter.criticalityState' }"
                                             />
                                         </f:fields>
                                     </f:FormElement>
@@ -145,17 +146,8 @@
                                                     parts: [ { path: 'TotalExpensesToPay' }, { path: 'Currency_code' } ],
                                                     formatter: 'formatter.formatCardAmount'
                                                 }"
+                                                state="{ path: 'CriticallityToPay', formatter: 'formatter.criticalityState' }"
                                             />
-                                        </f:fields>
-                                    </f:FormElement>
-                                    <f:FormElement label="{i18n>personMonthCriticallityLabel}">
-                                        <f:fields>
-                                            <ObjectNumber number="{MonthCriticallity}" />
-                                        </f:fields>
-                                    </f:FormElement>
-                                    <f:FormElement label="{i18n>personCriticallityToPayLabel}">
-                                        <f:fields>
-                                            <ObjectNumber number="{CriticallityToPay}" />
                                         </f:fields>
                                     </f:FormElement>
                                 </f:formElements>
