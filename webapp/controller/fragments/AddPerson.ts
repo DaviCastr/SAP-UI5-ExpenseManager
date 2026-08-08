@@ -6,11 +6,8 @@ import Event from "sap/ui/base/Event";
 import FileUploader from "sap/ui/unified/FileUploader";
 import Avatar from "sap/m/Avatar";
 import JSONModel from "sap/ui/model/json/JSONModel";
-import MessageBox from "sap/m/MessageBox";
-import MessageToast from "sap/m/MessageToast";
 import { createEntity, uploadImage } from "../../util/entityApi";
-import { isSessionExpiredError } from "../../util/http";
-import { getText } from "../../util/i18n";
+import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import type Home from "../../controller/Home.controller";
 import type { NewPerson } from "../../model/UiModel";
 
@@ -49,7 +46,7 @@ const AdicionarPessoa = {
         const person = uiModel.getProperty("/newPerson") as NewPerson;
 
         if (!person.name || !person.email || !person.income || !person.currency || !person.target) {
-            MessageBox.warning(getText(view, "errorFillRequiredFields"));
+            showWarning(view, "errorFillRequiredFields");
             return;
         }
 
@@ -72,13 +69,10 @@ const AdicionarPessoa = {
             }
 
             dialog.close();
-            MessageToast.show(getText(view, "personCreated"));
+            showToast(view, "personCreated");
             void (view.getController() as Home).reload();
         } catch (error) {
-            if (isSessionExpiredError(error)) {
-                return;
-            }
-            MessageBox.error(getText(view, "errorCreatePerson"));
+            handleActionError(view, error, "errorCreatePerson");
         } finally {
             uiModel.setProperty("/busy", false);
         }

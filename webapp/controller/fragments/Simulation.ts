@@ -3,10 +3,8 @@ import Dialog from "sap/m/Dialog";
 import XMLView from "sap/ui/core/mvc/XMLView";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
-import MessageBox from "sap/m/MessageBox";
 import { simulateExpenses } from "../../util/expenseApi";
-import { isSessionExpiredError } from "../../util/http";
-import { getText } from "../../util/i18n";
+import { handleActionError, showWarning } from "../../util/feedback";
 import type { UiSimulation } from "../../model/UiModel";
 
 const Simulation = {
@@ -23,7 +21,7 @@ const Simulation = {
         const personId = uiModel.getProperty("/selectedPersonId") as string;
 
         if (!personId) {
-            MessageBox.warning(getText(view, "errorMissingPerson"));
+            showWarning(view, "errorMissingPerson");
             return;
         }
 
@@ -31,7 +29,7 @@ const Simulation = {
         const month = Number(simulation.month);
 
         if (!year || !month) {
-            MessageBox.warning(getText(view, "errorInvalidMonthYear"));
+            showWarning(view, "errorInvalidMonthYear");
             return;
         }
 
@@ -41,10 +39,7 @@ const Simulation = {
             const result = await simulateExpenses(view.getModel() as ODataModel, personId, year, month);
             uiModel.setProperty("/simulationResult", result);
         } catch (error) {
-            if (isSessionExpiredError(error)) {
-                return;
-            }
-            MessageBox.error(getText(view, "errorSimulate"));
+            handleActionError(view, error, "errorSimulate");
         } finally {
             uiModel.setProperty("/busy", false);
         }

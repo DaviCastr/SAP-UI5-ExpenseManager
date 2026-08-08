@@ -5,15 +5,10 @@ import Fragment from "sap/ui/core/Fragment";
 import Select from "sap/m/Select";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
-import MessageBox from "sap/m/MessageBox";
-import MessageToast from "sap/m/MessageToast";
 import { addCardExpense } from "../../util/expenseApi";
-import { isSessionExpiredError } from "../../util/http";
-import { getText } from "../../util/i18n";
+import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import type Home from "../../controller/Home.controller";
 import type { NewExpense } from "../../model/UiModel";
-
-const DRAFT_BLOCK_MESSAGE = "Este item está como rascunho. Salve-o primeiro antes de registrar um gasto.";
 
 const AdicionarGasto = {
     onCancelarGasto: function (this: Control): void {
@@ -37,12 +32,12 @@ const AdicionarGasto = {
             | undefined;
 
         if (!expense.description || !expense.amount || !card?.ID || !category?.ID) {
-            MessageBox.warning(getText(view, "errorFillRequiredFields"));
+            showWarning(view, "errorFillRequiredFields");
             return;
         }
 
         if (card.IsActiveEntity === false || category.IsActiveEntity === false) {
-            MessageBox.warning(DRAFT_BLOCK_MESSAGE);
+            showWarning(view, "errorDraftBlocked");
             return;
         }
 
@@ -61,13 +56,10 @@ const AdicionarGasto = {
             });
 
             dialog.close();
-            MessageToast.show(getText(view, "expenseRegistered"));
+            showToast(view, "expenseRegistered");
             void (view.getController() as Home).refresh();
         } catch (error) {
-            if (isSessionExpiredError(error)) {
-                return;
-            }
-            MessageBox.error(getText(view, "errorRegisterExpense"));
+            handleActionError(view, error, "errorRegisterExpense");
         } finally {
             uiModel.setProperty("/busy", false);
         }

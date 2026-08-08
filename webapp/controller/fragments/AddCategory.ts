@@ -6,11 +6,8 @@ import Event from "sap/ui/base/Event";
 import FileUploader from "sap/ui/unified/FileUploader";
 import Avatar from "sap/m/Avatar";
 import JSONModel from "sap/ui/model/json/JSONModel";
-import MessageBox from "sap/m/MessageBox";
-import MessageToast from "sap/m/MessageToast";
 import { createEntity, uploadImage } from "../../util/entityApi";
-import { isSessionExpiredError } from "../../util/http";
-import { getText } from "../../util/i18n";
+import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import type Home from "../../controller/Home.controller";
 import type { NewCategory } from "../../model/UiModel";
 
@@ -50,12 +47,12 @@ const AdicionarCategoria = {
         const personId = uiModel.getProperty("/selectedPersonId") as string;
 
         if (!category.name) {
-            MessageBox.warning(getText(view, "errorFillRequiredFields"));
+            showWarning(view, "errorFillRequiredFields");
             return;
         }
 
         if (!personId) {
-            MessageBox.warning(getText(view, "errorMissingPerson"));
+            showWarning(view, "errorMissingPerson");
             return;
         }
 
@@ -74,13 +71,10 @@ const AdicionarCategoria = {
             }
 
             dialog.close();
-            MessageToast.show(getText(view, "categoryCreated"));
+            showToast(view, "categoryCreated");
             void (view.getController() as Home).refresh();
         } catch (error) {
-            if (isSessionExpiredError(error)) {
-                return;
-            }
-            MessageBox.error(getText(view, "errorCreateCategory"));
+            handleActionError(view, error, "errorCreateCategory");
         } finally {
             uiModel.setProperty("/busy", false);
         }
