@@ -574,7 +574,7 @@
                                             number="{
                                             parts: [
                                                 { path: 'Limit' },
-                                                { path: 'Currency' }
+                                                { path: 'Currency_code' }
                                             ],
                                             formatter: 'formatter.formatCardAmount'
                                         }"

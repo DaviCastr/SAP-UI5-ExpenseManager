@@ -55,7 +55,6 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../util/feedb
           Phone: person.Phone || "",
           Income: toNumber(person.Income),
           ExpenseTarget: toNumber(person.ExpenseTarget),
-          AmountToSave: toNumber(person.AmountToSave),
           // eslint-disable-next-line camelcase
           Currency_code: person.Currency_code || "BRL",
           // eslint-disable-next-line camelcase

@@ -28,11 +28,8 @@
                             displaySize="Custom"
                             customDisplaySize="5rem"
                             displayShape="Circle"
-                            initials="{Name}"
-                            src="{
-                                parts: [ { path: 'ID' }, { path: 'ImageType' } ],
-                                formatter: 'formatter.personImage'
-                            }"
+                            initials="{ path: 'Name', formatter: 'formatter.initials' }"
+                            src="{ui>/selectedPersonImage}"
                             class="sapUiTinyMarginEnd"
                         />
                         <VBox>
@@ -84,14 +81,6 @@
                                     <f:FormElement label="{i18n>personTargetLabel}">
                                         <f:fields>
                                             <Input value="{ExpenseTarget}" placeholder="{i18n>personTargetPlaceholder}" />
-                                        </f:fields>
-                                    </f:FormElement>
-                                    <f:FormElement label="{i18n>personAmountToSaveLabel}">
-                                        <f:fields>
-                                            <Input
-                                                value="{AmountToSave}"
-                                                placeholder="{i18n>personAmountToSavePlaceholder}"
-                                            />
                                         </f:fields>
                                     </f:FormElement>
                                     <f:FormElement label="{i18n>personCurrencyLabel}">
