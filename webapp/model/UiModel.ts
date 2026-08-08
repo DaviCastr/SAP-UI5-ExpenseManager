@@ -7,6 +7,7 @@ export interface UiPerson {
     ExpenseTarget?: number;
     Currency?: string | { code?: string };
     ImageType?: string;
+    IsActiveEntity?: boolean;
 }
 
 export interface UiPeriod {
@@ -17,7 +18,6 @@ export interface UiPeriod {
 export interface UiOption {
     key: string;
     text: string;
-    isDraft?: boolean;
 }
 
 export interface UiSummary {
@@ -35,8 +35,6 @@ export interface UiSummary {
 export interface NewExpense {
     description: string;
     amount: string;
-    cardId: string;
-    categoryId: string;
     installments: number;
     fixedExpense: boolean;
     transactionDate: string;
@@ -75,12 +73,9 @@ export interface IUiState {
     personsEmpty: boolean;
     busy: boolean;
     transactions: unknown[];
-    cards: unknown[];
     categories: unknown[];
     categoryDetail: unknown;
     summary: UiSummary;
-    expenseCardOptions: UiOption[];
-    expenseCategoryOptions: UiOption[];
     newExpense: NewExpense;
     newPerson: NewPerson;
     newCard: NewCard;
@@ -120,8 +115,6 @@ export default class UiModel extends JSONModel {
 
             transactions: [],
 
-            cards: [],
-
             categories: [],
 
             categoryDetail: null,
@@ -138,15 +131,9 @@ export default class UiModel extends JSONModel {
                 trendIcon: "sap-icon://trend-up"
             },
 
-            expenseCardOptions: [],
-
-            expenseCategoryOptions: [],
-
             newExpense: {
                 description: "",
                 amount: "",
-                cardId: "",
-                categoryId: "",
                 installments: 1,
                 fixedExpense: false,
                 transactionDate: new Date().toISOString().slice(0, 10)

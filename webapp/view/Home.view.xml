@@ -52,6 +52,7 @@
                                 class="personLabel"
                             />
                             <Avatar
+                                id="personImage"
                                 src="{ui>/selectedPersonImage}"
                                 initials="{ path: 'ui>/selectedPerson/Name', formatter: 'formatter.initials' }"
                                 displaySize="XS"
@@ -95,89 +96,90 @@
                         </HBox>
                     </HBox>
 
-                    <HBox
-                        class="balanceHero"
-                        justifyContent="SpaceBetween"
-                        alignItems="Stretch"
-                        wrap="Wrap"
-                        busy="{ui>/busy}"
-                        visible="{= !${ui>/personsEmpty} }"
-                    >
-                        <VBox class="balanceCopy">
-                            <Text
-                                text="{i18n>homeEyebrow}"
-                                class="eyebrow"
-                            />
-                            <Title
-                                text="{ parts: [ { path: 'i18n>helloUser' }, { path: 'ui>/selectedPerson/Name' } ], formatter: 'formatter.formatTemplate' }"
-                                level="H1"
-                                class="heroTitle"
-                            />
-                            <Text
-                                text="{i18n>heroGreetingSubtitle}"
-                                class="heroSubtitle"
-                            />
-                            <HBox
-                                class="heroActions"
-                                wrap="Wrap"
-                            >
-                                <Button
-                                    text="{i18n>actionRegisterExpense}"
-                                    icon="sap-icon://add"
-                                    type="Emphasized"
-                                    press=".onOpenExpenseDialog"
-                                    class="primaryAction"
+                    <VBox id="personDetails">
+                        <HBox
+                            class="balanceHero"
+                            justifyContent="SpaceBetween"
+                            alignItems="Stretch"
+                            wrap="Wrap"
+                            busy="{ui>/busy}"
+                            visible="{= !${ui>/personsEmpty} }"
+                        >
+                            <VBox class="balanceCopy">
+                                <Text
+                                    text="{i18n>homeEyebrow}"
+                                    class="eyebrow"
                                 />
-                                <Button
-                                    text="{i18n>actionAddCard}"
-                                    icon="sap-icon://credit-card"
-                                    type="Transparent"
-                                    press=".onOpenCardDialog"
-                                    class="secondaryAction"
+                                <Title
+                                    text="{ parts: [ { path: 'i18n>helloUser' }, { path: 'Name' } ], formatter: 'formatter.formatTemplate' }"
+                                    level="H1"
+                                    class="heroTitle"
                                 />
-                                <Button
-                                    text="{i18n>actionSimulate}"
-                                    icon="sap-icon://customer-view"
-                                    type="Transparent"
-                                    press=".onOpenSimulationDialog"
-                                    class="secondaryAction"
+                                <Text
+                                    text="{i18n>heroGreetingSubtitle}"
+                                    class="heroSubtitle"
                                 />
-                                <Button
-                                    text="{i18n>actionRestoreBackup}"
-                                    icon="sap-icon://upload-to-cloud"
-                                    type="Transparent"
-                                    press=".onRestoreBackup"
-                                    class="secondaryAction"
+                                <HBox
+                                    class="heroActions"
+                                    wrap="Wrap"
+                                >
+                                    <Button
+                                        text="{i18n>actionRegisterExpense}"
+                                        icon="sap-icon://add"
+                                        type="Emphasized"
+                                        press=".onOpenExpenseDialog"
+                                        class="primaryAction"
+                                    />
+                                    <Button
+                                        text="{i18n>actionAddCard}"
+                                        icon="sap-icon://credit-card"
+                                        type="Transparent"
+                                        press=".onOpenCardDialog"
+                                        class="secondaryAction"
+                                    />
+                                    <Button
+                                        text="{i18n>actionSimulate}"
+                                        icon="sap-icon://customer-view"
+                                        type="Transparent"
+                                        press=".onOpenSimulationDialog"
+                                        class="secondaryAction"
+                                    />
+                                    <Button
+                                        text="{i18n>actionRestoreBackup}"
+                                        icon="sap-icon://upload-to-cloud"
+                                        type="Transparent"
+                                        press=".onRestoreBackup"
+                                        class="secondaryAction"
+                                    />
+                                    <Button
+                                        text="{i18n>actionExportBackup}"
+                                        icon="sap-icon://download-to-cloud"
+                                        type="Transparent"
+                                        press=".onExportBackup"
+                                        class="secondaryAction"
+                                    />
+                                </HBox>
+                            </VBox>
+                            <VBox class="balanceCard">
+                                <Text
+                                    text="{i18n>balanceAvailableLabel}"
+                                    class="balanceLabel"
                                 />
-                                <Button
-                                    text="{i18n>actionExportBackup}"
-                                    icon="sap-icon://download-to-cloud"
-                                    type="Transparent"
-                                    press=".onExportBackup"
-                                    class="secondaryAction"
+                                <ObjectNumber
+                                    number="{ui>/summary/available}"
+                                    class="balanceNumber"
                                 />
-                            </HBox>
-                        </VBox>
-                        <VBox class="balanceCard">
-                            <Text
-                                text="{i18n>balanceAvailableLabel}"
-                                class="balanceLabel"
-                            />
-                            <ObjectNumber
-                                number="{ui>/summary/available}"
-                                class="balanceNumber"
-                            />
-                            <HBox
-                                alignItems="Center"
-                                class="balanceTrend"
-                            >
-                                <core:Icon src="{ui>/summary/trendIcon}" />
-                                <Text text="{ui>/summary/trendText}" />
-                            </HBox>
-                        </VBox>
-                    </HBox>
+                                <HBox
+                                    alignItems="Center"
+                                    class="balanceTrend"
+                                >
+                                    <core:Icon src="{ui>/summary/trendIcon}" />
+                                    <Text text="{ui>/summary/trendText}" />
+                                </HBox>
+                            </VBox>
+                        </HBox>
+                    </VBox>
                 </VBox>
-
                 <HBox
                     class="periodNav"
                     justifyContent="SpaceBetween"
@@ -531,60 +533,60 @@
                                 tooltip="{i18n>cardDialogTitle}"
                             />
                         </HBox>
-                        <List
-                            items="{ path: 'ui>/cards' }"
-                            showSeparators="None"
-                            class="cardList"
-                            noDataText="{i18n>cardsNoData}"
-                        >
-                            <CustomListItem>
-                                <VBox class="creditCardItem">
-                                    <HBox
-                                        justifyContent="SpaceBetween"
-                                        alignItems="Center"
-                                    >
+                        <VBox id="cardsList">
+                            <List
+                                id="cardsListItems"
+                                items="{ path: 'Cards' }"
+                                showSeparators="None"
+                                class="cardList"
+                                noDataText="{i18n>cardsNoData}"
+                            >
+                                <CustomListItem>
+                                    <VBox class="creditCardItem">
+                                        <HBox
+                                            justifyContent="SpaceBetween"
+                                            alignItems="Center"
+                                        >
+                                            <Text
+                                                text="{Name}"
+                                                class="creditCardName"
+                                            />
+                                            <Avatar
+                                                src="{ parts: [ { path: 'ID' }, { path: 'ui>/cardImages' } ], formatter: 'formatter.cardImageValue' }"
+                                                displaySize="XS"
+                                                customDisplaySize="2.75rem"
+                                                displayShape="Circle"
+                                                initials="{Name}"
+                                            />
+                                        </HBox>
                                         <Text
-                                            text="{ui>Name}"
-                                            class="creditCardName"
+                                            text="{i18n>cardLimitLabel}"
+                                            class="creditCardLabel"
                                         />
-                                        <!-- <core:Icon
-                                            src="sap-icon://credit-card"
-                                        /> -->
-                                        <Avatar
-                                            src="{ui>CardImageBase64}"
-                                            displaySize="XS"
-                                            customDisplaySize="2.75rem"
-                                            displayShape="Circle"
-                                            initials="{ui>Name}"
-                                        />
-                                    </HBox>
-                                    <Text
-                                        text="{i18n>cardLimitLabel}"
-                                        class="creditCardLabel"
-                                    />
-                                    <ObjectNumber
-                                        number="{
+                                        <ObjectNumber
+                                            number="{
                                             parts: [
-                                                { path: 'ui>Limit' },
-                                                { path: 'ui>Currency' }
+                                                { path: 'Limit' },
+                                                { path: 'Currency' }
                                             ],
-                                            formatter: 'formatter.formatCurrency'
+                                            formatter: 'formatter.formatCardAmount'
                                         }"
-                                        class="creditCardValue"
-                                    />
-                                    <HBox justifyContent="SpaceBetween">
-                                        <Text
-                                            text="{ parts: [ { path: 'i18n>cardClosingDay' }, { path: 'ui>ClosingDay' } ], formatter: 'formatter.formatTemplate' }"
-                                            class="creditCardFoot"
+                                            class="creditCardValue"
                                         />
-                                        <Text
-                                            text="{ parts: [ { path: 'i18n>cardDueDay' }, { path: 'ui>DueDay' } ], formatter: 'formatter.formatTemplate' }"
-                                            class="creditCardFoot"
-                                        />
-                                    </HBox>
-                                </VBox>
-                            </CustomListItem>
-                        </List>
+                                        <HBox justifyContent="SpaceBetween">
+                                            <Text
+                                                text="{ parts: [ { path: 'i18n>cardClosingDay' }, { path: 'ClosingDay' } ], formatter: 'formatter.formatTemplate' }"
+                                                class="creditCardFoot"
+                                            />
+                                            <Text
+                                                text="{ parts: [ { path: 'i18n>cardDueDay' }, { path: 'DueDay' } ], formatter: 'formatter.formatTemplate' }"
+                                                class="creditCardFoot"
+                                            />
+                                        </HBox>
+                                    </VBox>
+                                </CustomListItem>
+                            </List>
+                        </VBox>
                     </VBox>
                 </HBox>
             </VBox>

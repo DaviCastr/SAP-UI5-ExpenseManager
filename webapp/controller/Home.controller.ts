@@ -3,6 +3,7 @@ import MessageBox from "sap/m/MessageBox";
 import MessageToast from "sap/m/MessageToast";
 import Dialog from "sap/m/Dialog";
 import Select from "sap/m/Select";
+import List from "sap/m/List";
 import Control from "sap/ui/core/Control";
 import Event from "sap/ui/base/Event";
 import Context from "sap/ui/model/Context";
@@ -96,7 +97,6 @@ export default class Home extends BaseController {
 
         try {
             await this.setupPersonSelector();
-            this.applyPersonSelection(this.getSelectedPersonId());
         } catch (error) {
             if (isSessionExpiredError(error)) {
                 return;
@@ -105,14 +105,9 @@ export default class Home extends BaseController {
         }
     }
 
-    public onPersonChange(oEvent: Event): void {
-        const selectedItem = (oEvent.getParameters() as { selectedItem?: { getKey?: () => string } }).selectedItem;
-        const id = selectedItem?.getKey?.();
-
-        if (!id) {
-            return;
-        }
-
+    public onPersonChange(): void {
+        const selectPersons = this.byId("personSelect") as Select;
+        const id = (selectPersons.getSelectedItem() as { getKey?: () => string } | undefined)?.getKey?.() || "";
         this.applyPersonSelection(id);
     }
 
@@ -136,16 +131,36 @@ export default class Home extends BaseController {
         });
     }
 
+    /**
+     * Derives the person binding path from the stored person metadata instead of
+     * reading the Select's binding context, which may not be hydrated yet during
+     * startup. Avoids the race where an empty path cleared the selected person.
+     *
+     * @param {string} id the person id; empty when the selection is cleared
+     * @returns {string} the absolute OData path of the person, or "" when id is empty
+     */
+    private personPathFor(id: string): string {
+        if (!id) {
+            return "";
+        }
+        const person = this.getPersonsFromBinding().find((candidate) => candidate.ID === id);
+        const isActiveEntity = person?.IsActiveEntity === false ? "false" : "true";
+        return `/Persons(ID='${encodeURIComponent(id)}',IsActiveEntity=${isActiveEntity})`;
+    }
+
+    private bindPersonContext(id: string): void {
+        const path = this.personPathFor(id);
+        this.byId("personDetails")?.bindObject(path);
+        this.byId("cardsList")?.bindObject(path);
+    }
+
     public onOpenExpenseDialog(): void {
         const oView = this.getView() as XMLView;
         const ui = this.uiModel;
-        const personId = this.getSelectedPersonId();
 
         ui.setProperty("/newExpense", {
             description: "",
             amount: "",
-            cardId: "",
-            categoryId: "",
             installments: 1,
             fixedExpense: false,
             transactionDate: new Date().toISOString().slice(0, 10)
@@ -155,53 +170,22 @@ export default class Home extends BaseController {
             this._expenseDialog = this.loadFragmentDialog(oView, "AddExpense");
         }
 
-        void this._expenseDialog.then((dialog) => dialog.open());
-
-        if (personId) {
-            void this.loadExpenseOptions(personId);
-        }
+        void this._expenseDialog.then((dialog) => {
+            this.bindExpenseSelects();
+            (Fragment.byId("AddExpense", "expenseCard") as Select | undefined)?.setSelectedItem(null);
+            (Fragment.byId("AddExpense", "expenseCategory") as Select | undefined)?.setSelectedItem(null);
+            dialog.open();
+        });
     }
 
-    private async loadExpenseOptions(personId: string): Promise<void> {
-        if (!this._odata) {
-            return;
-        }
+    private bindExpenseSelects(): void {
+        const selectPersons = this.byId("personSelect") as Select;
+        const selectedPerson = selectPersons.getSelectedItem();
+        const contextSelected = selectedPerson?.getBindingContext() as Context | undefined;
+        const personPath = contextSelected?.getPath() || "";
 
-        try {
-            const [cards, categories] = await Promise.all([
-                this._odata.requestEntitySet<CardRow & { IsActiveEntity?: boolean }>("Cards", {
-                    select: ["ID", "Name"],
-                    filters: [new Filter({ path: "Person/ID", operator: FilterOperator.EQ, value1: personId })],
-                    filterExpression: DRAFT_FILTER,
-                    expand: DRAFT_EXPAND
-                }),
-                this._odata.requestEntitySet<{ ID: string; Name: string; IsActiveEntity?: boolean }>("Categories", {
-                    select: ["ID", "Name"],
-                    filters: [new Filter({ path: "Person/ID", operator: FilterOperator.EQ, value1: personId })],
-                    filterExpression: DRAFT_FILTER,
-                    expand: DRAFT_EXPAND
-                })
-            ]);
-
-            const cardOptions = cards.map((card) => ({ key: card.ID, text: card.Name, isDraft: card.IsActiveEntity === false }));
-            const categoryOptions = categories.map((category) => ({ key: category.ID, text: category.Name, isDraft: category.IsActiveEntity === false }));
-
-            // eslint-disable-next-line no-console
-            console.log("[expenseOptions] first card:", cards[0]);
-            // eslint-disable-next-line no-console
-            console.log("[expenseOptions] first category:", categories[0]);
-            // eslint-disable-next-line no-console
-            console.log("[expenseOptions] cardOptions[0]:", cardOptions[0], "categoryOptions[0]:", categoryOptions[0]);
-
-            this.uiModel.setProperty("/expenseCardOptions", cardOptions);
-            this.uiModel.setProperty("/expenseCategoryOptions", categoryOptions);
-        } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error("[expenseOptions] failed to load options:", error);
-            if (isSessionExpiredError(error)) {
-                return;
-            }
-        }
+        Fragment.byId("AddExpense", "expenseCard")?.bindObject(personPath);
+        Fragment.byId("AddExpense", "expenseCategory")?.bindObject(personPath);
     }
 
     public onOpenPersonDialog(): void {
@@ -339,6 +323,13 @@ export default class Home extends BaseController {
     }
 
     public refresh(): void {
+        const cardsList = this.byId("cardsListItems") as List | undefined;
+        if (cardsList) {
+            const binding = cardsList.getBinding("items");
+            if (binding) {
+                binding.refresh();
+            }
+        }
         void this.loadDashboard();
     }
 
@@ -383,7 +374,8 @@ export default class Home extends BaseController {
                     Income: person.Income,
                     ExpenseTarget: person.ExpenseTarget,
                     Currency: person.Currency,
-                    ImageType: person.ImageType
+                    ImageType: person.ImageType,
+                    IsActiveEntity: person.IsActiveEntity
                 }));
         } catch (error) {
             if (isSessionExpiredError(error)) {
@@ -433,8 +425,8 @@ export default class Home extends BaseController {
 
     private applyPersonSelection(id: string): void {
         const ui = this.uiModel;
-        // eslint-disable-next-line no-console
-        console.log("[applyPersonSelection] id:", id);
+
+        this.bindPersonContext(id);
 
         if (!id) {
             ui.setProperty("/selectedPersonId", "");
@@ -447,8 +439,6 @@ export default class Home extends BaseController {
 
         const person = this.getPersonsFromBinding().find((candidate) => candidate.ID === id);
         if (person) {
-            // eslint-disable-next-line no-console
-            console.log("[applyPersonSelection] selected person:", person);
             ui.setProperty("/selectedPerson", {
                 ID: person.ID,
                 Name: person.Name,
@@ -517,17 +507,11 @@ export default class Home extends BaseController {
             console.log("[loadDashboard] invoice TotalAmount:", invoice.TotalAmount);
 
             const cards = await this._odata.requestEntitySet<CardRow & { IsActiveEntity?: boolean }>("Cards", {
-                select: ["ID", "Name", "Limit", "Currency", "DueDay", "ClosingDay"],
+                select: ["ID"],
                 filters: [new Filter({ path: "Person/ID", operator: FilterOperator.EQ, value1: personId })],
                 filterExpression: DRAFT_FILTER,
                 expand: DRAFT_EXPAND
             });
-            // eslint-disable-next-line no-console
-            console.log("[dashboard] first card:", cards[0]);
-            ui.setProperty("/cards", cards.map((card) => ({
-                ...card,
-                Currency: resolveCurrency(card.Currency)
-            })));
             void this.resolveCardImages(cards);
         } catch (error) {
             if (isSessionExpiredError(error)) {
@@ -704,9 +688,10 @@ export default class Home extends BaseController {
 
     /**
      * Resolves the image of each card and stores its base64 representation in
-     * the ui model, so the avatar renders without a browser-side request that
-     * would lack the Authorization header. Each card is fetched once via the
-     * authenticated OData model media support.
+     * the `ui>/cardImages` map (keyed by card ID), so the cards list avatar
+     * renders without a browser-side request that would lack the Authorization
+     * header. Each card is fetched once via the authenticated OData model media
+     * support.
      *
      * @param {CardRow[]} cards the cards to enrich (CardImageBase64)
      */
@@ -718,16 +703,17 @@ export default class Home extends BaseController {
             return;
         }
 
+        const images: Record<string, string> = {};
         await Promise.all(
-            cards.map(async (card, index) => {
+            cards.map(async (card) => {
                 const mediaPath = `Cards(ID='${encodeURIComponent(card.ID)}',IsActiveEntity=true)/Image`;
                 const base64 = await odata.getMediaAsBase64(mediaPath);
-                if (!base64) {
-                    return;
+                if (base64) {
+                    images[card.ID] = base64;
                 }
-                ui.setProperty(`/cards/${index}/CardImageBase64`, base64);
             })
         );
+        ui.setProperty("/cardImages", images);
     }
 
     private navigateMonth(delta: number): void {
@@ -756,6 +742,7 @@ export default class Home extends BaseController {
 
     private loadFragmentDialog(oView: XMLView, fragmentName: string): Promise<Dialog> {
         return Fragment.load({
+            id: fragmentName,
             name: `apps.dflc.expensemanager.view.fragments.${fragmentName}`
         }).then((dialog) => {
             oView.addDependent(dialog as Control);
