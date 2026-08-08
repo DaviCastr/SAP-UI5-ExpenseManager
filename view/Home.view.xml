@@ -58,6 +58,7 @@
                                 displaySize="XS"
                                 displayShape="Circle"
                                 class="personAvatar"
+                                visible="{= !${ui>/personsEmpty} }"
                             />
                             <Select
                                 id="personSelect"
@@ -73,6 +74,7 @@
                                 change=".onPersonChange"
                                 class="personSelect"
                                 width="12rem"
+                                visible="{= !${ui>/personsEmpty} }"
                             >
                                 <core:Item
                                     key="{ID}"
@@ -85,6 +87,7 @@
                                 tooltip="{i18n>personEditTooltip}"
                                 press=".onOpenPersonDetailDialog"
                                 class="iconAction"
+                                visible="{= !${ui>/personsEmpty} }"
                             />
                             <Button
                                 icon="sap-icon://add"
@@ -92,6 +95,7 @@
                                 tooltip="{i18n>personAddButton}"
                                 press=".onOpenPersonDialog"
                                 class="iconAction"
+                                visible="{= !${ui>/personsEmpty} }"
                             />
                             <Button
                                 icon="sap-icon://log"
@@ -274,6 +278,7 @@
                 </VBox>
 
                 <HBox
+                    id="metricsGrid"
                     class="metricGrid"
                     wrap="Wrap"
                     visible="{= !${ui>/personsEmpty} }"
@@ -311,6 +316,7 @@
                         </HBox>
                         <ObjectNumber
                             number="{ui>/summary/expenses}"
+                            state="{ path: 'MonthCriticallity', formatter: 'formatter.criticalityState' }"
                             class="metricNumber"
                         />
                         <Text
@@ -355,6 +361,85 @@
                         />
                         <Text
                             text="{ui>/summary/targetHint}"
+                            class="metricHint"
+                        />
+                    </VBox>
+                    <VBox class="metricCard paidMetric">
+                        <HBox
+                            justifyContent="SpaceBetween"
+                            alignItems="Start"
+                        >
+                            <Text
+                                text="{i18n>metricTotalPaidLabel}"
+                                class="metricLabel"
+                            />
+                            <core:Icon src="sap-icon://money-bills" />
+                        </HBox>
+                        <ObjectNumber
+                            number="{
+                                parts: [
+                                    { path: 'ui>/summary/expensesPayed' },
+                                    { path: 'ui>/selectedPerson/Currency' }
+                                ],
+                                formatter: 'formatter.formatCurrency'
+                            }"
+                            class="metricNumber"
+                        />
+                        <Text
+                            text="{i18n>metricTotalPaidHint}"
+                            class="metricHint"
+                        />
+                    </VBox>
+                    <VBox class="metricCard payMetric">
+                        <HBox
+                            justifyContent="SpaceBetween"
+                            alignItems="Start"
+                        >
+                            <Text
+                                text="{i18n>metricTotalToPayLabel}"
+                                class="metricLabel"
+                            />
+                            <core:Icon src="sap-icon://money-bills" />
+                        </HBox>
+                        <ObjectNumber
+                            number="{
+                                parts: [
+                                    { path: 'ui>/summary/expensesToPay' },
+                                    { path: 'ui>/selectedPerson/Currency' }
+                                ],
+                                formatter: 'formatter.formatCurrency'
+                            }"
+                            state="{ path: 'CriticallityToPay', formatter: 'formatter.criticalityState' }"
+                            class="metricNumber"
+                        />
+                        <Text
+                            text="{i18n>metricTotalToPayHint}"
+                            class="metricHint"
+                        />
+                    </VBox>
+                    <VBox class="metricCard closedMetric">
+                        <HBox
+                            justifyContent="SpaceBetween"
+                            alignItems="Start"
+                        >
+                            <Text
+                                text="{i18n>metricTotalClosedLabel}"
+                                class="metricLabel"
+                            />
+                            <core:Icon src="sap-icon://locked" />
+                        </HBox>
+                        <ObjectNumber
+                            number="{
+                                parts: [
+                                    { path: 'ui>/summary/expensesClosed' },
+                                    { path: 'ui>/selectedPerson/Currency' }
+                                ],
+                                formatter: 'formatter.formatCurrency'
+                            }"
+                            class="metricNumber"
+                        />
+                        <Text
+                            text="{i18n>metricTotalClosedHint}"
                             class="metricHint"
                         />
                     </VBox>

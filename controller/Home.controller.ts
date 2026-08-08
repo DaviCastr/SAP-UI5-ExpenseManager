@@ -15,6 +15,7 @@ import { InvoiceService, type Period } from "../service/InvoiceService";
 import { PeriodService } from "../service/PeriodService";
 import { MediaService } from "../service/MediaService";
 import { DashboardRenderer } from "../service/DashboardRenderer";
+import { criticalityState } from "../util/format";
 import type ListBinding from "sap/ui/model/ListBinding";
 import Filter from "sap/ui/model/Filter";
 import FilterOperator from "sap/ui/model/FilterOperator";
@@ -35,6 +36,14 @@ import type { UiPerson } from "../model/UiModel";
 interface CardRow {
     ID: string;
     Name: string;
+}
+
+interface PersonFinancialTotals {
+    TotalExpensesPayed?: number;
+    TotalExpensesToPay?: number;
+    TotalExpensesClosed?: number;
+    MonthCriticallity?: number;
+    CriticallityToPay?: number;
 }
 
 /**
@@ -330,7 +339,7 @@ export default class Home extends BaseController {
             Name: person?.Name,
             Income: person?.Income,
             ExpenseTarget: person?.ExpenseTarget,
-            Currency: person?.Currency,
+            Currency: person?.Currency?.code,
             ImageType: person?.ImageType
         });
 
@@ -351,8 +360,10 @@ export default class Home extends BaseController {
      */
     private bindPersonContext(id: string): void {
         const path = this.personPathFor(id);
+        this.byId("personDetails")?.setModel(this.getView()?.getModel() as ODataModel);
         this.byId("personDetails")?.bindObject(path);
         this.byId("cardsList")?.bindObject(path);
+        this.byId("metricsGrid")?.bindObject(path);
     }
 
     private personPathFor(id: string): string {
@@ -417,6 +428,13 @@ export default class Home extends BaseController {
             void this._mediaService?.resolveCategoryImages(transactions);
             void renderer.loadTrend(personId, period, expenses);
 
+            const financialTotals = this.loadPersonFinancialTotals();
+            ui.setProperty("/summary/expenseState", criticalityState(financialTotals.MonthCriticallity));
+            ui.setProperty("/summary/toPayState", criticalityState(financialTotals.CriticallityToPay));
+            ui.setProperty("/summary/expensesPayed", financialTotals.TotalExpensesPayed ?? 0);
+            ui.setProperty("/summary/expensesToPay", financialTotals.TotalExpensesToPay ?? 0);
+            ui.setProperty("/summary/expensesClosed", financialTotals.TotalExpensesClosed ?? 0);
+
             const cards = await this._odata?.requestEntitySet<CardRow & { IsActiveEntity?: boolean }>("Cards", {
                 select: ["ID", "Name"],
                 filters: [new Filter({ path: "Person/ID", operator: FilterOperator.EQ, value1: personId })],
@@ -438,6 +456,28 @@ export default class Home extends BaseController {
 
     private selectedPerson(): { Income?: number; ExpenseTarget?: number; Currency?: unknown } {
         return (this.getUiModel().getProperty("/selectedPerson") as UiPerson) || {};
+    }
+
+    private loadPersonFinancialTotals(): PersonFinancialTotals {
+        const personDetails = this.byId("personDetails");
+        const bindingContext = personDetails?.getBindingContext() as Context | undefined;
+
+        if (!bindingContext) {
+            return {};
+        }
+
+        const person = bindingContext.getObject() as PersonFinancialTotals | undefined;
+        if (!person) {
+            return {};
+        }
+
+        return {
+            TotalExpensesPayed: Number(person.TotalExpensesPayed) || 0,
+            TotalExpensesToPay: Number(person.TotalExpensesToPay) || 0,
+            TotalExpensesClosed: Number(person.TotalExpensesClosed) || 0,
+            MonthCriticallity: Number(person.MonthCriticallity) || 0,
+            CriticallityToPay: Number(person.CriticallityToPay) || 0
+        };
     }
 
     // ---------------------------------------------------------------------------

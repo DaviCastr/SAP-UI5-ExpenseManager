@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../service/ODataService", "../service/InvoiceService", "../service/PeriodService", "../service/MediaService", "../service/DashboardRenderer", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageToast, Fragment, ___BaseController, ___auth_AuthenticationService, ___service_ODataService, ___service_InvoiceService, ___service_PeriodService, ___service_MediaService, ___service_DashboardRenderer, Filter, FilterOperator, ___util_expenseApi, ___util_backupApi, ___util_http) {
+sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController", "../auth/AuthenticationService", "../service/ODataService", "../service/InvoiceService", "../service/PeriodService", "../service/MediaService", "../service/DashboardRenderer", "../util/format", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageToast, Fragment, ___BaseController, ___auth_AuthenticationService, ___service_ODataService, ___service_InvoiceService, ___service_PeriodService, ___service_MediaService, ___service_DashboardRenderer, ___util_format, Filter, FilterOperator, ___util_expenseApi, ___util_backupApi, ___util_http) {
   "use strict";
 
   const BaseController = ___BaseController["BaseController"];
@@ -10,6 +10,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController",
   const PeriodService = ___service_PeriodService["PeriodService"];
   const MediaService = ___service_MediaService["MediaService"];
   const DashboardRenderer = ___service_DashboardRenderer["DashboardRenderer"];
+  const criticalityState = ___util_format["criticalityState"];
   const getTransactionsByCategory = ___util_expenseApi["getTransactionsByCategory"];
   const requestExportBackup = ___util_backupApi["requestExportBackup"];
   const fetchBackupStream = ___util_backupApi["fetchBackupStream"];
@@ -269,7 +270,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController",
         Name: person?.Name,
         Income: person?.Income,
         ExpenseTarget: person?.ExpenseTarget,
-        Currency: person?.Currency,
+        Currency: person?.Currency?.code,
         ImageType: person?.ImageType
       });
       if (person) {
@@ -288,8 +289,10 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController",
      */
     bindPersonContext(id) {
       const path = this.personPathFor(id);
+      this.byId("personDetails")?.setModel(this.getView()?.getModel());
       this.byId("personDetails")?.bindObject(path);
       this.byId("cardsList")?.bindObject(path);
+      this.byId("metricsGrid")?.bindObject(path);
     }
     personPathFor(id) {
       if (!id) {
@@ -341,6 +344,12 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController",
         const transactions = renderer.renderInvoice(invoice, this.selectedPerson());
         void this._mediaService?.resolveCategoryImages(transactions);
         void renderer.loadTrend(personId, period, expenses);
+        const financialTotals = this.loadPersonFinancialTotals();
+        ui.setProperty("/summary/expenseState", criticalityState(financialTotals.MonthCriticallity));
+        ui.setProperty("/summary/toPayState", criticalityState(financialTotals.CriticallityToPay));
+        ui.setProperty("/summary/expensesPayed", financialTotals.TotalExpensesPayed ?? 0);
+        ui.setProperty("/summary/expensesToPay", financialTotals.TotalExpensesToPay ?? 0);
+        ui.setProperty("/summary/expensesClosed", financialTotals.TotalExpensesClosed ?? 0);
         const cards = await this._odata?.requestEntitySet("Cards", {
           select: ["ID", "Name"],
           filters: [new Filter({
@@ -365,6 +374,24 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "./BaseController",
     }
     selectedPerson() {
       return this.getUiModel().getProperty("/selectedPerson") || {};
+    }
+    loadPersonFinancialTotals() {
+      const personDetails = this.byId("personDetails");
+      const bindingContext = personDetails?.getBindingContext();
+      if (!bindingContext) {
+        return {};
+      }
+      const person = bindingContext.getObject();
+      if (!person) {
+        return {};
+      }
+      return {
+        TotalExpensesPayed: Number(person.TotalExpensesPayed) || 0,
+        TotalExpensesToPay: Number(person.TotalExpensesToPay) || 0,
+        TotalExpensesClosed: Number(person.TotalExpensesClosed) || 0,
+        MonthCriticallity: Number(person.MonthCriticallity) || 0,
+        CriticallityToPay: Number(person.CriticallityToPay) || 0
+      };
     }
 
     // ---------------------------------------------------------------------------

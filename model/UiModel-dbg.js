@@ -30,7 +30,12 @@ sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
           expenseHint: "",
           targetHint: "",
           trendText: "",
-          trendIcon: "sap-icon://trend-up"
+          trendIcon: "sap-icon://trend-up",
+          expenseState: "None",
+          toPayState: "None",
+          expensesPayed: 0,
+          expensesToPay: 0,
+          expensesClosed: 0
         },
         newExpense: {
           description: "",
