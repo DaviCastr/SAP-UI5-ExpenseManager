@@ -1,10 +1,11 @@
-sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast", "../../util/entityApi", "../../util/http", "../../util/i18n"], function (Fragment, MessageBox, MessageToast, ____util_entityApi, ____util_http, ____util_i18n) {
+sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../util/feedback"], function (Fragment, ____util_entityApi, ____util_feedback) {
   "use strict";
 
   const createEntity = ____util_entityApi["createEntity"];
   const uploadImage = ____util_entityApi["uploadImage"];
-  const isSessionExpiredError = ____util_http["isSessionExpiredError"];
-  const getText = ____util_i18n["getText"];
+  const handleActionError = ____util_feedback["handleActionError"];
+  const showToast = ____util_feedback["showToast"];
+  const showWarning = ____util_feedback["showWarning"];
   let personPhoto = null;
   const AdicionarPessoa = {
     onDialogBeforeOpen: function () {
@@ -33,7 +34,7 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast",
       const uiModel = view.getModel("ui");
       const person = uiModel.getProperty("/newPerson");
       if (!person.name || !person.email || !person.income || !person.currency || !person.target) {
-        MessageBox.warning(getText(view, "errorFillRequiredFields"));
+        showWarning(view, "errorFillRequiredFields");
         return;
       }
       uiModel.setProperty("/busy", true);
@@ -52,13 +53,10 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast",
           await uploadImage("Persons", created.ID, personPhoto);
         }
         dialog.close();
-        MessageToast.show(getText(view, "personCreated"));
+        showToast(view, "personCreated");
         void view.getController().reload();
       } catch (error) {
-        if (isSessionExpiredError(error)) {
-          return;
-        }
-        MessageBox.error(getText(view, "errorCreatePerson"));
+        handleActionError(view, error, "errorCreatePerson");
       } finally {
         uiModel.setProperty("/busy", false);
       }

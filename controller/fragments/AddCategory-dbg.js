@@ -1,10 +1,11 @@
-sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast", "../../util/entityApi", "../../util/http", "../../util/i18n"], function (Fragment, MessageBox, MessageToast, ____util_entityApi, ____util_http, ____util_i18n) {
+sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../util/feedback"], function (Fragment, ____util_entityApi, ____util_feedback) {
   "use strict";
 
   const createEntity = ____util_entityApi["createEntity"];
   const uploadImage = ____util_entityApi["uploadImage"];
-  const isSessionExpiredError = ____util_http["isSessionExpiredError"];
-  const getText = ____util_i18n["getText"];
+  const handleActionError = ____util_feedback["handleActionError"];
+  const showToast = ____util_feedback["showToast"];
+  const showWarning = ____util_feedback["showWarning"];
   let categoryPhoto = null;
   const AdicionarCategoria = {
     onDialogBeforeOpen: function () {
@@ -34,11 +35,11 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast",
       const category = uiModel.getProperty("/newCategory");
       const personId = uiModel.getProperty("/selectedPersonId");
       if (!category.name) {
-        MessageBox.warning(getText(view, "errorFillRequiredFields"));
+        showWarning(view, "errorFillRequiredFields");
         return;
       }
       if (!personId) {
-        MessageBox.warning(getText(view, "errorMissingPerson"));
+        showWarning(view, "errorMissingPerson");
         return;
       }
       uiModel.setProperty("/busy", true);
@@ -53,13 +54,10 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast",
           await uploadImage("Categories", created.ID, categoryPhoto);
         }
         dialog.close();
-        MessageToast.show(getText(view, "categoryCreated"));
+        showToast(view, "categoryCreated");
         void view.getController().refresh();
       } catch (error) {
-        if (isSessionExpiredError(error)) {
-          return;
-        }
-        MessageBox.error(getText(view, "errorCreateCategory"));
+        handleActionError(view, error, "errorCreateCategory");
       } finally {
         uiModel.setProperty("/busy", false);
       }

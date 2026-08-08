@@ -1,10 +1,11 @@
-sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast", "../../util/backupApi", "../../util/http", "../../util/i18n"], function (Fragment, MessageBox, MessageToast, ____util_backupApi, ____util_http, ____util_i18n) {
+sap.ui.define(["sap/ui/core/Fragment", "../../util/backupApi", "../../util/feedback"], function (Fragment, ____util_backupApi, ____util_feedback) {
   "use strict";
 
   const createBackupRow = ____util_backupApi["createBackupRow"];
   const uploadBackupStream = ____util_backupApi["uploadBackupStream"];
-  const isSessionExpiredError = ____util_http["isSessionExpiredError"];
-  const getText = ____util_i18n["getText"];
+  const handleActionError = ____util_feedback["handleActionError"];
+  const showToast = ____util_feedback["showToast"];
+  const showWarning = ____util_feedback["showWarning"];
   let backupFile = null;
   const Backup = {
     onDialogBeforeOpen: function () {
@@ -25,7 +26,7 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast",
       const view = dialog.getParent();
       const uiModel = view.getModel("ui");
       if (!backupFile) {
-        MessageBox.warning(getText(view, "errorSelectBackupFile"));
+        showWarning(view, "errorSelectBackupFile");
         return;
       }
       uiModel.setProperty("/busy", true);
@@ -33,13 +34,10 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast",
         const row = await createBackupRow();
         await uploadBackupStream(row.ID, backupFile);
         dialog.close();
-        MessageToast.show(getText(view, "backupRestored"));
+        showToast(view, "backupRestored");
         void view.getController().reload();
       } catch (error) {
-        if (isSessionExpiredError(error)) {
-          return;
-        }
-        MessageBox.error(getText(view, "errorImportBackup"));
+        handleActionError(view, error, "errorImportBackup");
       } finally {
         uiModel.setProperty("/busy", false);
       }

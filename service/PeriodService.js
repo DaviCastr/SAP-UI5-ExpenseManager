@@ -1,0 +1,2 @@
+sap.ui.define(["../util/format"],function(t){"use strict";const r=t["formatMonth"];const e="Visão geral • ";class n{current(){const t=new Date;return{year:t.getFullYear(),month:t.getMonth()+1}}currentOrDefault(t){return t||this.current()}shift(t,r){const e=t.year*12+(t.month-1)+r;return{year:Math.floor(e/12),month:e%12+1}}label(t,n){return`${e}${r(t,n)}`}}var o={__esModule:true};o.PERIOD_OVERVIEW_LABEL=e;o.PeriodService=n;return o});
+//# sourceMappingURL=PeriodService.js.map

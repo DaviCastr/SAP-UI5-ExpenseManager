@@ -5,11 +5,8 @@ import Fragment from "sap/ui/core/Fragment";
 import FileUploader from "sap/ui/unified/FileUploader";
 import Event from "sap/ui/base/Event";
 import JSONModel from "sap/ui/model/json/JSONModel";
-import MessageBox from "sap/m/MessageBox";
-import MessageToast from "sap/m/MessageToast";
 import { createBackupRow, uploadBackupStream } from "../../util/backupApi";
-import { isSessionExpiredError } from "../../util/http";
-import { getText } from "../../util/i18n";
+import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import type Home from "../../controller/Home.controller";
 
 let backupFile: File | null = null;
@@ -37,7 +34,7 @@ const Backup = {
         const uiModel = view.getModel("ui") as JSONModel;
 
         if (!backupFile) {
-            MessageBox.warning(getText(view, "errorSelectBackupFile"));
+            showWarning(view, "errorSelectBackupFile");
             return;
         }
 
@@ -47,13 +44,10 @@ const Backup = {
             const row = await createBackupRow();
             await uploadBackupStream(row.ID, backupFile);
             dialog.close();
-            MessageToast.show(getText(view, "backupRestored"));
+            showToast(view, "backupRestored");
             void (view.getController() as Home).reload();
         } catch (error) {
-            if (isSessionExpiredError(error)) {
-                return;
-            }
-            MessageBox.error(getText(view, "errorImportBackup"));
+            handleActionError(view, error, "errorImportBackup");
         } finally {
             uiModel.setProperty("/busy", false);
         }

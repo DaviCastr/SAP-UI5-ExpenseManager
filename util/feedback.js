@@ -1,0 +1,2 @@
+sap.ui.define(["sap/m/MessageBox","sap/m/MessageToast","./i18n","./http"],function(r,n,e,s){"use strict";const t=e["getText"];const o=s["isSessionExpiredError"];const i=s["isBackendUnavailableError"];function a(n,e){r.warning(t(n,e))}function u(r,e){n.show(t(r,e))}function c(n,e,s){if(o(e)||i(e)){return true}r.error(t(n,s));return true}var f={__esModule:true};f.showWarning=a;f.showToast=u;f.handleActionError=c;return f});
+//# sourceMappingURL=feedback.js.map

@@ -6,11 +6,8 @@ import Event from "sap/ui/base/Event";
 import FileUploader from "sap/ui/unified/FileUploader";
 import Avatar from "sap/m/Avatar";
 import JSONModel from "sap/ui/model/json/JSONModel";
-import MessageBox from "sap/m/MessageBox";
-import MessageToast from "sap/m/MessageToast";
 import { createEntity, uploadImage } from "../../util/entityApi";
-import { isSessionExpiredError } from "../../util/http";
-import { getText } from "../../util/i18n";
+import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import type Home from "../../controller/Home.controller";
 import type { NewCard } from "../../model/UiModel";
 
@@ -50,12 +47,12 @@ const AdicionarCartao = {
         const personId = uiModel.getProperty("/selectedPersonId") as string;
 
         if (!card.name || !card.limit) {
-            MessageBox.warning(getText(view, "errorFillRequiredFields"));
+            showWarning(view, "errorFillRequiredFields");
             return;
         }
 
         if (!personId) {
-            MessageBox.warning(getText(view, "errorMissingPerson"));
+            showWarning(view, "errorMissingPerson");
             return;
         }
 
@@ -79,13 +76,10 @@ const AdicionarCartao = {
             }
 
             dialog.close();
-            MessageToast.show(getText(view, "cardAdded"));
+            showToast(view, "cardAdded");
             void (view.getController() as Home).refresh();
         } catch (error) {
-            if (isSessionExpiredError(error)) {
-                return;
-            }
-            MessageBox.error(getText(view, "errorCreateCard"));
+            handleActionError(view, error, "errorCreateCard");
         } finally {
             uiModel.setProperty("/busy", false);
         }

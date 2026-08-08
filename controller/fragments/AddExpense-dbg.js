@@ -1,10 +1,10 @@
-sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast", "../../util/expenseApi", "../../util/http", "../../util/i18n"], function (Fragment, MessageBox, MessageToast, ____util_expenseApi, ____util_http, ____util_i18n) {
+sap.ui.define(["sap/ui/core/Fragment", "../../util/expenseApi", "../../util/feedback"], function (Fragment, ____util_expenseApi, ____util_feedback) {
   "use strict";
 
   const addCardExpense = ____util_expenseApi["addCardExpense"];
-  const isSessionExpiredError = ____util_http["isSessionExpiredError"];
-  const getText = ____util_i18n["getText"];
-  const DRAFT_BLOCK_MESSAGE = "Este item está como rascunho. Salve-o primeiro antes de registrar um gasto.";
+  const handleActionError = ____util_feedback["handleActionError"];
+  const showToast = ____util_feedback["showToast"];
+  const showWarning = ____util_feedback["showWarning"];
   const AdicionarGasto = {
     onCancelarGasto: function () {
       this.getParent().close();
@@ -19,11 +19,11 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast",
       const card = selectedCard?.getBindingContext()?.getObject();
       const category = selectedCategory?.getBindingContext()?.getObject();
       if (!expense.description || !expense.amount || !card?.ID || !category?.ID) {
-        MessageBox.warning(getText(view, "errorFillRequiredFields"));
+        showWarning(view, "errorFillRequiredFields");
         return;
       }
       if (card.IsActiveEntity === false || category.IsActiveEntity === false) {
-        MessageBox.warning(DRAFT_BLOCK_MESSAGE);
+        showWarning(view, "errorDraftBlocked");
         return;
       }
       uiModel.setProperty("/busy", true);
@@ -39,13 +39,10 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/m/MessageBox", "sap/m/MessageToast",
           FixedExpense: !!expense.fixedExpense
         });
         dialog.close();
-        MessageToast.show(getText(view, "expenseRegistered"));
+        showToast(view, "expenseRegistered");
         void view.getController().refresh();
       } catch (error) {
-        if (isSessionExpiredError(error)) {
-          return;
-        }
-        MessageBox.error(getText(view, "errorRegisterExpense"));
+        handleActionError(view, error, "errorRegisterExpense");
       } finally {
         uiModel.setProperty("/busy", false);
       }
