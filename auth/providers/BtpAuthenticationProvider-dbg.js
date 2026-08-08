@@ -4,19 +4,20 @@ sap.ui.define(["../storage/SessionStorage", "../AuthenticationService"], functio
   const SessionStorage = ___storage_SessionStorage["SessionStorage"];
   const AuthenticationService = ___AuthenticationService["AuthenticationService"];
   class BtpAuthenticationProvider {
-    async login() {
-      return this.createSession();
+    login() {
+      return Promise.resolve(this.createSession());
     }
-    async logout() {
+    logout() {
       SessionStorage.clear();
       if (typeof window !== "undefined") {
         const redirectTarget = encodeURIComponent(window.location.href);
         window.location.assign(`${window.location.origin}/logout?redirect=${redirectTarget}`);
       }
+      return Promise.resolve();
     }
-    async isAuthenticated() {
+    isAuthenticated() {
       const session = AuthenticationService.getSession();
-      return !!session && session.expiresAt > Date.now();
+      return Promise.resolve(!!session && session.expiresAt > Date.now());
     }
     createSession() {
       return {

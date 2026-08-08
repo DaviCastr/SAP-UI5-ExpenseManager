@@ -1,2 +1,2 @@
-sap.ui.define(["sap/ui/core/mvc/Controller"],function(n){"use strict";const e=n.extend("apps.dflc.expensemanager.controller.Main",{onInit:function n(){}});return e});
+sap.ui.define(["./BaseController"],function(e){"use strict";const n=e["BaseController"];class s extends n{onInit(){}}return s});
 //# sourceMappingURL=Main.controller.js.map

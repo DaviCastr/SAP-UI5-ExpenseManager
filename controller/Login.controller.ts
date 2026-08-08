@@ -2,7 +2,6 @@ import { BaseController } from "./BaseController";
 import { AuthenticationService } from "../auth/AuthenticationService";
 import Environment, { EnvironmentType } from "../util/Environment";
 import MessageToast from "sap/m/MessageToast";
-import MessageBox from "sap/m/MessageBox";
 
 export default class Login extends BaseController {
 
@@ -27,17 +26,26 @@ export default class Login extends BaseController {
         }
 
         if (Environment.current() === EnvironmentType.GITHUB || Environment.current() === EnvironmentType.LOCAL) {
-            MessageToast.show(this.getText("loginRedirecting"));
+            this.showToastMessage("loginRedirecting");
             return;
         }
 
-        MessageToast.show(this.getText("loginAwaitBtp"));
+        this.showToastMessage("loginAwaitBtp");
     }
 
+    /**
+     * Surfaces backend unavailability on the Login page. Only meaningful in
+     * the GitHub Pages demo environment, where the login depends on a live
+     * backend.
+     */
     private showBackendUnavailable(): void {
         if (Environment.current() === EnvironmentType.GITHUB) {
-            MessageBox.error(this.getText("backendUnavailableLogin"));
+            this.showErrorMessage("backendUnavailableLogin");
         }
+    }
+
+    private showToastMessage(messageKey: string): void {
+        MessageToast.show(this.getText(messageKey));
     }
 
 }

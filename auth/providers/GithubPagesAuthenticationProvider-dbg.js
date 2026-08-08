@@ -5,7 +5,7 @@ sap.ui.define(["../AuthenticationService", "../storage/SessionStorage", "./Xsuaa
   const SessionStorage = ___storage_SessionStorage["SessionStorage"];
   const XsuaaAuthHelper = ___XsuaaAuthHelper["XsuaaAuthHelper"];
   class GithubPagesAuthenticationProvider {
-    async login() {
+    login() {
       try {
         const {
           authorizeUrl,
@@ -17,14 +17,14 @@ sap.ui.define(["../AuthenticationService", "../storage/SessionStorage", "./Xsuaa
           userName: "Pending"
         });
         if (typeof window !== "undefined") {
-          sessionStorage.setItem("expensemanager.state", state);
+          SessionStorage.saveOauthState(state);
           window.location.assign(authorizeUrl);
         }
-        return {
+        return Promise.resolve({
           accessToken: "",
           expiresAt: 0,
           userName: "Pending"
-        };
+        });
       } catch (error) {
         const session = {
           accessToken: "github-pages-demo-token",
@@ -32,11 +32,12 @@ sap.ui.define(["../AuthenticationService", "../storage/SessionStorage", "./Xsuaa
           userName: "Visitante GitHub Pages"
         };
         SessionStorage.save(session);
-        return session;
+        return Promise.resolve(session);
       }
     }
-    async logout() {
+    logout() {
       SessionStorage.clear();
+      return Promise.resolve();
     }
     async isAuthenticated() {
       const session = AuthenticationService.getSession();
@@ -51,7 +52,7 @@ sap.ui.define(["../AuthenticationService", "../storage/SessionStorage", "./Xsuaa
       if (!authCode) {
         return false;
       }
-      const savedState = sessionStorage.getItem("expensemanager.state");
+      const savedState = SessionStorage.loadOauthState();
       const state = searchParams.get("state");
       if (savedState && state && savedState !== state) {
         return false;

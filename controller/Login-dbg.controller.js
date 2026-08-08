@@ -1,4 +1,4 @@
-sap.ui.define(["./BaseController", "../auth/AuthenticationService", "../util/Environment", "sap/m/MessageToast", "sap/m/MessageBox"], function (___BaseController, ___auth_AuthenticationService, __Environment, MessageToast, MessageBox) {
+sap.ui.define(["./BaseController", "../auth/AuthenticationService", "../util/Environment", "sap/m/MessageToast"], function (___BaseController, ___auth_AuthenticationService, __Environment, MessageToast) {
   "use strict";
 
   function _interopRequireDefault(obj) {
@@ -26,15 +26,24 @@ sap.ui.define(["./BaseController", "../auth/AuthenticationService", "../util/Env
         return;
       }
       if (Environment.current() === EnvironmentType.GITHUB || Environment.current() === EnvironmentType.LOCAL) {
-        MessageToast.show(this.getText("loginRedirecting"));
+        this.showToastMessage("loginRedirecting");
         return;
       }
-      MessageToast.show(this.getText("loginAwaitBtp"));
+      this.showToastMessage("loginAwaitBtp");
     }
+
+    /**
+     * Surfaces backend unavailability on the Login page. Only meaningful in
+     * the GitHub Pages demo environment, where the login depends on a live
+     * backend.
+     */
     showBackendUnavailable() {
       if (Environment.current() === EnvironmentType.GITHUB) {
-        MessageBox.error(this.getText("backendUnavailableLogin"));
+        this.showErrorMessage("backendUnavailableLogin");
       }
+    }
+    showToastMessage(messageKey) {
+      MessageToast.show(this.getText(messageKey));
     }
   }
   return Login;

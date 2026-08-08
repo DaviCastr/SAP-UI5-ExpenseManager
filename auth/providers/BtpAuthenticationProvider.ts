@@ -5,22 +5,24 @@ import { AuthenticationService } from "../AuthenticationService";
 
 export class BtpAuthenticationProvider implements IAuthenticationProvider {
 
-    public async login(): Promise<UserSession> {
-        return this.createSession();
+    public login(): Promise<UserSession> {
+        return Promise.resolve(this.createSession());
     }
 
-    public async logout(): Promise<void> {
+    public logout(): Promise<void> {
         SessionStorage.clear();
 
         if (typeof window !== "undefined") {
             const redirectTarget = encodeURIComponent(window.location.href);
             window.location.assign(`${window.location.origin}/logout?redirect=${redirectTarget}`);
         }
+
+        return Promise.resolve();
     }
 
-    public async isAuthenticated(): Promise<boolean> {
+    public isAuthenticated(): Promise<boolean> {
         const session = AuthenticationService.getSession();
-        return !!session && session.expiresAt > Date.now();
+        return Promise.resolve(!!session && session.expiresAt > Date.now());
     }
 
     private createSession(): UserSession {

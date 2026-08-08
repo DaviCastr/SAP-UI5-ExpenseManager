@@ -1,12 +1,14 @@
-sap.ui.define(["sap/ui/core/mvc/Controller"], function (Controller) {
+sap.ui.define(["./BaseController"], function (___BaseController) {
   "use strict";
 
+  const BaseController = ___BaseController["BaseController"];
   /**
    * @namespace apps.dflc.expensemanager.controller
    */
-  const Main = Controller.extend("apps.dflc.expensemanager.controller.Main", {
-    /*eslint-disable @typescript-eslint/no-empty-function*/onInit: function _onInit() {}
-  });
+  class Main extends BaseController {
+    /*eslint-disable @typescript-eslint/no-empty-function*/
+    onInit() {}
+  }
   return Main;
 });
 //# sourceMappingURL=Main-dbg.controller.js.map

@@ -6,7 +6,7 @@ import { XsuaaAuthHelper } from "./XsuaaAuthHelper";
 
 export class GithubPagesAuthenticationProvider implements IAuthenticationProvider {
 
-    public async login(): Promise<UserSession> {
+    public login(): Promise<UserSession> {
         try {
             const { authorizeUrl, state } = XsuaaAuthHelper.createAuthorizationFlow();
             SessionStorage.save({
@@ -16,15 +16,15 @@ export class GithubPagesAuthenticationProvider implements IAuthenticationProvide
             });
 
             if (typeof window !== "undefined") {
-                sessionStorage.setItem("expensemanager.state", state);
+                SessionStorage.saveOauthState(state);
                 window.location.assign(authorizeUrl);
             }
 
-            return {
+            return Promise.resolve({
                 accessToken: "",
                 expiresAt: 0,
                 userName: "Pending"
-            };
+            });
         } catch (error) {
             const session = {
                 accessToken: "github-pages-demo-token",
@@ -33,12 +33,13 @@ export class GithubPagesAuthenticationProvider implements IAuthenticationProvide
             };
 
             SessionStorage.save(session);
-            return session;
+            return Promise.resolve(session);
         }
     }
 
-    public async logout(): Promise<void> {
+    public logout(): Promise<void> {
         SessionStorage.clear();
+        return Promise.resolve();
     }
 
     public async isAuthenticated(): Promise<boolean> {
@@ -59,7 +60,7 @@ export class GithubPagesAuthenticationProvider implements IAuthenticationProvide
             return false;
         }
 
-        const savedState = sessionStorage.getItem("expensemanager.state");
+        const savedState = SessionStorage.loadOauthState();
         const state = searchParams.get("state");
 
         if (savedState && state && savedState !== state) {

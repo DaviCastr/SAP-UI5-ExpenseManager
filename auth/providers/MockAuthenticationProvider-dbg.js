@@ -3,19 +3,19 @@ sap.ui.define(["../AuthenticationService"], function (___AuthenticationService) 
 
   const AuthenticationService = ___AuthenticationService["AuthenticationService"];
   class MockAuthenticationProvider {
-    async login() {
-      return {
+    login() {
+      return Promise.resolve({
         accessToken: "mock-token",
         expiresAt: Date.now() + 3600000,
         userName: "Davi"
-      };
+      });
     }
     async logout() {
       await AuthenticationService.logout();
     }
-    async isAuthenticated() {
+    isAuthenticated() {
       const session = AuthenticationService.getSession();
-      return !!session && session.expiresAt > Date.now();
+      return Promise.resolve(!!session && session.expiresAt > Date.now());
     }
   }
   var __exports = {

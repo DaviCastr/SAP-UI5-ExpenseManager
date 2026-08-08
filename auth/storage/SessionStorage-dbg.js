@@ -1,20 +1,25 @@
-sap.ui.define([], function () {
+sap.ui.define(["sap/ui/util/Storage"], function (Storage) {
   "use strict";
 
   class SessionStorage {
     static STORAGE_KEY = "expenseManager.session";
+    static OAUTH_STATE_KEY = "expensemanager.state";
     static save(session) {
-      window.sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(session));
+      Storage.put(this.STORAGE_KEY, session);
     }
     static load() {
-      const value = window.sessionStorage.getItem(this.STORAGE_KEY);
-      if (!value) {
-        return null;
-      }
-      return JSON.parse(value);
+      const value = Storage.get(this.STORAGE_KEY);
+      return value ?? null;
     }
     static clear() {
-      window.sessionStorage.removeItem(this.STORAGE_KEY);
+      Storage.remove(this.STORAGE_KEY);
+    }
+    static saveOauthState(state) {
+      Storage.put(this.OAUTH_STATE_KEY, state);
+    }
+    static loadOauthState() {
+      const value = Storage.get(this.OAUTH_STATE_KEY);
+      return value ?? null;
     }
   }
   var __exports = {

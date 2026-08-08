@@ -60,6 +60,8 @@ export default class Component extends BaseComponent {
      * Resolves with the shared OData model once a valid session is available,
      * or with `null` when the user is not authenticated. The provisioning can
      * be retried after a login (the promise is re-armed when it fails).
+     *
+     * @returns {Promise<ODataModel | null>} the shared service model, or null when not authenticated
      */
     public ensureServiceModel(): Promise<ODataModel | null> {
         const current = this.getModel() as ODataModel | undefined;
