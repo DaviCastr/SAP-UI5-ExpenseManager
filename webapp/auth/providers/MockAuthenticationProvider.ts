@@ -4,27 +4,21 @@ import { AuthenticationService } from "../AuthenticationService";
 
 export class MockAuthenticationProvider implements IAuthenticationProvider {
 
-    public async login(): Promise<UserSession> {
-
-        return {
-
+    public login(): Promise<UserSession> {
+        return Promise.resolve({
             accessToken: "mock-token",
-
             expiresAt: Date.now() + 3600000,
-
             userName: "Davi"
-
-        };
-
+        });
     }
 
     public async logout(): Promise<void> {
         await AuthenticationService.logout();
     }
 
-    public async isAuthenticated(): Promise<boolean> {
+    public isAuthenticated(): Promise<boolean> {
         const session = AuthenticationService.getSession();
-        return !!session && session.expiresAt > Date.now();
+        return Promise.resolve(!!session && session.expiresAt > Date.now());
     }
 
 }
