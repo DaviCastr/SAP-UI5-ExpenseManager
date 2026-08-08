@@ -5,7 +5,7 @@ export interface UiPerson {
     Name: string;
     Income?: number;
     ExpenseTarget?: number;
-    Currency?: string | { code?: string };
+    Currency?: { code?: string | undefined };
     ImageType?: string;
     IsActiveEntity?: boolean;
 }
@@ -21,15 +21,20 @@ export interface UiOption {
 }
 
 export interface UiSummary {
-    available: string;
-    income: string;
-    expenses: string;
-    savings: string;
-    target: string;
+    available: string | number;
+    income: string | number;
+    expenses: string | number;
+    savings: string | number;
+    target: string | number;
     expenseHint: string;
     targetHint: string;
     trendText: string;
     trendIcon: string;
+    expenseState: string;
+    toPayState: string;
+    expensesPayed: string | number;
+    expensesToPay: string | number;
+    expensesClosed: string | number;
 }
 
 export interface NewExpense {
@@ -128,7 +133,12 @@ export default class UiModel extends JSONModel {
                 expenseHint: "",
                 targetHint: "",
                 trendText: "",
-                trendIcon: "sap-icon://trend-up"
+                trendIcon: "sap-icon://trend-up",
+                expenseState: "None",
+                toPayState: "None",
+                expensesPayed: 0,
+                expensesToPay: 0,
+                expensesClosed: 0
             },
 
             newExpense: {

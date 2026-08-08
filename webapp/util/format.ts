@@ -37,7 +37,7 @@ export function formatCurrency(value: number | string, currency?: string): strin
     const amount = toNumber(value);
     const code = currency || "BRL";
     return amount.toLocaleString("pt-BR", { style: "currency", currency: code });
-}
+} 
 
 export function formatCardAmount(limit?: number | string, currency?: unknown): string {
     return formatCurrency(toNumber(limit ?? 0), currencyCode(currency));
