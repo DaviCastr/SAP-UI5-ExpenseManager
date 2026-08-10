@@ -302,6 +302,28 @@ export class ODataService {
         await binding.invoke(undefined, true);
     }
 
+    /**
+     * Discards an open draft without touching the active entity
+     * (DELETE <entity>(ID,IsActiveEntity=false)). Used when a save flow fails
+     * after the draft was created, so no orphan drafts are left behind if the
+     * user ignores the error and leaves the app.
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @param {string} id the entity key
+     * @returns {Promise<void>} resolves once the draft is discarded
+     */
+    public async discardDraft(entitySet: string, id: string): Promise<void> {
+        const binding = this.model.bindContext(this.entityPath(entitySet, id, false));
+        await binding.requestObject();
+
+        const draftContext = binding.getBoundContext() as Context | undefined;
+        if (!draftContext) {
+            throw new Error(`Rascunho de ${entitySet} (${id}) não pôde ser carregado.`);
+        }
+
+        await draftContext.delete();
+    }
+
     public getMediaUrl(mediaPath: string): string {
         return `${this.getServiceUrl()}${mediaPath}`;
     }
