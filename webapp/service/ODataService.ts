@@ -1,4 +1,6 @@
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
+import type ODataContextBinding from "sap/ui/model/odata/v4/ODataContextBinding";
+import type Context from "sap/ui/model/odata/v4/Context";
 import type Filter from "sap/ui/model/Filter";
 import { request } from "../util/http";
 
@@ -123,6 +125,181 @@ export class ODataService {
         }
 
         await binding.invoke();
+    }
+
+    // ---------------------------------------------------------------------------
+    // Draft handling (shared by every draft-enabled entity, e.g. Persons, Cards,
+    // Categories...). The operations run through the OData V4 model so the
+    // requests carry the headers CAP expects (Content-Type, Prefer, ETag) and the
+    // model's own CSRF handling. For derived entities that are compositions of
+    // Persons, pass "Persons" as entitySet with the person ID and the composition
+    // body in `updates` — the draft path is always based on the root entity.
+    // ---------------------------------------------------------------------------
+
+    private entityPath(entitySet: string, id: string, isActiveEntity: boolean): string {
+        return `${entitySet}(ID='${encodeURIComponent(id)}',IsActiveEntity=${isActiveEntity})`;
+    }
+
+    /**
+     * Returns the qualified name of a bound action (e.g. "ExpenseManager.draftEdit").
+     * Bound actions must be bound by their qualified name, otherwise the meta
+     * model cannot resolve the operation and invocation fails with
+     * "Unknown operation".
+     *
+     * @param {string} entitySet the entity set of the bound action, e.g. "Persons"
+     * @param {string} actionName the simple action name, e.g. "draftEdit"
+     * @returns {string} the qualified action name
+     */
+    private qualifiedActionName(entitySet: string, actionName: string): string {
+        const metaModel = this.model.getMetaModel();
+        const entityType = metaModel.getObject(`/${entitySet}/$Type`) as string | undefined;
+
+        if (typeof entityType !== "string" || !entityType.includes(".")) {
+            throw new Error(`Não foi possível resolver o namespace da entidade ${entitySet}.`);
+        }
+
+        return `${entityType.slice(0, entityType.lastIndexOf("."))}.${actionName}`;
+    }
+
+    /**
+     * Resolves the entity (parent) context and returns a deferred operation
+     * binding for a bound action of that entity. A bound action can only be
+     * invoked once its parent context is resolved, so the entity is read first.
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @param {string} id the entity key
+     * @param {boolean} isActiveEntity whether to bind the active or the draft entity
+     * @param {string} actionName the bound action name (e.g. "draftEdit")
+     * @param {Record<string, unknown>} [parameters] action parameters
+     * @returns {Promise<ODataContextBinding>} the deferred operation binding
+     */
+    private async bindBoundAction(
+        entitySet: string,
+        id: string,
+        isActiveEntity: boolean,
+        actionName: string,
+        parameters?: Record<string, unknown>
+    ): Promise<ODataContextBinding> {
+        const entityBinding = this.model.bindContext(this.entityPath(`/${entitySet}`, id, isActiveEntity));
+        await entityBinding.requestObject();
+
+        const entityContext = entityBinding.getBoundContext() as Context | undefined;
+        if (!entityContext) {
+            throw new Error(`Entidade ${entitySet} (${id}) não pôde ser carregada.`);
+        }
+
+        const actionBinding = this.model.bindContext(
+            `${this.qualifiedActionName(entitySet, actionName)}(...)`,
+            entityContext
+        );
+
+        if (parameters) {
+            for (const [name, value] of Object.entries(parameters)) {
+                actionBinding.setParameter(name, value);
+            }
+        }
+
+        return actionBinding;
+    }
+
+    /**
+     * Tells whether the given error means "a draft for this entity already
+     * exists" (HTTP 409). Opening a draft that is already open is harmless, so
+     * the flow can continue with the existing draft.
+     *
+     * @param {unknown} error the error raised by the OData model
+     * @returns {boolean} whether the draft already exists
+     */
+    private isDraftAlreadyExistsError(error: unknown): boolean {
+        const cause = error as { status?: number; message?: string; cause?: { status?: number; message?: string } };
+        const status = cause.status ?? cause.cause?.status;
+        const message = `${cause.message ?? ""} ${cause.cause?.message ?? ""}`;
+
+        return status === 409 && /already exists/i.test(message);
+    }
+
+    /**
+     * Opens a draft of the active entity so it can be edited
+     * (POST <entity>(ID,IsActiveEntity=true)/draftEdit with PreserveChanges).
+     * When a draft is already open the backend answers with 409
+     * ("A draft for this entity already exists"), which is fine: the flow just
+     * continues with the existing draft.
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @param {string} id the entity key
+     * @returns {Promise<void>} resolves once the draft is created (or already exists)
+     */
+    public async enableDraftEdit(entitySet: string, id: string): Promise<void> {
+        const binding = await this.bindBoundAction(entitySet, id, true, "draftEdit", { PreserveChanges: true });
+
+        try {
+            await binding.invoke();
+        } catch (error) {
+            if (!this.isDraftAlreadyExistsError(error)) {
+                throw error;
+            }
+        }
+    }
+
+    /**
+     * Persists the given properties to the draft entity
+     * (PATCH <entity>(ID,IsActiveEntity=false)) through the OData V4 model. The
+     * changes are collected in a deferred group and submitted as a single PATCH.
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @param {string} id the entity key
+     * @param {Record<string, unknown>} updates the properties to change
+     * @returns {Promise<void>} resolves once the PATCH succeeded
+     */
+    public async saveDraft(entitySet: string, id: string, updates: Record<string, unknown>): Promise<void> {
+        const groupId = "draftSave";
+        const binding: ODataContextBinding = this.model.bindContext(
+            this.entityPath(`/${entitySet}`, id, false),
+            undefined,
+            { $$updateGroupId: groupId }
+        );
+
+        await binding.requestObject();
+
+        const context = binding.getBoundContext() as Context | undefined;
+        if (!context) {
+            throw new Error(`Rascunho de ${entitySet} (${id}) não pôde ser carregado.`);
+        }
+
+        const pending: Promise<void>[] = [];
+        for (const [name, value] of Object.entries(updates)) {
+            pending.push(context.setProperty(name, value));
+        }
+
+        await this.model.submitBatch(groupId);
+        await Promise.all(pending);
+    }
+
+    /**
+     * Triggers the backend side effects on the draft
+     * (POST <entity>(ID,IsActiveEntity=false)/draftPrepare). Mirrors the standard
+     * save flow of Fiori Elements; harmless when the entity has no side effects.
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @param {string} id the entity key
+     * @returns {Promise<void>} resolves once the side effects were applied
+     */
+    public async prepareDraft(entitySet: string, id: string): Promise<void> {
+        const binding = await this.bindBoundAction(entitySet, id, false, "draftPrepare", { SideEffectsQualifier: "" });
+        await binding.invoke(undefined, true);
+    }
+
+    /**
+     * Publishes the draft into the active entity
+     * (POST <entity>(ID,IsActiveEntity=false)/draftActivate).
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @param {string} id the entity key
+     * @returns {Promise<void>} resolves once the draft is activated
+     */
+    public async activateDraft(entitySet: string, id: string): Promise<void> {
+        const binding = await this.bindBoundAction(entitySet, id, false, "draftActivate");
+        await binding.invoke(undefined, true);
     }
 
     public getMediaUrl(mediaPath: string): string {

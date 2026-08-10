@@ -19,10 +19,49 @@ export function showToast(view: XMLView, messageKey: string): void {
 }
 
 /**
+ * Extracts the human-readable error message returned by the backend from a
+ * UI5 OData V4 model error. Walks the `cause` chain (e.g. errors raised from
+ * within a `$batch`) and skips transport-level fallbacks such as
+ * "Communication error" and "Network error".
+ *
+ * @param {unknown} error the caught error
+ * @returns {string | undefined} the backend message, or `undefined` when none
+ */
+export function getBackendErrorMessage(error: unknown): string | undefined {
+    const GENERIC = /^(Communication error|Network error)/i;
+    const visited = new Set<unknown>();
+    let current: unknown = error;
+
+    while (current && !visited.has(current)) {
+        visited.add(current);
+        const cause = current as {
+            error?: { message?: unknown };
+            message?: unknown;
+            responseText?: string;
+            cause?: unknown;
+        };
+
+        const parsed = cause.error?.message;
+        if (typeof parsed === "string" && parsed.trim()) {
+            return parsed;
+        }
+
+        if (typeof cause.message === "string" && cause.message.trim() && !GENERIC.test(cause.message)) {
+            return cause.message;
+        }
+
+        current = cause.cause;
+    }
+
+    return undefined;
+}
+
+/**
  * Handles a failure thrown by an async action:
  * - session-expired and backend-unavailable errors are handled silently
  *   (the app-level handlers own those flows);
- * - everything else is shown with the given i18n message.
+ * - everything else is shown with the given i18n message, followed by the
+ *   error message returned by the backend (when one is available).
  *
  * @param {XMLView} view the view that owns the i18n model
  * @param {unknown} error the caught error
@@ -33,6 +72,8 @@ export function handleActionError(view: XMLView, error: unknown, messageKey: str
     if (isSessionExpiredError(error) || isBackendUnavailableError(error)) {
         return true;
     }
-    MessageBox.error(getText(view, messageKey));
+
+    const detail = getBackendErrorMessage(error);
+    MessageBox.error(detail ? `${getText(view, messageKey)}\n\n${detail}` : getText(view, messageKey));
     return true;
 }
