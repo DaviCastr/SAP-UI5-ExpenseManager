@@ -18,6 +18,7 @@
         contentWidth="38rem"
         contentHeight="70%"
         beforeOpen="handler.onDialogBeforeOpen"
+        busy="{ui>/busy}"
     >
         <content>
             <ScrollContainer height="100%" vertical="true" focusable="false">

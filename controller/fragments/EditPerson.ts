@@ -7,7 +7,9 @@ import FileUploader from "sap/ui/unified/FileUploader";
 import Avatar from "sap/m/Avatar";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import Context from "sap/ui/model/Context";
-import { updatePersonEntity, uploadPersonImage } from "../../util/entityApi";
+import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
+import { ODataService } from "../../service/ODataService";
+import { uploadPersonImage } from "../../util/entityApi";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import type Home from "../../controller/Home.controller";
 
@@ -50,34 +52,40 @@ const PersonDetail = {
         const view = dialog.getParent() as XMLView;
         const context = dialog.getBindingContext() as Context | undefined;
 
-        if (!context) {
-            showWarning(view, "errorMissingPerson");
-            return;
-        }
-
-        const person = context.getObject() as {
-            ID: string;
-            Name?: string;
-            Email?: string;
-            Phone?: string;
-            Income?: string | number;
-            ExpenseTarget?: string | number;
-            // eslint-disable-next-line camelcase
-            Currency_code?: string;
-            // eslint-disable-next-line camelcase
-            ImageType?: string;
-            IsActiveEntity?: boolean;
-        };
-
-        if (!person?.ID || !person.Name) {
-            showWarning(view, "errorFillRequiredFields");
-            return;
-        }
-
-        (view.getModel("ui") as JSONModel).setProperty("/busy", true);
-
         try {
-            await updatePersonEntity(person.ID, !!person.IsActiveEntity, {
+
+            (view.getModel("ui") as JSONModel).setProperty("/busy", true);
+
+            if (!context) {
+                showWarning(view, "errorMissingPerson");
+                return;
+            }
+
+            const person = context.getObject() as {
+                ID: string;
+                Name?: string;
+                Email?: string;
+                Phone?: string;
+                Income?: string | number;
+                ExpenseTarget?: string | number;
+                // eslint-disable-next-line camelcase
+                Currency_code?: string;
+                // eslint-disable-next-line camelcase
+                ImageType?: string;
+                IsActiveEntity?: boolean;
+            };
+
+            if (!person?.ID || !person.Name) {
+                showWarning(view, "errorFillRequiredFields");
+                return;
+            }
+
+            // Draft flow: enable draft edit if editing the active entity, then
+            // PATCH the draft (IsActiveEntity=false) and finally activate it. The
+            // lifecycle runs through the OData V4 model so every request carries
+            // the headers CAP expects (Content-Type, Prefer, ETag) and the CSRF
+            // handling is done by the model itself.
+            const updates = {
                 Name: person.Name,
                 Email: person.Email || "",
                 Phone: person.Phone || "",
@@ -85,13 +93,24 @@ const PersonDetail = {
                 ExpenseTarget: toNumber(person.ExpenseTarget),
                 // eslint-disable-next-line camelcase
                 Currency_code: person.Currency_code || "BRL",
-                // eslint-disable-next-line camelcase
-                ImageType: (person.ImageType as string) || personPhoto?.type || ""
-            });
+            };
+
+            const odata = new ODataService(context.getModel() as ODataModel);
+
+            if (person.IsActiveEntity) {
+                await odata.enableDraftEdit("Persons", person.ID);
+            }
+
+            await odata.saveDraft("Persons", person.ID, updates);
 
             if (personPhoto) {
-                await uploadPersonImage(person.ID, !!person.IsActiveEntity, personPhoto);
+                // upload to the draft entity (same pattern as the Backup zip upload)
+                await uploadPersonImage(person.ID, false, personPhoto);
             }
+
+            // apply backend side effects, then publish the draft
+            await odata.prepareDraft("Persons", person.ID);
+            await odata.activateDraft("Persons", person.ID);
 
             dialog.close();
             showToast(view, "personUpdated");
