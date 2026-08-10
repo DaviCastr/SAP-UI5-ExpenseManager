@@ -52,6 +52,22 @@ const PersonDetail = {
         const view = dialog.getParent() as XMLView;
         const context = dialog.getBindingContext() as Context | undefined;
 
+        let person: {
+            ID: string;
+            Name?: string;
+            Email?: string;
+            Phone?: string;
+            Income?: string | number;
+            ExpenseTarget?: string | number;
+            // eslint-disable-next-line camelcase
+            Currency_code?: string;
+            // eslint-disable-next-line camelcase
+            ImageType?: string;
+            IsActiveEntity?: boolean;
+        } | undefined;
+        let odata: ODataService | undefined;
+        let draftCreated = false;
+
         try {
 
             (view.getModel("ui") as JSONModel).setProperty("/busy", true);
@@ -61,19 +77,7 @@ const PersonDetail = {
                 return;
             }
 
-            const person = context.getObject() as {
-                ID: string;
-                Name?: string;
-                Email?: string;
-                Phone?: string;
-                Income?: string | number;
-                ExpenseTarget?: string | number;
-                // eslint-disable-next-line camelcase
-                Currency_code?: string;
-                // eslint-disable-next-line camelcase
-                ImageType?: string;
-                IsActiveEntity?: boolean;
-            };
+            person = context.getObject() as typeof person;
 
             if (!person?.ID || !person.Name) {
                 showWarning(view, "errorFillRequiredFields");
@@ -92,10 +96,11 @@ const PersonDetail = {
                 Income: toNumber(person.Income),
                 ExpenseTarget: toNumber(person.ExpenseTarget),
                 // eslint-disable-next-line camelcase
-                Currency_code: person.Currency_code || "BRL",
+                Currency_code: person.Currency_code || "BRL"
             };
 
-            const odata = new ODataService(context.getModel() as ODataModel);
+            odata = new ODataService(context.getModel() as ODataModel);
+            draftCreated = Boolean(person.IsActiveEntity);
 
             if (person.IsActiveEntity) {
                 await odata.enableDraftEdit("Persons", person.ID);
@@ -116,6 +121,17 @@ const PersonDetail = {
             showToast(view, "personUpdated");
             void (view.getController() as Home).reload();
         } catch (error) {
+            // The flow opens a draft when editing the active entity. If anything
+            // fails after that point, discard the draft so an error ignored by
+            // the user does not leave an orphan draft behind (an already open
+            // draft, IsActiveEntity=false, is a pre-existing one and is kept).
+            if (person?.ID && draftCreated && odata) {
+                try {
+                    await odata.discardDraft("Persons", person.ID);
+                } catch {
+                    // best effort: keep the original error
+                }
+            }
             handleActionError(view, error, "errorUpdatePerson");
         } finally {
             (view.getModel("ui") as JSONModel).setProperty("/busy", false);

@@ -243,6 +243,26 @@ sap.ui.define(["../util/http"], function (___util_http) {
       const binding = await this.bindBoundAction(entitySet, id, false, "draftActivate");
       await binding.invoke(undefined, true);
     }
+
+    /**
+     * Discards an open draft without touching the active entity
+     * (DELETE <entity>(ID,IsActiveEntity=false)). Used when a save flow fails
+     * after the draft was created, so no orphan drafts are left behind if the
+     * user ignores the error and leaves the app.
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @param {string} id the entity key
+     * @returns {Promise<void>} resolves once the draft is discarded
+     */
+    async discardDraft(entitySet, id) {
+      const binding = this.model.bindContext(this.entityPath(entitySet, id, false));
+      await binding.requestObject();
+      const draftContext = binding.getBoundContext();
+      if (!draftContext) {
+        throw new Error(`Rascunho de ${entitySet} (${id}) não pôde ser carregado.`);
+      }
+      await draftContext.delete();
+    }
     getMediaUrl(mediaPath) {
       return `${this.getServiceUrl()}${mediaPath}`;
     }

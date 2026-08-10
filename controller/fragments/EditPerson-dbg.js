@@ -38,13 +38,16 @@ sap.ui.define(["sap/ui/core/Fragment", "../../service/ODataService", "../../util
       const dialog = this.getParent();
       const view = dialog.getParent();
       const context = dialog.getBindingContext();
+      let person;
+      let odata;
+      let draftCreated = false;
       try {
         view.getModel("ui").setProperty("/busy", true);
         if (!context) {
           showWarning(view, "errorMissingPerson");
           return;
         }
-        const person = context.getObject();
+        person = context.getObject();
         if (!person?.ID || !person.Name) {
           showWarning(view, "errorFillRequiredFields");
           return;
@@ -64,7 +67,8 @@ sap.ui.define(["sap/ui/core/Fragment", "../../service/ODataService", "../../util
           // eslint-disable-next-line camelcase
           Currency_code: person.Currency_code || "BRL"
         };
-        const odata = new ODataService(context.getModel());
+        odata = new ODataService(context.getModel());
+        draftCreated = Boolean(person.IsActiveEntity);
         if (person.IsActiveEntity) {
           await odata.enableDraftEdit("Persons", person.ID);
         }
@@ -81,6 +85,17 @@ sap.ui.define(["sap/ui/core/Fragment", "../../service/ODataService", "../../util
         showToast(view, "personUpdated");
         void view.getController().reload();
       } catch (error) {
+        // The flow opens a draft when editing the active entity. If anything
+        // fails after that point, discard the draft so an error ignored by
+        // the user does not leave an orphan draft behind (an already open
+        // draft, IsActiveEntity=false, is a pre-existing one and is kept).
+        if (person?.ID && draftCreated && odata) {
+          try {
+            await odata.discardDraft("Persons", person.ID);
+          } catch {
+            // best effort: keep the original error
+          }
+        }
         handleActionError(view, error, "errorUpdatePerson");
       } finally {
         view.getModel("ui").setProperty("/busy", false);
