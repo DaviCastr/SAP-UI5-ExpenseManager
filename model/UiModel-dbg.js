@@ -16,6 +16,7 @@ sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
         },
         selectedPersonId: "",
         selectedPersonImage: "",
+        selectedPersonDraft: false,
         personsEmpty: false,
         busy: false,
         transactions: [],
@@ -23,19 +24,12 @@ sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
         categoryDetail: null,
         summary: {
           available: "",
-          income: "",
           expenses: "",
           savings: "",
-          target: "",
           expenseHint: "",
           targetHint: "",
           trendText: "",
-          trendIcon: "sap-icon://trend-up",
-          expenseState: "None",
-          toPayState: "None",
-          expensesPayed: 0,
-          expensesToPay: 0,
-          expensesClosed: 0
+          trendIcon: "sap-icon://trend-up"
         },
         newExpense: {
           description: "",

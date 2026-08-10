@@ -121,31 +121,41 @@ sap.ui.define(["../util/http"], function (___util_http) {
     }
 
     /**
-     * Resolves the entity (parent) context and returns a deferred operation
-     * binding for a bound action of that entity. A bound action can only be
-     * invoked once its parent context is resolved, so the entity is read first.
+     * Resolves the entity (parent) context and invokes a bound action of that
+     * entity, destroying the transient bindings afterwards. A bound action can
+     * only be invoked once its parent context is resolved, so the entity is
+     * read first. Both transient bindings are thrown away after the call so a
+     * later model refresh does not re-read the draft entity (which may have
+     * been activated or discarded in the meantime) and fail with a 404.
      *
      * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
      * @param {string} id the entity key
      * @param {boolean} isActiveEntity whether to bind the active or the draft entity
      * @param {string} actionName the bound action name (e.g. "draftEdit")
      * @param {Record<string, unknown>} [parameters] action parameters
-     * @returns {Promise<ODataContextBinding>} the deferred operation binding
+     * @param {boolean} [sideEffects] invoke with side effects (draft flows)
+     * @returns {Promise<void>} resolves once the action was invoked
      */
-    async bindBoundAction(entitySet, id, isActiveEntity, actionName, parameters) {
+    async invokeBoundAction(entitySet, id, isActiveEntity, actionName, parameters, sideEffects = false) {
       const entityBinding = this.model.bindContext(this.entityPath(`/${entitySet}`, id, isActiveEntity));
-      await entityBinding.requestObject();
-      const entityContext = entityBinding.getBoundContext();
-      if (!entityContext) {
-        throw new Error(`Entidade ${entitySet} (${id}) não pôde ser carregada.`);
-      }
-      const actionBinding = this.model.bindContext(`${this.qualifiedActionName(entitySet, actionName)}(...)`, entityContext);
-      if (parameters) {
-        for (const [name, value] of Object.entries(parameters)) {
-          actionBinding.setParameter(name, value);
+      let actionBinding;
+      try {
+        await entityBinding.requestObject();
+        const entityContext = entityBinding.getBoundContext();
+        if (!entityContext) {
+          throw new Error(`Entidade ${entitySet} (${id}) não pôde ser carregada.`);
         }
+        actionBinding = this.model.bindContext(`${this.qualifiedActionName(entitySet, actionName)}(...)`, entityContext);
+        if (parameters) {
+          for (const [name, value] of Object.entries(parameters)) {
+            actionBinding.setParameter(name, value);
+          }
+        }
+        await actionBinding.invoke(undefined, sideEffects);
+      } finally {
+        actionBinding?.destroy();
+        entityBinding.destroy();
       }
-      return actionBinding;
     }
 
     /**
@@ -175,44 +185,15 @@ sap.ui.define(["../util/http"], function (___util_http) {
      * @returns {Promise<void>} resolves once the draft is created (or already exists)
      */
     async enableDraftEdit(entitySet, id) {
-      const binding = await this.bindBoundAction(entitySet, id, true, "draftEdit", {
-        PreserveChanges: true
-      });
       try {
-        await binding.invoke();
+        await this.invokeBoundAction(entitySet, id, true, "draftEdit", {
+          PreserveChanges: true
+        });
       } catch (error) {
         if (!this.isDraftAlreadyExistsError(error)) {
           throw error;
         }
       }
-    }
-
-    /**
-     * Persists the given properties to the draft entity
-     * (PATCH <entity>(ID,IsActiveEntity=false)) through the OData V4 model. The
-     * changes are collected in a deferred group and submitted as a single PATCH.
-     *
-     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
-     * @param {string} id the entity key
-     * @param {Record<string, unknown>} updates the properties to change
-     * @returns {Promise<void>} resolves once the PATCH succeeded
-     */
-    async saveDraft(entitySet, id, updates) {
-      const groupId = "draftSave";
-      const binding = this.model.bindContext(this.entityPath(`/${entitySet}`, id, false), undefined, {
-        $$updateGroupId: groupId
-      });
-      await binding.requestObject();
-      const context = binding.getBoundContext();
-      if (!context) {
-        throw new Error(`Rascunho de ${entitySet} (${id}) não pôde ser carregado.`);
-      }
-      const pending = [];
-      for (const [name, value] of Object.entries(updates)) {
-        pending.push(context.setProperty(name, value));
-      }
-      await this.model.submitBatch(groupId);
-      await Promise.all(pending);
     }
 
     /**
@@ -225,10 +206,9 @@ sap.ui.define(["../util/http"], function (___util_http) {
      * @returns {Promise<void>} resolves once the side effects were applied
      */
     async prepareDraft(entitySet, id) {
-      const binding = await this.bindBoundAction(entitySet, id, false, "draftPrepare", {
+      await this.invokeBoundAction(entitySet, id, false, "draftPrepare", {
         SideEffectsQualifier: ""
-      });
-      await binding.invoke(undefined, true);
+      }, true);
     }
 
     /**
@@ -240,8 +220,7 @@ sap.ui.define(["../util/http"], function (___util_http) {
      * @returns {Promise<void>} resolves once the draft is activated
      */
     async activateDraft(entitySet, id) {
-      const binding = await this.bindBoundAction(entitySet, id, false, "draftActivate");
-      await binding.invoke(undefined, true);
+      await this.invokeBoundAction(entitySet, id, false, "draftActivate", undefined, true);
     }
 
     /**
@@ -255,13 +234,58 @@ sap.ui.define(["../util/http"], function (___util_http) {
      * @returns {Promise<void>} resolves once the draft is discarded
      */
     async discardDraft(entitySet, id) {
-      const binding = this.model.bindContext(this.entityPath(entitySet, id, false));
-      await binding.requestObject();
-      const draftContext = binding.getBoundContext();
-      if (!draftContext) {
-        throw new Error(`Rascunho de ${entitySet} (${id}) não pôde ser carregado.`);
+      const binding = this.model.bindContext(this.entityPath(`/${entitySet}`, id, false));
+      try {
+        await binding.requestObject();
+        const draftContext = binding.getBoundContext();
+        if (!draftContext) {
+          throw new Error(`Rascunho de ${entitySet} (${id}) não pôde ser carregado.`);
+        }
+        await draftContext.delete();
+      } finally {
+        binding.destroy();
       }
-      await draftContext.delete();
+    }
+
+    /**
+     * Flushes any pending changes of the default (`$auto`) update group. The
+     * two-way bound fields of the edit dialog collect their PATCHes there, so
+     * this has to be awaited before the draft is activated to ensure every
+     * change reaches the backend first.
+     *
+     * @returns {Promise<void>} resolves once the pending changes were sent
+     */
+    async submitPending() {
+      await this.model.submitBatch("$auto");
+    }
+
+    /**
+     * Returns the OData entity path of the draft entity for the given entity
+     * (e.g. "/Persons(ID='..',IsActiveEntity=false)"). The edit dialog is bound
+     * to this path so two-way bound fields PATCH the draft instead of the
+     * read-only active entity.
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @param {string} id the entity key
+     * @returns {string} the draft entity path
+     */
+    draftPath(entitySet, id) {
+      return `/${entitySet}(ID='${encodeURIComponent(id)}',IsActiveEntity=false)`;
+    }
+
+    /**
+     * Lists the keys of every open draft entity of the given set. Used to tell
+     * whether a person has unsaved draft changes, because the regular list only
+     * shows the active row plus drafts without an active sibling.
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @returns {Promise<string[]>} the IDs of all open drafts
+     */
+    async listDraftIds(entitySet) {
+      const drafts = await this.requestEntitySet(entitySet, {
+        filterExpression: "IsActiveEntity eq false"
+      });
+      return drafts.filter(draft => !!draft.ID).map(draft => draft.ID);
     }
     getMediaUrl(mediaPath) {
       return `${this.getServiceUrl()}${mediaPath}`;

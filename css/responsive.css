@@ -10,4 +10,7 @@
     .financePage .sapMPageEnableScrolling { overflow-x: hidden; }
     .loginCard { padding: 2rem 1.4rem; }
     .loginShell { padding: 1rem; }
+    .personDraftBanner { flex-direction: column; align-items: flex-start; }
+    .personDraftBanner .sapUiTinyMarginEnd { margin-right: 0; }
+    .personDraftBanner .sapMBtn { margin-top: .25rem; }
 }

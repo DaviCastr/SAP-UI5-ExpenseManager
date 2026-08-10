@@ -7,6 +7,7 @@ import Event from "sap/ui/base/Event";
 import Context from "sap/ui/model/Context";
 import Fragment from "sap/ui/core/Fragment";
 import XMLView from "sap/ui/core/mvc/XMLView";
+import MessageBox from "sap/m/MessageBox";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import { BaseController } from "./BaseController";
 import { AuthenticationService } from "../auth/AuthenticationService";
@@ -15,7 +16,6 @@ import { InvoiceService, type Period } from "../service/InvoiceService";
 import { PeriodService } from "../service/PeriodService";
 import { MediaService } from "../service/MediaService";
 import { DashboardRenderer } from "../service/DashboardRenderer";
-import { criticalityState } from "../util/format";
 import type ListBinding from "sap/ui/model/ListBinding";
 import Filter from "sap/ui/model/Filter";
 import FilterOperator from "sap/ui/model/FilterOperator";
@@ -36,14 +36,6 @@ import type { UiPerson } from "../model/UiModel";
 interface CardRow {
     ID: string;
     Name: string;
-}
-
-interface PersonFinancialTotals {
-    TotalExpensesPayed?: number;
-    TotalExpensesToPay?: number;
-    TotalExpensesClosed?: number;
-    MonthCriticallity?: number;
-    CriticallityToPay?: number;
 }
 
 /**
@@ -132,19 +124,57 @@ export default class Home extends BaseController {
         void this.openPreparedDialog("AddPerson", (dialog) => dialog.open());
     }
 
-    public onOpenPersonDetailDialog(): void {
+    public onOpenPersonDetailDialog(): Promise<void> {
+        return this.openPersonDetailDialog();
+    }
+
+    /**
+     * Discards the open draft of the currently selected person after a
+     * confirmation, then reloads the dashboard. The edit dialog (when bound to
+     * that person) is released first so the model refresh does not re-read the
+     * just-deleted draft and fail with a 404.
+     */
+    public onDiscardPersonDraft(): void {
         const personId = this.getSelectedPersonId();
 
         if (!personId) {
-            this.showErrorMessage("errorMissingPerson");
             return;
         }
 
-        void this.openPreparedDialog("PersonDetail", (dialog) => {
-            dialog.setModel(this.getView()?.getModel() as ODataModel);
-            dialog.bindObject(this.personPathFor(personId));
-            dialog.open();
+        MessageBox.confirm(this.getText("personDraftDiscardConfirm"), {
+            title: this.getText("personDraftDiscardTitle"),
+            onClose: (action) => {
+                if (action !== MessageBox.Action.OK || !this._odata) {
+                    return;
+                }
+                void this.discardSelectedPersonDraft();
+            }
         });
+    }
+
+    private async discardSelectedPersonDraft(): Promise<void> {
+        const ui = this.getUiModel();
+        const personId = this.getSelectedPersonId();
+
+        if (!personId || !this._odata) {
+            return;
+        }
+
+        ui.setProperty("/busy", true);
+
+        try {
+            this.releasePersonDetailDraftBinding();
+            await this._odata.discardDraft("Persons", personId);
+            ui.setProperty("/selectedPersonDraft", false);
+            MessageToast.show(this.getText("personDraftDiscarded"));
+            this.reload();
+        } catch (error) {
+            if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
+                this.showErrorMessage("errorDiscardPersonDraft");
+            }
+        } finally {
+            ui.setProperty("/busy", false);
+        }
     }
 
     public onOpenCardDialog(): void {
@@ -231,15 +261,25 @@ export default class Home extends BaseController {
 
     /**
      * Reloads persons and refreshes the current dashboard. Used by the
-     * create/restore dialogs.
+     * create/restore/person-edit dialogs.
+     *
+     * The OData model is NOT refreshed globally on purpose: after a draft is
+     * saved or discarded, the person-scoped bindings (`personDetails`,
+     * `cardsList`, `metricsGrid`) may still point at the draft path and a full
+     * `model.refresh()` would re-read the now deleted draft and fail with a
+     * 404. Instead the select list is refreshed and `refreshPersonSelector`
+     * re-binds those sections to the correct (active/draft) path.
      */
     public reload(): void {
+        this._persons = [];
+
+        const select = this.byId("personSelect") as Select | undefined;
         try {
-            this._persons = [];
-            this.getServiceModel().refresh();
+            select?.getBinding("items")?.refresh();
         } catch {
-            // ignore transient refresh errors; setupPersonSelector re-fetches the list.
+            // ignore transient refresh errors; refreshPersonSelector re-fetches the list.
         }
+
         void this.refreshPersonSelector();
     }
 
@@ -262,17 +302,31 @@ export default class Home extends BaseController {
                 expand: DRAFT_EXPAND
             });
 
+            // Find persons that have an open draft (unsaved changes). The regular
+            // list only returns the active row for those, so their IDs must be
+            // collected from the draft entities.
+            let openDraftIds: string[] = [];
+            try {
+                openDraftIds = await this._odata.listDraftIds("Persons");
+            } catch {
+                // best effort; the draft indicator just stays off
+            }
+
             persons = result
                 .filter((person) => !!person.ID)
-                .map((person) => ({
-                    ID: person.ID,
-                    Name: person.Name + (person.IsActiveEntity === false ? " (rascunho)" : ""),
-                    Income: person.Income,
-                    ExpenseTarget: person.ExpenseTarget,
-                    Currency: person.Currency,
-                    ImageType: person.ImageType,
-                    IsActiveEntity: person.IsActiveEntity
-                }));
+                .map((person) => {
+                    const hasDraft = person.IsActiveEntity === false || openDraftIds.includes(person.ID);
+                    return {
+                        ID: person.ID,
+                        Name: person.Name + (hasDraft ? " (rascunho)" : ""),
+                        Income: person.Income,
+                        ExpenseTarget: person.ExpenseTarget,
+                        Currency: person.Currency,
+                        ImageType: person.ImageType,
+                        IsActiveEntity: person.IsActiveEntity,
+                        hasDraft
+                    };
+                });
         } catch (error) {
             if (isSessionExpiredError(error) || isBackendUnavailableError(error)) {
                 return;
@@ -287,6 +341,7 @@ export default class Home extends BaseController {
         if (persons.length === 0) {
             this.getUiModel().setProperty("/personsEmpty", true);
             this.getUiModel().setProperty("/selectedPersonId", "");
+            this.getUiModel().setProperty("/selectedPersonDraft", false);
             if (select) {
                 select.setSelectedKey("");
             }
@@ -328,12 +383,14 @@ export default class Home extends BaseController {
             ui.setProperty("/selectedPersonId", "");
             ui.setProperty("/selectedPerson", {});
             ui.setProperty("/selectedPersonImage", "");
+            ui.setProperty("/selectedPersonDraft", false);
             return;
         }
 
         const person = this.getPersonsFromSource().find((candidate) => candidate.ID === id);
 
         ui.setProperty("/selectedPersonId", id);
+        ui.setProperty("/selectedPersonDraft", person?.hasDraft === true);
         ui.setProperty("/selectedPerson", {
             ID: person?.ID,
             Name: person?.Name,
@@ -344,7 +401,7 @@ export default class Home extends BaseController {
         });
 
         if (person) {
-            void this._mediaService?.resolvePersonImage(person);
+            void this._mediaService?.resolvePersonImage(person, person?.hasDraft === true);
         }
 
         this.applyPeriodData();
@@ -371,8 +428,8 @@ export default class Home extends BaseController {
             return "";
         }
         const person = this.getPersonsFromSource().find((candidate) => candidate.ID === id);
-        const isActiveEntity = person?.IsActiveEntity === false ? "false" : "true";
-        return `/Persons(ID='${encodeURIComponent(id)}',IsActiveEntity=${isActiveEntity})`;
+        const isDraft = person?.IsActiveEntity === false || person?.hasDraft === true;
+        return `/Persons(ID='${encodeURIComponent(id)}',IsActiveEntity=${isDraft ? "false" : "true"})`;
     }
 
     private getSelectedPersonId(): string {
@@ -428,13 +485,8 @@ export default class Home extends BaseController {
             void this._mediaService?.resolveCategoryImages(transactions);
             void renderer.loadTrend(personId, period, expenses);
 
-            const financialTotals = this.loadPersonFinancialTotals();
-            ui.setProperty("/summary/expenseState", criticalityState(financialTotals.MonthCriticallity));
-            ui.setProperty("/summary/toPayState", criticalityState(financialTotals.CriticallityToPay));
-            ui.setProperty("/summary/expensesPayed", financialTotals.TotalExpensesPayed ?? 0);
-            ui.setProperty("/summary/expensesToPay", financialTotals.TotalExpensesToPay ?? 0);
-            ui.setProperty("/summary/expensesClosed", financialTotals.TotalExpensesClosed ?? 0);
-
+            // The person-scoped metrics (Income, ExpenseTarget, TotalExpenses*)
+            // are bound directly to the OData V4 model via metricsGrid.
             const cards = await this._odata?.requestEntitySet<CardRow & { IsActiveEntity?: boolean }>("Cards", {
                 select: ["ID", "Name"],
                 filters: [new Filter({ path: "Person/ID", operator: FilterOperator.EQ, value1: personId })],
@@ -456,28 +508,6 @@ export default class Home extends BaseController {
 
     private selectedPerson(): { Income?: number; ExpenseTarget?: number; Currency?: unknown } {
         return (this.getUiModel().getProperty("/selectedPerson") as UiPerson) || {};
-    }
-
-    private loadPersonFinancialTotals(): PersonFinancialTotals {
-        const personDetails = this.byId("personDetails");
-        const bindingContext = personDetails?.getBindingContext() as Context | undefined;
-
-        if (!bindingContext) {
-            return {};
-        }
-
-        const person = bindingContext.getObject() as PersonFinancialTotals | undefined;
-        if (!person) {
-            return {};
-        }
-
-        return {
-            TotalExpensesPayed: Number(person.TotalExpensesPayed) || 0,
-            TotalExpensesToPay: Number(person.TotalExpensesToPay) || 0,
-            TotalExpensesClosed: Number(person.TotalExpensesClosed) || 0,
-            MonthCriticallity: Number(person.MonthCriticallity) || 0,
-            CriticallityToPay: Number(person.CriticallityToPay) || 0
-        };
     }
 
     // ---------------------------------------------------------------------------
@@ -526,5 +556,70 @@ export default class Home extends BaseController {
 
         this._dialogs.set(fragmentName, fragment);
         return fragment;
+    }
+
+    /**
+     * Opens the PersonDetail edit dialog for the selected person. Editing the
+     * active entity opens a draft first and binds the dialog to it, so the
+     * two-way bound fields PATCH the draft instead of the (read-only) active
+     * entity. Editing a person that already has a draft continues on that draft.
+     */
+    private async openPersonDetailDialog(): Promise<void> {
+        const personId = this.getSelectedPersonId();
+
+        if (!personId) {
+            this.showErrorMessage("errorMissingPerson");
+            return;
+        }
+
+        const ui = this.getUiModel();
+        ui.setProperty("/busy", true);
+
+        try {
+            const person = this.getPersonsFromSource().find((candidate) => candidate.ID === personId);
+            const isDraft = person?.IsActiveEntity === false || person?.hasDraft === true;
+
+            if (this._odata && !isDraft) {
+                await this._odata.enableDraftEdit("Persons", personId);
+            }
+
+            // Show the draft's own photo (when it has one), falling back to the
+            // active entity image otherwise.
+            if (this._mediaService && person) {
+                void this._mediaService.resolvePersonImage(person, true);
+            }
+
+            const path = this._odata?.draftPath("Persons", personId) ?? "";
+
+            await this.openPreparedDialog("PersonDetail", (dialog) => {
+                dialog.setModel(this.getServiceModel());
+                dialog.unbindObject();
+                dialog.bindObject(path);
+                dialog.open();
+            });
+        } catch (error) {
+            this.handleError(error, "errorUpdatePerson");
+        } finally {
+            ui.setProperty("/busy", false);
+        }
+    }
+
+    /**
+     * Detaches the PersonDetail dialog from its OData draft binding, if present,
+     * so a model refresh does not re-read a draft that is about to be discarded.
+     */
+    private releasePersonDetailDraftBinding(): void {
+        const cached = this._dialogs.get("PersonDetail");
+        if (!cached) {
+            return;
+        }
+
+        void cached.then((dialog) => {
+            try {
+                dialog.unbindObject();
+            } catch {
+                // best effort; the binding cleanup must not break the discard flow
+            }
+        });
     }
 }

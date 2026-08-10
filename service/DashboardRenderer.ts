@@ -58,10 +58,8 @@ export class DashboardRenderer {
 
         this.ui.setProperty("/summary", {
             available: formatCurrency(available, currency),
-            income: formatCurrency(income, currency),
             expenses: formatCurrency(expenses, currency),
             savings: formatCurrency(available, currency),
-            target: formatCurrency(target, currency),
             expenseHint: target > 0
                 ? this.text("summaryExpenseHintMeta", [String(targetPercent)])
                 : this.text("summaryExpenseHintSpent", [String(Math.round(expenses))]),

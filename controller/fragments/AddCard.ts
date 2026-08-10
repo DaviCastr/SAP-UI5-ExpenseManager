@@ -77,7 +77,10 @@ const AdicionarCartao = {
 
             dialog.close();
             showToast(view, "cardAdded");
-            void (view.getController() as Home).refresh();
+            if (view) {
+                void (view.getController() as Home).reload();
+            }
+
         } catch (error) {
             handleActionError(view, error, "errorCreateCard");
         } finally {

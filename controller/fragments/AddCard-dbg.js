@@ -60,7 +60,9 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../util/feedb
         }
         dialog.close();
         showToast(view, "cardAdded");
-        void view.getController().refresh();
+        if (view) {
+          void view.getController().reload();
+        }
       } catch (error) {
         handleActionError(view, error, "errorCreateCard");
       } finally {

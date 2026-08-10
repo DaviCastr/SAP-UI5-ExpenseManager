@@ -40,7 +40,9 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/expenseApi", "../../util/feed
         });
         dialog.close();
         showToast(view, "expenseRegistered");
-        void view.getController().refresh();
+        if (view) {
+          void view.getController().reload();
+        }
       } catch (error) {
         handleActionError(view, error, "errorRegisterExpense");
       } finally {

@@ -1,18 +1,98 @@
-sap.ui.define(["sap/ui/core/Fragment", "../../service/ODataService", "../../util/entityApi", "../../util/feedback"], function (Fragment, ____service_ODataService, ____util_entityApi, ____util_feedback) {
+sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../../service/ODataService", "../../util/entityApi", "../../util/i18n", "../../util/feedback"], function (Dialog, Fragment, MessageBox, ____service_ODataService, ____util_entityApi, ____util_i18n, ____util_feedback) {
   "use strict";
 
   const ODataService = ____service_ODataService["ODataService"];
   const uploadPersonImage = ____util_entityApi["uploadPersonImage"];
+  const getText = ____util_i18n["getText"];
   const handleActionError = ____util_feedback["handleActionError"];
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
   let personPhoto = null;
-  function toNumber(value) {
-    const text = typeof value === "number" ? String(value) : value ?? "";
-    if (!String(text).trim()) {
-      return null;
+
+  /**
+   * Returns the ID of the person the given dialog is currently bound to.
+   *
+   * @param {Dialog} dialog the bound edit dialog
+   * @returns {string | undefined} the person ID, or `undefined` when unbound
+   */
+  function boundPersonId(dialog) {
+    const context = dialog.getBindingContext();
+    return context?.getObject()?.ID;
+  }
+
+  /**
+   * Finds the person edit dialog that contains the given control by walking up
+   * the parent chain (the footer buttons may be nested in an HBox).
+   *
+   * @param {Control} control the control inside the dialog footer
+   * @returns {Dialog | undefined} the dialog, or `undefined` when not found
+   */
+  function findPersonDialog(control) {
+    let current = control;
+    while (current) {
+      if (current instanceof Dialog) {
+        return current;
+      }
+      current = current.getParent();
     }
-    return Number(String(text).replace(",", ".")) || null;
+    return undefined;
+  }
+
+  /**
+   * Detaches the dialog from its OData draft binding (best effort). Called after
+   * close/save/discard so a later model refresh does not re-read the draft entity
+   * (which may already be activated or discarded) and fail with a 404.
+   *
+   * @param {Dialog} dialog the bound edit dialog
+   */
+  function releaseDraftBinding(dialog) {
+    try {
+      dialog.unbindObject();
+    } catch {
+      // best effort; the binding cleanup must not break the close flow
+    }
+  }
+
+  /**
+   * Flushes the pending two-way-bound edits of the dialog into its draft (best
+   * effort). Used on plain close so an abandoned edit keeps its typed values in
+   * the still-open draft.
+   *
+   * @param {Dialog} dialog the bound edit dialog
+   */
+  function flushPendingEdits(dialog) {
+    try {
+      void dialog.getModel().submitBatch("$auto");
+    } catch {
+      // best effort; the draft keeps whatever already reached the backend
+    }
+  }
+
+  /**
+   * Discards the draft of the given person (after confirmation) and returns to
+   * the Home screen. The pending edits are flushed first so no stale PATCH
+   * remains queued after the draft is deleted.
+   *
+   * @param {XMLView} view the owning view
+   * @param {Dialog} dialog the bound edit dialog
+   * @param {string} id the person ID whose draft should be discarded
+   * @returns {Promise<void>} resolves once the draft was discarded
+   */
+  async function discardDraftAndClose(view, dialog, id) {
+    const ui = view.getModel("ui");
+    ui.setProperty("/busy", true);
+    try {
+      const odata = new ODataService(dialog.getModel());
+      await odata.submitPending();
+      await odata.discardDraft("Persons", id);
+      releaseDraftBinding(dialog);
+      dialog.close();
+      showToast(view, "personDraftDiscarded");
+    } catch (error) {
+      handleActionError(view, error, "errorDiscardPersonDraft");
+    } finally {
+      ui.setProperty("/busy", false);
+    }
   }
   const PersonDetail = {
     onDialogBeforeOpen: function () {
@@ -27,75 +107,92 @@ sap.ui.define(["sap/ui/core/Fragment", "../../service/ODataService", "../../util
         const reader = new FileReader();
         reader.onload = () => {
           Fragment.byId("PersonDetail", "editPersonAvatar")?.setSrc(reader.result);
+          if (personPhoto) {
+            const dialog = findPersonDialog(event.getSource());
+            const context = dialog?.getBindingContext();
+            const personId = context?.getObject()?.ID ?? "";
+            if (personId) {
+              void uploadPersonImage(personId, false, personPhoto).catch(() => {
+                // keep the local preview; the photo is re-uploaded on save
+              });
+            }
+          }
         };
         reader.readAsDataURL(personPhoto);
       }
     },
-    onCancelarEdicao: function () {
-      this.getParent().close();
+    // Cancel: only closes the popup. An open draft (with or without edits) is
+    // preserved and kept in the list ("rascunho"), the user can discard it from
+    // the popup or from the Home banner.
+    onCancelEdit: function () {
+      findPersonDialog(this)?.close();
     },
-    onSalvarPessoa: async function () {
-      const dialog = this.getParent();
+    onDiscardDraft: function () {
+      const dialog = findPersonDialog(this);
+      const view = dialog?.getParent();
+      const id = dialog ? boundPersonId(dialog) : undefined;
+      if (!id || !dialog) {
+        return;
+      }
+      MessageBox.confirm(getText(view, "personDraftDiscardConfirm"), {
+        title: getText(view, "personDraftDiscardTitle"),
+        onClose: action => {
+          if (action === MessageBox.Action.OK) {
+            void discardDraftAndClose(view, dialog, id);
+          }
+        }
+      });
+    },
+    // Runs when the dialog is fully closed (X, Escape, click-away, Cancel or
+    // programmatic close). Keeps the draft but detaches the binding so a later
+    // model refresh does not re-read a draft that may have been activated or
+    // discarded meanwhile. The Home screen is then reloaded so the draft
+    // indicator banner reflects the current state (a preserved draft is shown
+    // after Cancel; a saved/discarded draft disappears).
+    onDialogAfterClose: function () {
+      flushPendingEdits(this);
+      releaseDraftBinding(this);
+      const view = this.getParent();
+      if (view) {
+        void view.getController().reload();
+      }
+    },
+    onSavePerson: async function () {
+      const dialog = findPersonDialog(this);
+      if (!dialog) {
+        return;
+      }
       const view = dialog.getParent();
       const context = dialog.getBindingContext();
-      let person;
-      let odata;
-      let draftCreated = false;
       try {
         view.getModel("ui").setProperty("/busy", true);
         if (!context) {
           showWarning(view, "errorMissingPerson");
           return;
         }
-        person = context.getObject();
+        const person = context.getObject();
         if (!person?.ID || !person.Name) {
           showWarning(view, "errorFillRequiredFields");
           return;
         }
+        const odata = new ODataService(context.getModel());
 
-        // Draft flow: enable draft edit if editing the active entity, then
-        // PATCH the draft (IsActiveEntity=false) and finally activate it. The
-        // lifecycle runs through the OData V4 model so every request carries
-        // the headers CAP expects (Content-Type, Prefer, ETag) and the CSRF
-        // handling is done by the model itself.
-        const updates = {
-          Name: person.Name,
-          Email: person.Email || "",
-          Phone: person.Phone || "",
-          Income: toNumber(person.Income),
-          ExpenseTarget: toNumber(person.ExpenseTarget),
-          // eslint-disable-next-line camelcase
-          Currency_code: person.Currency_code || "BRL"
-        };
-        odata = new ODataService(context.getModel());
-        draftCreated = Boolean(person.IsActiveEntity);
-        if (person.IsActiveEntity) {
-          await odata.enableDraftEdit("Persons", person.ID);
-        }
-        await odata.saveDraft("Persons", person.ID, updates);
-        if (personPhoto) {
-          // upload to the draft entity (same pattern as the Backup zip upload)
-          await uploadPersonImage(person.ID, false, personPhoto);
-        }
+        // The dialog is bound to the draft entity, so every edited field is
+        // already PATCHed to the draft by the two-way binding. Flush any
+        // still pending change, upload a new photo, then publish the draft.
+        await odata.submitPending();
 
-        // apply backend side effects, then publish the draft
+        // if (personPhoto) {
+        //     await uploadPersonImage(person.ID, false, personPhoto);
+        // }
+
         await odata.prepareDraft("Persons", person.ID);
         await odata.activateDraft("Persons", person.ID);
+        releaseDraftBinding(dialog);
         dialog.close();
         showToast(view, "personUpdated");
-        void view.getController().reload();
       } catch (error) {
-        // The flow opens a draft when editing the active entity. If anything
-        // fails after that point, discard the draft so an error ignored by
-        // the user does not leave an orphan draft behind (an already open
-        // draft, IsActiveEntity=false, is a pre-existing one and is kept).
-        if (person?.ID && draftCreated && odata) {
-          try {
-            await odata.discardDraft("Persons", person.ID);
-          } catch {
-            // best effort: keep the original error
-          }
-        }
+        // keep the draft so the user can retry or cancel to discard it
         handleActionError(view, error, "errorUpdatePerson");
       } finally {
         view.getModel("ui").setProperty("/busy", false);
