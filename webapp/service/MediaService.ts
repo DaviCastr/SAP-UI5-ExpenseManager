@@ -102,26 +102,36 @@ export class MediaService {
     /**
      * Resolves the avatar of the currently selected person to an object URL.
      *
+     * When `preferDraft` is set, the draft media (`IsActiveEntity=false`) is
+     * tried first — this is what the edit dialog shows — falling back to the
+     * active entity image when the draft has not been given its own photo yet.
+     *
      * @param {UiPersonMedia} person the selected person metadata
+     * @param {boolean} [preferDraft] try the draft image before the active one
      */
-    public async resolvePersonImage(person: UiPersonMedia): Promise<void> {
+    public async resolvePersonImage(person: UiPersonMedia, preferDraft = false): Promise<void> {
         if (!person?.ID || !person.ImageType) {
             this.ui.setProperty("/selectedPersonImage", "");
             return;
         }
 
-        try {
-            const url = `${getOdataServiceUrl()}Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=true)/Image`;
-            const response = await fetch(url, { headers: buildHeaders({}) });
+        const states = preferDraft ? [false, true] : [true];
 
-            if (!response.ok) {
+        for (const isActiveEntity of states) {
+            try {
+                const url = `${getOdataServiceUrl()}Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=${isActiveEntity})/Image`;
+                const response = await fetch(url, { headers: buildHeaders({}) });
+
+                if (!response.ok) {
+                    continue;
+                }
+
+                const blob = await response.blob();
+                this.ui.setProperty("/selectedPersonImage", URL.createObjectURL(blob));
                 return;
+            } catch {
+                // try the next state / leave the initials in place
             }
-
-            const blob = await response.blob();
-            this.ui.setProperty("/selectedPersonImage", URL.createObjectURL(blob));
-        } catch {
-            // avatar stays with initials when the image cannot be loaded
         }
     }
 }

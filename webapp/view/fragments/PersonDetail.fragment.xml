@@ -18,12 +18,20 @@
         contentWidth="38rem"
         contentHeight="70%"
         beforeOpen="handler.onDialogBeforeOpen"
+        afterClose="handler.onDialogAfterClose"
         busy="{ui>/busy}"
     >
         <content>
-            <ScrollContainer height="100%" vertical="true" focusable="false">
+            <ScrollContainer
+                height="100%"
+                vertical="true"
+                focusable="false"
+            >
                 <VBox class="dialogContent">
-                    <HBox alignItems="Center" class="personDetailHeader">
+                    <HBox
+                        alignItems="Center"
+                        class="personDetailHeader"
+                    >
                         <Avatar
                             id="editPersonAvatar"
                             displaySize="Custom"
@@ -34,8 +42,14 @@
                             class="sapUiTinyMarginEnd"
                         />
                         <VBox>
-                            <Title text="{Name}" level="H2" />
-                            <Text text="{i18n>personDetailIntro}" class="sectionHint" />
+                            <Title
+                                text="{Name}"
+                                level="H2"
+                            />
+                            <Text
+                                text="{i18n>personDetailIntro}"
+                                class="sectionHint"
+                            />
                         </VBox>
                     </HBox>
                     <u:FileUploader
@@ -50,56 +64,105 @@
                     />
                     <f:Form editable="true">
                         <f:layout>
-                            <f:ResponsiveGridLayout labelSpanL="12" labelSpanM="12" emptySpanL="0" emptySpanM="0" columnsL="1" columnsM="1" />
+                            <f:ResponsiveGridLayout
+                                labelSpanL="12"
+                                labelSpanM="12"
+                                emptySpanL="0"
+                                emptySpanM="0"
+                                columnsL="1"
+                                columnsM="1"
+                            />
                         </f:layout>
                         <f:formContainers>
-                            <f:FormContainer title="{i18n>personFormBasicTitle}">
+                            <f:FormContainer
+                                title="{i18n>personFormBasicTitle}"
+                            >
                                 <f:formElements>
-                                    <f:FormElement label="{i18n>personNameLabel}">
+                                    <f:FormElement
+                                        label="{i18n>personNameLabel}"
+                                    >
                                         <f:fields>
-                                            <Input value="{Name}" placeholder="{i18n>personNamePlaceholder}" />
+                                            <Input
+                                                value="{Name}"
+                                                placeholder="{i18n>personNamePlaceholder}"
+                                            />
                                         </f:fields>
                                     </f:FormElement>
-                                    <f:FormElement label="{i18n>personEmailLabel}">
+                                    <f:FormElement
+                                        label="{i18n>personEmailLabel}"
+                                    >
                                         <f:fields>
-                                            <Input value="{Email}" type="Email" placeholder="{i18n>personEmailPlaceholder}" />
+                                            <Input
+                                                value="{Email}"
+                                                type="Email"
+                                                placeholder="{i18n>personEmailPlaceholder}"
+                                            />
                                         </f:fields>
                                     </f:FormElement>
-                                    <f:FormElement label="{i18n>personPhoneLabel}">
+                                    <f:FormElement
+                                        label="{i18n>personPhoneLabel}"
+                                    >
                                         <f:fields>
-                                            <Input value="{Phone}" placeholder="{i18n>personPhonePlaceholder}" />
+                                            <Input
+                                                value="{Phone}"
+                                                placeholder="{i18n>personPhonePlaceholder}"
+                                            />
                                         </f:fields>
                                     </f:FormElement>
                                 </f:formElements>
                             </f:FormContainer>
-                            <f:FormContainer title="{i18n>personFormFinanceTitle}">
+                            <f:FormContainer
+                                title="{i18n>personFormFinanceTitle}"
+                            >
                                 <f:formElements>
-                                    <f:FormElement label="{i18n>personIncomeLabel}">
+                                    <f:FormElement
+                                        label="{i18n>personIncomeLabel}"
+                                    >
                                         <f:fields>
-                                            <Input value="{Income}" placeholder="{i18n>personIncomePlaceholder}" />
+                                            <Input
+                                                value="{Income}"
+                                                placeholder="{i18n>personIncomePlaceholder}"
+                                            />
                                         </f:fields>
                                     </f:FormElement>
-                                    <f:FormElement label="{i18n>personTargetLabel}">
+                                    <f:FormElement
+                                        label="{i18n>personTargetLabel}"
+                                    >
                                         <f:fields>
-                                            <Input value="{ExpenseTarget}" placeholder="{i18n>personTargetPlaceholder}" />
+                                            <Input
+                                                value="{ExpenseTarget}"
+                                                placeholder="{i18n>personTargetPlaceholder}"
+                                            />
                                         </f:fields>
                                     </f:FormElement>
-                                    <f:FormElement label="{i18n>personCurrencyLabel}">
+                                    <f:FormElement
+                                        label="{i18n>personCurrencyLabel}"
+                                    >
                                         <f:fields>
                                             <Select
                                                 id="editPersonCurrency"
                                                 selectedKey="{Currency_code}"
                                             >
-                                                <core:Item key="BRL" text="Real brasileiro (BRL)" />
-                                                <core:Item key="USD" text="Dólar americano (USD)" />
+                                                <core:Item
+                                                    key="BRL"
+                                                    text="Real brasileiro (BRL)"
+                                                />
+                                                <core:Item
+                                                    key="USD"
+                                                    text="Dólar americano (USD)"
+                                                />
                                             </Select>
                                         </f:fields>
                                     </f:FormElement>
                                 </f:formElements>
                             </f:FormContainer>
-                            <f:FormContainer title="{i18n>personFormTotalsTitle}">
+                            <f:FormContainer
+                                title="{i18n>personFormTotalsTitle}"
+                            >
                                 <f:formElements>
-                                    <f:FormElement label="{i18n>personTotalExpensesLabel}">
+                                    <f:FormElement
+                                        label="{i18n>personTotalExpensesLabel}"
+                                    >
                                         <f:fields>
                                             <ObjectNumber
                                                 number="{
@@ -109,7 +172,9 @@
                                             />
                                         </f:fields>
                                     </f:FormElement>
-                                    <f:FormElement label="{i18n>personTotalExpensesMonthLabel}">
+                                    <f:FormElement
+                                        label="{i18n>personTotalExpensesMonthLabel}"
+                                    >
                                         <f:fields>
                                             <ObjectNumber
                                                 number="{
@@ -120,7 +185,9 @@
                                             />
                                         </f:fields>
                                     </f:FormElement>
-                                    <f:FormElement label="{i18n>personTotalExpensesClosedLabel}">
+                                    <f:FormElement
+                                        label="{i18n>personTotalExpensesClosedLabel}"
+                                    >
                                         <f:fields>
                                             <ObjectNumber
                                                 number="{
@@ -130,7 +197,9 @@
                                             />
                                         </f:fields>
                                     </f:FormElement>
-                                    <f:FormElement label="{i18n>personTotalExpensesPayedLabel}">
+                                    <f:FormElement
+                                        label="{i18n>personTotalExpensesPayedLabel}"
+                                    >
                                         <f:fields>
                                             <ObjectNumber
                                                 number="{
@@ -140,7 +209,9 @@
                                             />
                                         </f:fields>
                                     </f:FormElement>
-                                    <f:FormElement label="{i18n>personTotalExpensesToPayLabel}">
+                                    <f:FormElement
+                                        label="{i18n>personTotalExpensesToPayLabel}"
+                                    >
                                         <f:fields>
                                             <ObjectNumber
                                                 number="{
@@ -158,7 +229,31 @@
                 </VBox>
             </ScrollContainer>
         </content>
-        <beginButton><Button text="{i18n>personSaveButtonEdit}" icon="sap-icon://accept" type="Emphasized" press="handler.onSalvarPessoa" /></beginButton>
-        <endButton><Button text="{i18n>personCancelButton}" icon="sap-icon://decline" press="handler.onCancelarEdicao" /></endButton>
+        <!-- <beginButton><Button text="{i18n>personSaveButtonEdit}" icon="sap-icon://accept" type="Emphasized" press="handler.onSavePerson" /></beginButton> -->
+        <buttons>
+            <Button
+                text="{i18n>personSaveButtonEdit}"
+                icon="sap-icon://accept"
+                type="Emphasized"
+                press="handler.onSavePerson"
+            />
+            <Button
+                text="{i18n>personDiscardButton}"
+                icon="sap-icon://delete"
+                type="Reject"
+                press="handler.onDiscardDraft"
+            />
+            <Button
+                text="{i18n>personCancelButton}"
+                icon="sap-icon://decline"
+                press="handler.onCancelEdit"
+            />
+        </buttons>
+        <!-- <endButton>
+            <HBox alignItems="Center">
+                <Button text="{i18n>personDiscardButton}" icon="sap-icon://delete" type="Reject" press="handler.onDiscardDraft" />
+                <Button text="{i18n>personCancelButton}" icon="sap-icon://decline" press="handler.onCancelEdit" />
+            </HBox>
+        </endButton> -->
     </Dialog>
 </core:FragmentDefinition>

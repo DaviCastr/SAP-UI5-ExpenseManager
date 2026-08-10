@@ -10,6 +10,7 @@
         class="financeDialog"
         contentWidth="30rem"
         beforeOpen="handler.onDialogBeforeOpen"
+        busy="{ui>/busy}"
         core:require="{ handler: 'apps/dflc/expensemanager/controller/fragments/Backup' }"
     >
         <content>

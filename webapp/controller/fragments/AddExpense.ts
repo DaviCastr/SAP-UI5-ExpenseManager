@@ -57,7 +57,10 @@ const AdicionarGasto = {
 
             dialog.close();
             showToast(view, "expenseRegistered");
-            void (view.getController() as Home).refresh();
+            if (view) {
+                void (view.getController() as Home).reload();
+            }
+            
         } catch (error) {
             handleActionError(view, error, "errorRegisterExpense");
         } finally {

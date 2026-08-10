@@ -72,7 +72,10 @@ const AdicionarCategoria = {
 
             dialog.close();
             showToast(view, "categoryCreated");
-            void (view.getController() as Home).refresh();
+            if (view) {
+                void (view.getController() as Home).reload();
+            }
+
         } catch (error) {
             handleActionError(view, error, "errorCreateCategory");
         } finally {

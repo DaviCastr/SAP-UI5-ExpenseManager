@@ -162,44 +162,56 @@ export class ODataService {
     }
 
     /**
-     * Resolves the entity (parent) context and returns a deferred operation
-     * binding for a bound action of that entity. A bound action can only be
-     * invoked once its parent context is resolved, so the entity is read first.
+     * Resolves the entity (parent) context and invokes a bound action of that
+     * entity, destroying the transient bindings afterwards. A bound action can
+     * only be invoked once its parent context is resolved, so the entity is
+     * read first. Both transient bindings are thrown away after the call so a
+     * later model refresh does not re-read the draft entity (which may have
+     * been activated or discarded in the meantime) and fail with a 404.
      *
      * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
      * @param {string} id the entity key
      * @param {boolean} isActiveEntity whether to bind the active or the draft entity
      * @param {string} actionName the bound action name (e.g. "draftEdit")
      * @param {Record<string, unknown>} [parameters] action parameters
-     * @returns {Promise<ODataContextBinding>} the deferred operation binding
+     * @param {boolean} [sideEffects] invoke with side effects (draft flows)
+     * @returns {Promise<void>} resolves once the action was invoked
      */
-    private async bindBoundAction(
+    private async invokeBoundAction(
         entitySet: string,
         id: string,
         isActiveEntity: boolean,
         actionName: string,
-        parameters?: Record<string, unknown>
-    ): Promise<ODataContextBinding> {
+        parameters?: Record<string, unknown>,
+        sideEffects = false
+    ): Promise<void> {
         const entityBinding = this.model.bindContext(this.entityPath(`/${entitySet}`, id, isActiveEntity));
-        await entityBinding.requestObject();
+        let actionBinding: ODataContextBinding | undefined;
 
-        const entityContext = entityBinding.getBoundContext() as Context | undefined;
-        if (!entityContext) {
-            throw new Error(`Entidade ${entitySet} (${id}) não pôde ser carregada.`);
-        }
+        try {
+            await entityBinding.requestObject();
 
-        const actionBinding = this.model.bindContext(
-            `${this.qualifiedActionName(entitySet, actionName)}(...)`,
-            entityContext
-        );
-
-        if (parameters) {
-            for (const [name, value] of Object.entries(parameters)) {
-                actionBinding.setParameter(name, value);
+            const entityContext = entityBinding.getBoundContext() as Context | undefined;
+            if (!entityContext) {
+                throw new Error(`Entidade ${entitySet} (${id}) não pôde ser carregada.`);
             }
-        }
 
-        return actionBinding;
+            actionBinding = this.model.bindContext(
+                `${this.qualifiedActionName(entitySet, actionName)}(...)`,
+                entityContext
+            );
+
+            if (parameters) {
+                for (const [name, value] of Object.entries(parameters)) {
+                    actionBinding.setParameter(name, value);
+                }
+            }
+
+            await actionBinding.invoke(undefined, sideEffects);
+        } finally {
+            actionBinding?.destroy();
+            entityBinding.destroy();
+        }
     }
 
     /**
@@ -230,49 +242,13 @@ export class ODataService {
      * @returns {Promise<void>} resolves once the draft is created (or already exists)
      */
     public async enableDraftEdit(entitySet: string, id: string): Promise<void> {
-        const binding = await this.bindBoundAction(entitySet, id, true, "draftEdit", { PreserveChanges: true });
-
         try {
-            await binding.invoke();
+            await this.invokeBoundAction(entitySet, id, true, "draftEdit", { PreserveChanges: true });
         } catch (error) {
             if (!this.isDraftAlreadyExistsError(error)) {
                 throw error;
             }
         }
-    }
-
-    /**
-     * Persists the given properties to the draft entity
-     * (PATCH <entity>(ID,IsActiveEntity=false)) through the OData V4 model. The
-     * changes are collected in a deferred group and submitted as a single PATCH.
-     *
-     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
-     * @param {string} id the entity key
-     * @param {Record<string, unknown>} updates the properties to change
-     * @returns {Promise<void>} resolves once the PATCH succeeded
-     */
-    public async saveDraft(entitySet: string, id: string, updates: Record<string, unknown>): Promise<void> {
-        const groupId = "draftSave";
-        const binding: ODataContextBinding = this.model.bindContext(
-            this.entityPath(`/${entitySet}`, id, false),
-            undefined,
-            { $$updateGroupId: groupId }
-        );
-
-        await binding.requestObject();
-
-        const context = binding.getBoundContext() as Context | undefined;
-        if (!context) {
-            throw new Error(`Rascunho de ${entitySet} (${id}) não pôde ser carregado.`);
-        }
-
-        const pending: Promise<void>[] = [];
-        for (const [name, value] of Object.entries(updates)) {
-            pending.push(context.setProperty(name, value));
-        }
-
-        await this.model.submitBatch(groupId);
-        await Promise.all(pending);
     }
 
     /**
@@ -285,8 +261,7 @@ export class ODataService {
      * @returns {Promise<void>} resolves once the side effects were applied
      */
     public async prepareDraft(entitySet: string, id: string): Promise<void> {
-        const binding = await this.bindBoundAction(entitySet, id, false, "draftPrepare", { SideEffectsQualifier: "" });
-        await binding.invoke(undefined, true);
+        await this.invokeBoundAction(entitySet, id, false, "draftPrepare", { SideEffectsQualifier: "" }, true);
     }
 
     /**
@@ -298,8 +273,7 @@ export class ODataService {
      * @returns {Promise<void>} resolves once the draft is activated
      */
     public async activateDraft(entitySet: string, id: string): Promise<void> {
-        const binding = await this.bindBoundAction(entitySet, id, false, "draftActivate");
-        await binding.invoke(undefined, true);
+        await this.invokeBoundAction(entitySet, id, false, "draftActivate", undefined, true);
     }
 
     /**
@@ -313,15 +287,62 @@ export class ODataService {
      * @returns {Promise<void>} resolves once the draft is discarded
      */
     public async discardDraft(entitySet: string, id: string): Promise<void> {
-        const binding = this.model.bindContext(this.entityPath(entitySet, id, false));
-        await binding.requestObject();
+        const binding = this.model.bindContext(this.entityPath(`/${entitySet}`, id, false));
 
-        const draftContext = binding.getBoundContext() as Context | undefined;
-        if (!draftContext) {
-            throw new Error(`Rascunho de ${entitySet} (${id}) não pôde ser carregado.`);
+        try {
+            await binding.requestObject();
+
+            const draftContext = binding.getBoundContext() as Context | undefined;
+            if (!draftContext) {
+                throw new Error(`Rascunho de ${entitySet} (${id}) não pôde ser carregado.`);
+            }
+
+            await draftContext.delete();
+        } finally {
+            binding.destroy();
         }
+    }
 
-        await draftContext.delete();
+    /**
+     * Flushes any pending changes of the default (`$auto`) update group. The
+     * two-way bound fields of the edit dialog collect their PATCHes there, so
+     * this has to be awaited before the draft is activated to ensure every
+     * change reaches the backend first.
+     *
+     * @returns {Promise<void>} resolves once the pending changes were sent
+     */
+    public async submitPending(): Promise<void> {
+        await this.model.submitBatch("$auto");
+    }
+
+    /**
+     * Returns the OData entity path of the draft entity for the given entity
+     * (e.g. "/Persons(ID='..',IsActiveEntity=false)"). The edit dialog is bound
+     * to this path so two-way bound fields PATCH the draft instead of the
+     * read-only active entity.
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @param {string} id the entity key
+     * @returns {string} the draft entity path
+     */
+    public draftPath(entitySet: string, id: string): string {
+        return `/${entitySet}(ID='${encodeURIComponent(id)}',IsActiveEntity=false)`;
+    }
+
+    /**
+     * Lists the keys of every open draft entity of the given set. Used to tell
+     * whether a person has unsaved draft changes, because the regular list only
+     * shows the active row plus drafts without an active sibling.
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @returns {Promise<string[]>} the IDs of all open drafts
+     */
+    public async listDraftIds(entitySet: string): Promise<string[]> {
+        const drafts = await this.requestEntitySet<{ ID: string }>(entitySet, {
+            filterExpression: "IsActiveEntity eq false"
+        });
+
+        return drafts.filter((draft) => !!draft.ID).map((draft) => draft.ID);
     }
 
     public getMediaUrl(mediaPath: string): string {

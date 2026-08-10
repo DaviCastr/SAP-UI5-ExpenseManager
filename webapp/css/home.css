@@ -24,6 +24,7 @@
 .expenseMetric .sapUiIcon { background: #fff0e5; color: #d98e3d; }
 .saveMetric .sapUiIcon { background: #e6eefb; color: #3d6ad9; }
 .targetMetric .sapUiIcon { background: #efe8fd; color: #7a3dd9; }
+.totalMetric .sapUiIcon { background: #fdeef1; color: #c63d5a; }
 .metricCard .sapMObjectNumberText { font-size: 1.35rem; font-weight: 700;  }
 
 .transactionList, .cardList, .categoryList { background: transparent; max-height: 26rem; overflow-y: auto; }
