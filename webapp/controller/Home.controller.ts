@@ -31,6 +31,7 @@ import {
     downloadBlob
 } from "../util/backupApi";
 import { isSessionExpiredError, isBackendUnavailableError } from "../util/http";
+import { getBackendErrorMessage } from "../util/feedback";
 import type { UiPerson } from "../model/UiModel";
 
 interface CardRow {
@@ -126,6 +127,60 @@ export default class Home extends BaseController {
 
     public onOpenPersonDetailDialog(): Promise<void> {
         return this.openPersonDetailDialog();
+    }
+
+    /**
+     * Publishes the open draft of the currently selected person after a
+     * confirmation (the "Efetivar salvamento" action in the draft banner), then
+     * reloads the dashboard. Pending edits are flushed first so every two-way
+     * bound change reaches the draft before it is activated.
+     */
+    public onSavePersonDraft(): void {
+        const personId = this.getSelectedPersonId();
+
+        if (!personId) {
+            return;
+        }
+
+        MessageBox.confirm(this.getText("personSaveDraftConfirm"), {
+            title: this.getText("personSaveDraftTitle"),
+            onClose: (action) => {
+                if (action !== MessageBox.Action.OK || !this._odata) {
+                    return;
+                }
+                void this.saveSelectedPersonDraft();
+            }
+        });
+    }
+
+    private async saveSelectedPersonDraft(): Promise<void> {
+        const ui = this.getUiModel();
+        const personId = this.getSelectedPersonId();
+
+        if (!personId || !this._odata) {
+            return;
+        }
+
+        ui.setProperty("/busy", true);
+
+        try {
+            this.releasePersonDetailDraftBinding();
+            await this._odata.submitPending();
+            await this._odata.prepareDraft("Persons", personId);
+            await this._odata.activateDraft("Persons", personId);
+            ui.setProperty("/selectedPersonDraft", false);
+            MessageToast.show(this.getText("personDraftSaved"));
+            this.reload();
+        } catch (error) {
+            if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
+                const detail = getBackendErrorMessage(error);
+                MessageBox.error(
+                    detail ? `${this.getText("errorSavePersonDraft")}\n\n${detail}` : this.getText("errorSavePersonDraft")
+                );
+            }
+        } finally {
+            ui.setProperty("/busy", false);
+        }
     }
 
     /**
