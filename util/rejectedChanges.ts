@@ -55,6 +55,18 @@ export interface RejectedChangeGuard {
     warnIfBlocked(): boolean;
 
     /**
+     * Stops the guard from reacting to model `messageChange` events, e.g. while
+     * the Save flow runs whose own error handling already shows the failure.
+     * Re-enabled with {@link RejectedChangeGuard#resume}.
+     */
+    suspend(): void;
+
+    /**
+     * Re-enables the guard after {@link RejectedChangeGuard#suspend}.
+     */
+    resume(): void;
+
+    /**
      * Resets the rejected state (used when preparing a new dialog session or
      * after the rejection was resolved).
      */
@@ -74,6 +86,7 @@ export function createRejectedChangeGuard(): RejectedChangeGuard {
     let errorKey = "";
     let rejectedKey = "";
     let rejected = false;
+    let suspended = false;
 
     // The failed PATCH is parked in "$parked.<group>" so it can be retried,
     // which is why it is re-sent by the next submitBatch (in Save) and fails
@@ -92,6 +105,9 @@ export function createRejectedChangeGuard(): RejectedChangeGuard {
     }
 
     function onServiceMessageChange(event: Event): void {
+        if (suspended) {
+            return;
+        }
         const newMessages = (event.getParameters() as { newMessages?: Message[] }).newMessages;
         if (!Array.isArray(newMessages) || !newMessages.length || !view) {
             return;
@@ -142,6 +158,12 @@ export function createRejectedChangeGuard(): RejectedChangeGuard {
                 showWarning(view, rejectedKey);
             }
             return rejected;
+        },
+        suspend() {
+            suspended = true;
+        },
+        resume() {
+            suspended = false;
         },
         reset() {
             rejected = false;

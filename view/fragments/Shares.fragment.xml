@@ -151,6 +151,7 @@
                                                     selectedKey="{Entity}"
                                                     items="{ui>/entityOptions}"
                                                     width="100%"
+                                                    forceSelection="false"
                                                 >
                                                     <core:Item key="{ui>key}" text="{ui>text}" />
                                                 </Select>
@@ -158,6 +159,7 @@
                                                     selectedKey="{Permission}"
                                                     items="{ui>/permissionOptions}"
                                                     width="100%"
+                                                    forceSelection="false"
                                                 >
                                                     <core:Item key="{ui>key}" text="{ui>text}" />
                                                 </Select>

@@ -89,6 +89,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
     ui.setProperty("/busy", true);
     try {
       const odata = new ODataService(dialog.getModel());
+      rejectedGuard.suspend();
       await odata.submitPending();
       await odata.discardDraft("Persons", id);
       releaseDraftBinding(dialog);
@@ -97,6 +98,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
     } catch (error) {
       handleActionError(view, error, "errorDiscardPersonDraft");
     } finally {
+      rejectedGuard.resume();
       ui.setProperty("/busy", false);
     }
   }
@@ -177,6 +179,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
       if (rejectedGuard.warnIfBlocked()) {
         return;
       }
+      rejectedGuard.suspend();
       try {
         view.getModel("ui").setProperty("/busy", true);
         if (!context) {
@@ -208,6 +211,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
         // keep the draft so the user can retry or cancel to discard it
         handleActionError(view, error, "errorUpdatePerson");
       } finally {
+        rejectedGuard.resume();
         view.getModel("ui").setProperty("/busy", false);
       }
     }

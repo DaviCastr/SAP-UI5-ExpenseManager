@@ -276,6 +276,7 @@ const Shares = {
             return;
         }
 
+        rejectedGuard.suspend();
         try {
             (view.getModel("ui") as JSONModel).setProperty("/busy", true);
 
@@ -296,6 +297,7 @@ const Shares = {
         } catch (error) {
             handleActionError(view, error, "sharesSaveError");
         } finally {
+            rejectedGuard.resume();
             (view.getModel("ui") as JSONModel).setProperty("/busy", false);
         }
     },
@@ -319,6 +321,7 @@ const Shares = {
                 try {
                     (view.getModel("ui") as JSONModel).setProperty("/busy", true);
                     const odata = new ODataService(context?.getModel() as ODataModel);
+                    rejectedGuard.suspend();
                     await odata.submitPending();
                     await odata.discardDraft("Persons", person.ID);
                     releaseDraftBinding(dialog);
@@ -327,6 +330,7 @@ const Shares = {
                 } catch (error) {
                     handleActionError(view, error, "sharesDiscardError");
                 } finally {
+                    rejectedGuard.resume();
                     (view.getModel("ui") as JSONModel).setProperty("/busy", false);
                 }
             })();

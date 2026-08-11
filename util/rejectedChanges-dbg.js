@@ -32,6 +32,7 @@ sap.ui.define(["sap/ui/core/message/MessageType", "./feedback"], function (Messa
     let errorKey = "";
     let rejectedKey = "";
     let rejected = false;
+    let suspended = false;
 
     // The failed PATCH is parked in "$parked.<group>" so it can be retried,
     // which is why it is re-sent by the next submitBatch (in Save) and fails
@@ -49,6 +50,9 @@ sap.ui.define(["sap/ui/core/message/MessageType", "./feedback"], function (Messa
       });
     }
     function onServiceMessageChange(event) {
+      if (suspended) {
+        return;
+      }
       const newMessages = event.getParameters().newMessages;
       if (!Array.isArray(newMessages) || !newMessages.length || !view) {
         return;
@@ -98,6 +102,12 @@ sap.ui.define(["sap/ui/core/message/MessageType", "./feedback"], function (Messa
           showWarning(view, rejectedKey);
         }
         return rejected;
+      },
+      suspend() {
+        suspended = true;
+      },
+      resume() {
+        suspended = false;
       },
       reset() {
         rejected = false;

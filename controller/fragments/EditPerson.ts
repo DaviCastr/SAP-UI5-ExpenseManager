@@ -98,6 +98,7 @@ async function discardDraftAndClose(view: XMLView, dialog: Dialog, id: string): 
 
     try {
         const odata = new ODataService(dialog.getModel() as ODataModel);
+        rejectedGuard.suspend();
         await odata.submitPending();
         await odata.discardDraft("Persons", id);
 
@@ -107,6 +108,7 @@ async function discardDraftAndClose(view: XMLView, dialog: Dialog, id: string): 
     } catch (error) {
         handleActionError(view, error, "errorDiscardPersonDraft");
     } finally {
+        rejectedGuard.resume();
         ui.setProperty("/busy", false);
     }
 }
@@ -204,6 +206,7 @@ const PersonDetail = {
             return;
         }
 
+        rejectedGuard.suspend();
         try {
 
             (view.getModel("ui") as JSONModel).setProperty("/busy", true);
@@ -241,6 +244,7 @@ const PersonDetail = {
             // keep the draft so the user can retry or cancel to discard it
             handleActionError(view, error, "errorUpdatePerson");
         } finally {
+            rejectedGuard.resume();
             (view.getModel("ui") as JSONModel).setProperty("/busy", false);
         }
     }

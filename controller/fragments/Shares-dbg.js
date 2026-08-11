@@ -241,6 +241,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
       if (rejectedGuard.warnIfBlocked()) {
         return;
       }
+      rejectedGuard.suspend();
       try {
         view.getModel("ui").setProperty("/busy", true);
         const person = context?.getObject();
@@ -258,6 +259,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
       } catch (error) {
         handleActionError(view, error, "sharesSaveError");
       } finally {
+        rejectedGuard.resume();
         view.getModel("ui").setProperty("/busy", false);
       }
     },
@@ -277,6 +279,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
           try {
             view.getModel("ui").setProperty("/busy", true);
             const odata = new ODataService(context?.getModel());
+            rejectedGuard.suspend();
             await odata.submitPending();
             await odata.discardDraft("Persons", person.ID);
             releaseDraftBinding(dialog);
@@ -285,6 +288,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
           } catch (error) {
             handleActionError(view, error, "sharesDiscardError");
           } finally {
+            rejectedGuard.resume();
             view.getModel("ui").setProperty("/busy", false);
           }
         })();
