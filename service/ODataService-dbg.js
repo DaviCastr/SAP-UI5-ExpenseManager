@@ -24,7 +24,7 @@ sap.ui.define(["../util/http"], function (___util_http) {
    * The filter lists active entities together with drafts that have no active
    * sibling, without duplicating entities that exist in both versions.
    */
-  const DRAFT_FILTER = "(IsActiveEntity eq true or SiblingEntity/IsActiveEntity eq null)";
+  const DRAFT_FILTER = "(IsActiveEntity eq false or SiblingEntity/IsActiveEntity eq null)";
   const DRAFT_EXPAND = "DraftAdministrativeData($select=DraftUUID,InProcessByUser)";
   async function blobToDataUrl(blob) {
     return new Promise((resolve, reject) => {

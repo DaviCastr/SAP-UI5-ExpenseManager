@@ -70,7 +70,7 @@
                                     parameters: {
                                         '$select': 'ID,Name,Income,ExpenseTarget,Currency,ImageType,IsActiveEntity',
                                         '$expand': 'DraftAdministrativeData($select=DraftUUID,InProcessByUser)',
-                                        '$filter': '(IsActiveEntity eq true or SiblingEntity/IsActiveEntity eq null)'
+                                        '$filter': '(IsActiveEntity eq false or SiblingEntity/IsActiveEntity eq null)'
                                     }
                                 }"
                                 selectedKey="{ui>/selectedPersonId}"
