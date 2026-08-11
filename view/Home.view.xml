@@ -12,6 +12,7 @@
         showHeader="false"
         enableScrolling="true"
         class="financePage"
+        busy="{ui>/busy}"
     >
         <content>
             <VBox class="financeShell">
@@ -143,6 +144,14 @@
                                 icon="sap-icon://delete"
                                 type="Reject"
                                 press=".onDiscardPersonDraft"
+                                class="sapUiTinyMarginBegin"
+                            />
+                            <Button
+                                text="{i18n>personSaveDraftButton}"
+                                icon="sap-icon://save"
+                                type="Success"
+                                press=".onSavePersonDraft"
+                                class="sapUiTinyMarginBegin"
                             />
                         </HBox>
                         <HBox

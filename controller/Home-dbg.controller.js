@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox", "./BaseController", "../auth/AuthenticationService", "../service/ODataService", "../service/InvoiceService", "../service/PeriodService", "../service/MediaService", "../service/DashboardRenderer", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/backupApi", "../util/http"], function (MessageToast, Fragment, MessageBox, ___BaseController, ___auth_AuthenticationService, ___service_ODataService, ___service_InvoiceService, ___service_PeriodService, ___service_MediaService, ___service_DashboardRenderer, Filter, FilterOperator, ___util_expenseApi, ___util_backupApi, ___util_http) {
+sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox", "./BaseController", "../auth/AuthenticationService", "../service/ODataService", "../service/InvoiceService", "../service/PeriodService", "../service/MediaService", "../service/DashboardRenderer", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/backupApi", "../util/http", "../util/feedback"], function (MessageToast, Fragment, MessageBox, ___BaseController, ___auth_AuthenticationService, ___service_ODataService, ___service_InvoiceService, ___service_PeriodService, ___service_MediaService, ___service_DashboardRenderer, Filter, FilterOperator, ___util_expenseApi, ___util_backupApi, ___util_http, ___util_feedback) {
   "use strict";
 
   const BaseController = ___BaseController["BaseController"];
@@ -17,6 +17,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
   const downloadBlob = ___util_backupApi["downloadBlob"];
   const isSessionExpiredError = ___util_http["isSessionExpiredError"];
   const isBackendUnavailableError = ___util_http["isBackendUnavailableError"];
+  const getBackendErrorMessage = ___util_feedback["getBackendErrorMessage"];
   /**
    * Orchestrates the Home dashboard. Loading, selection and image/media state
    * is delegated to focused services (PeriodService, MediaService,
@@ -93,6 +94,52 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     }
     onOpenPersonDetailDialog() {
       return this.openPersonDetailDialog();
+    }
+
+    /**
+     * Publishes the open draft of the currently selected person after a
+     * confirmation (the "Efetivar salvamento" action in the draft banner), then
+     * reloads the dashboard. Pending edits are flushed first so every two-way
+     * bound change reaches the draft before it is activated.
+     */
+    onSavePersonDraft() {
+      const personId = this.getSelectedPersonId();
+      if (!personId) {
+        return;
+      }
+      MessageBox.confirm(this.getText("personSaveDraftConfirm"), {
+        title: this.getText("personSaveDraftTitle"),
+        onClose: action => {
+          if (action !== MessageBox.Action.OK || !this._odata) {
+            return;
+          }
+          void this.saveSelectedPersonDraft();
+        }
+      });
+    }
+    async saveSelectedPersonDraft() {
+      const ui = this.getUiModel();
+      const personId = this.getSelectedPersonId();
+      if (!personId || !this._odata) {
+        return;
+      }
+      ui.setProperty("/busy", true);
+      try {
+        this.releasePersonDetailDraftBinding();
+        await this._odata.submitPending();
+        await this._odata.prepareDraft("Persons", personId);
+        await this._odata.activateDraft("Persons", personId);
+        ui.setProperty("/selectedPersonDraft", false);
+        MessageToast.show(this.getText("personDraftSaved"));
+        this.reload();
+      } catch (error) {
+        if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
+          const detail = getBackendErrorMessage(error);
+          MessageBox.error(detail ? `${this.getText("errorSavePersonDraft")}\n\n${detail}` : this.getText("errorSavePersonDraft"));
+        }
+      } finally {
+        ui.setProperty("/busy", false);
+      }
     }
 
     /**
