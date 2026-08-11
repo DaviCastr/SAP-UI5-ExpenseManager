@@ -19,9 +19,14 @@ sap.ui.define(["../util/http"], function (___util_http) {
      * Resolves the image of each distinct category and stores its base64
      * representation both in the transaction rows and in the categories list.
      *
+     * When `preferDraft` is set, the draft media (`IsActiveEntity=false`) is tried
+     * first — mirroring the state of an open person draft — falling back to the
+     * active entity image when the category has no draft media (yet).
+     *
      * @param {TransactionRow[]} transactions the transactions whose Category/ImagePath is resolved
+     * @param {boolean} [preferDraft] try the draft images before the active ones
      */
-    async resolveCategoryImages(transactions) {
+    async resolveCategoryImages(transactions, preferDraft = false) {
       const byId = new Map();
       transactions.forEach((transaction, index) => {
         const category = transaction.Category;
@@ -39,7 +44,7 @@ sap.ui.define(["../util/http"], function (___util_http) {
       const catIndex = new Map();
       categories.forEach((category, index) => catIndex.set(category.ID, index));
       await Promise.all(Array.from(byId.entries()).map(async ([categoryId, entry]) => {
-        const base64 = await this.odata.getMediaAsBase64(entry.path);
+        const base64 = (await this.odata.getMediaAsBase64(preferDraft ? `Categories(ID='${encodeURIComponent(categoryId)}',IsActiveEntity=false)/Image` : entry.path)) ?? (preferDraft ? await this.odata.getMediaAsBase64(entry.path) : undefined);
         if (!base64) {
           return;
         }
@@ -57,15 +62,24 @@ sap.ui.define(["../util/http"], function (___util_http) {
      * Resolves the image of each card and stores its base64 representation in
      * the `ui>/cardImages` map (keyed by card ID).
      *
+     * When `preferDraft` is set, the draft media (`IsActiveEntity=false`) is tried
+     * first — mirroring the state of an open person draft — falling back to the
+     * active entity image when the card has no draft media (yet).
+     *
      * @param {CardMediaSource[]} cards the cards whose images are resolved
+     * @param {boolean} [preferDraft] try the draft image before the active one
      */
-    async resolveCardImages(cards) {
+    async resolveCardImages(cards, preferDraft = false) {
       const images = {};
       await Promise.all(cards.map(async card => {
-        const mediaPath = `Cards(ID='${encodeURIComponent(card.ID)}',IsActiveEntity=true)/Image`;
-        const base64 = await this.odata.getMediaAsBase64(mediaPath);
-        if (base64) {
-          images[card.ID] = base64;
+        const states = preferDraft ? [false, true] : [true];
+        for (const isActiveEntity of states) {
+          const mediaPath = `Cards(ID='${encodeURIComponent(card.ID)}',IsActiveEntity=${isActiveEntity})/Image`;
+          const base64 = await this.odata.getMediaAsBase64(mediaPath);
+          if (base64) {
+            images[card.ID] = base64;
+            return;
+          }
         }
       }));
       this.ui.setProperty("/cardImages", images);

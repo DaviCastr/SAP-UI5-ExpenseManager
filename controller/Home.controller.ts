@@ -533,7 +533,9 @@ export default class Home extends BaseController {
             const expenses = Number(invoice.TotalAmount) || 0;
             const transactions = renderer.renderInvoice(invoice, this.selectedPerson());
 
-            void this._mediaService?.resolveCategoryImages(transactions);
+            const preferDraft = ui.getProperty("/selectedPersonDraft") === true;
+
+            void this._mediaService?.resolveCategoryImages(transactions, preferDraft);
             void renderer.loadTrend(personId, period, expenses);
 
             // The person-scoped metrics (Income, ExpenseTarget, TotalExpenses*)
@@ -545,7 +547,7 @@ export default class Home extends BaseController {
                 expand: DRAFT_EXPAND
             });
             if (cards) {
-                void this._mediaService?.resolveCardImages(cards);
+                void this._mediaService?.resolveCardImages(cards, preferDraft);
             }
         } catch (error) {
             if (isSessionExpiredError(error) || isBackendUnavailableError(error)) {

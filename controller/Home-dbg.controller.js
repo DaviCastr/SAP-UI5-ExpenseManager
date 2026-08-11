@@ -437,7 +437,8 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         const invoice = await invoiceService.getCompleteInvoice(personId, period);
         const expenses = Number(invoice.TotalAmount) || 0;
         const transactions = renderer.renderInvoice(invoice, this.selectedPerson());
-        void this._mediaService?.resolveCategoryImages(transactions);
+        const preferDraft = ui.getProperty("/selectedPersonDraft") === true;
+        void this._mediaService?.resolveCategoryImages(transactions, preferDraft);
         void renderer.loadTrend(personId, period, expenses);
 
         // The person-scoped metrics (Income, ExpenseTarget, TotalExpenses*)
@@ -453,7 +454,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
           expand: DRAFT_EXPAND
         });
         if (cards) {
-          void this._mediaService?.resolveCardImages(cards);
+          void this._mediaService?.resolveCardImages(cards, preferDraft);
         }
       } catch (error) {
         if (isSessionExpiredError(error) || isBackendUnavailableError(error)) {

@@ -37,67 +37,88 @@ export class MediaService {
         this.ui = ui;
     }
 
-    /**
-     * Resolves the image of each distinct category and stores its base64
-     * representation both in the transaction rows and in the categories list.
-     *
-     * @param {TransactionRow[]} transactions the transactions whose Category/ImagePath is resolved
-     */
-    public async resolveCategoryImages(transactions: { Category?: { ID: string; Name: string; ImagePath?: string } }[]): Promise<void> {
-        const byId = new Map<string, CategoryImageEntry>();
+/**
+ * Resolves the image of each distinct category and stores its base64
+ * representation both in the transaction rows and in the categories list.
+ *
+ * When `preferDraft` is set, the draft media (`IsActiveEntity=false`) is tried
+ * first — mirroring the state of an open person draft — falling back to the
+ * active entity image when the category has no draft media (yet).
+ *
+ * @param {TransactionRow[]} transactions the transactions whose Category/ImagePath is resolved
+ * @param {boolean} [preferDraft] try the draft images before the active ones
+ */
+public async resolveCategoryImages(
+    transactions: { Category?: { ID: string; Name: string; ImagePath?: string } }[],
+    preferDraft = false
+): Promise<void> {
+    const byId = new Map<string, CategoryImageEntry>();
 
-        transactions.forEach((transaction, index) => {
-            const category = transaction.Category;
-            if (!category) {
+    transactions.forEach((transaction, index) => {
+        const category = transaction.Category;
+        if (!category) {
+            return;
+        }
+        const entry = byId.get(category.ID) || { path: category.ImagePath, txIndexes: [] };
+        entry.txIndexes.push(index);
+        byId.set(category.ID, entry);
+    });
+
+    const categories = (this.ui.getProperty("/categories") as { ID: string }[] | undefined) || [];
+    const catIndex = new Map<string, number>();
+    categories.forEach((category, index) => catIndex.set(category.ID, index));
+
+    await Promise.all(
+        Array.from(byId.entries()).map(async ([categoryId, entry]) => {
+            const base64 = await this.odata.getMediaAsBase64(
+                preferDraft
+                    ? `Categories(ID='${encodeURIComponent(categoryId)}',IsActiveEntity=false)/Image`
+                    : entry.path
+            ) ?? (preferDraft ? await this.odata.getMediaAsBase64(entry.path) : undefined);
+            if (!base64) {
                 return;
             }
-            const entry = byId.get(category.ID) || { path: category.ImagePath, txIndexes: [] };
-            entry.txIndexes.push(index);
-            byId.set(category.ID, entry);
-        });
+            for (const txIndex of entry.txIndexes) {
+                this.ui.setProperty(`/transactions/${txIndex}/Category/ImageBase64`, base64);
+            }
+            const index = catIndex.get(categoryId);
+            if (index !== undefined) {
+                this.ui.setProperty(`/categories/${index}/CategoryImageBase64`, base64);
+            }
+        })
+    );
+}
 
-        const categories = (this.ui.getProperty("/categories") as { ID: string }[] | undefined) || [];
-        const catIndex = new Map<string, number>();
-        categories.forEach((category, index) => catIndex.set(category.ID, index));
+/**
+ * Resolves the image of each card and stores its base64 representation in
+ * the `ui>/cardImages` map (keyed by card ID).
+ *
+ * When `preferDraft` is set, the draft media (`IsActiveEntity=false`) is tried
+ * first — mirroring the state of an open person draft — falling back to the
+ * active entity image when the card has no draft media (yet).
+ *
+ * @param {CardMediaSource[]} cards the cards whose images are resolved
+ * @param {boolean} [preferDraft] try the draft image before the active one
+ */
+public async resolveCardImages(cards: CardMediaSource[], preferDraft = false): Promise<void> {
+    const images: Record<string, string> = {};
 
-        await Promise.all(
-            Array.from(byId.entries()).map(async ([categoryId, entry]) => {
-                const base64 = await this.odata.getMediaAsBase64(entry.path);
-                if (!base64) {
-                    return;
-                }
-                for (const txIndex of entry.txIndexes) {
-                    this.ui.setProperty(`/transactions/${txIndex}/Category/ImageBase64`, base64);
-                }
-                const index = catIndex.get(categoryId);
-                if (index !== undefined) {
-                    this.ui.setProperty(`/categories/${index}/CategoryImageBase64`, base64);
-                }
-            })
-        );
-    }
-
-    /**
-     * Resolves the image of each card and stores its base64 representation in
-     * the `ui>/cardImages` map (keyed by card ID).
-     *
-     * @param {CardMediaSource[]} cards the cards whose images are resolved
-     */
-    public async resolveCardImages(cards: CardMediaSource[]): Promise<void> {
-        const images: Record<string, string> = {};
-
-        await Promise.all(
-            cards.map(async (card) => {
-                const mediaPath = `Cards(ID='${encodeURIComponent(card.ID)}',IsActiveEntity=true)/Image`;
+    await Promise.all(
+        cards.map(async (card) => {
+            const states = preferDraft ? [false, true] : [true];
+            for (const isActiveEntity of states) {
+                const mediaPath = `Cards(ID='${encodeURIComponent(card.ID)}',IsActiveEntity=${isActiveEntity})/Image`;
                 const base64 = await this.odata.getMediaAsBase64(mediaPath);
                 if (base64) {
                     images[card.ID] = base64;
+                    return;
                 }
-            })
-        );
+            }
+        })
+    );
 
-        this.ui.setProperty("/cardImages", images);
-    }
+    this.ui.setProperty("/cardImages", images);
+}
 
     /**
      * Resolves the avatar of the currently selected person to an object URL.
