@@ -119,6 +119,20 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
   }
 
   /**
+   * Shows the chosen card photo on the Home dashboard and dialog rows during the
+   * draft session. The image only exists locally until the draft is activated, so
+   * it is mirrored into the ui model maps that Home binds its avatars to.
+   *
+   * @param {JSONModel} ui the ui model
+   * @param {string} id the card ID
+   * @param {string} dataUrl the base64 preview
+   */
+  function previewImageOnHome(ui, id, dataUrl) {
+    ui.setProperty(`/cardImages/${id}`, dataUrl);
+    ui.setProperty(`/dialogCardImages/${id}`, dataUrl);
+  }
+
+  /**
    * Tracks the result of a created entity through the binding's `createCompleted`
    * event. On failure the created context is deleted so the OData V4 model does
    * not keep retrying the rejected create; the backend error message itself is
@@ -149,29 +163,58 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
   // instead of being silently dropped or re-sent by the next submit.
   const rejectedGuard = createRejectedChangeGuard();
 
-  // Photos chosen for rows that do not have a server-side ID yet (new cards are
-  // only POSTed on Save). They key off the row's OData context, whose ID becomes
-  // available after `submitPending`, and are uploaded into the draft right before
-  // the draft is activated.
+  // Photos chosen for rows. They key off the row's OData context and are uploaded
+  // into the ACTIVE entity right after the draft is activated. Writing the media
+  // into the draft itself makes the CAP `draftActivate` hang, so the image bypasses
+  // the draft and is stored directly in the active row once the draft is published.
   const pendingPhotos = new Map();
+  /**
+   * Captures the entity key of every pending photo while the dialog's row contexts
+   * are still resolvable (after `submitPending`, but before the draft is
+   * activated). The IDs are stable across draft/active in CAP, so they can be used
+   * to write the image into the active entity once the draft is published.
+   *
+   * @returns {PendingPhotoUpload[]} the photos to upload, with their resolved IDs
+   */
+  function capturePendingPhotos() {
+    const uploads = [];
+    for (const [context, file] of Array.from(pendingPhotos.entries())) {
+      let id;
+      try {
+        id = context.getObject()?.ID;
+      } catch {
+        id = undefined;
+      }
+      if (id) {
+        uploads.push({
+          context,
+          id,
+          file
+        });
+      }
+    }
+    return uploads;
+  }
 
   /**
-   * Uploads every pending row photo into the card's draft row (`IsActiveEntity =
-   * false`). Run after `submitPending` so newly created cards already exist on the
-   * backend before their image is PUT.
+   * Uploads the given photos into the card's ACTIVE rows (`IsActiveEntity =
+   * true`). Must run after `draftActivate` so no draft media exists (avoiding the
+   * `draftActivate` hang) and the active row is no longer write-protected (409).
    *
-   * @param {ODataService} odata the service wrapper (used for error propagation)
-   * @returns {Promise<void>} resolves once all pending photos were uploaded
+   * @param {PendingPhotoUpload[]} uploads the photos with their active entity keys
+   * @returns {Promise<boolean>} whether at least one photo could not be uploaded
    */
-  async function uploadPendingPhotos() {
-    for (const [context, file] of Array.from(pendingPhotos.entries())) {
-      const id = context.getObject()?.ID;
-      if (!id) {
-        continue;
+  async function uploadPendingPhotos(uploads) {
+    let failed = false;
+    for (const upload of uploads) {
+      try {
+        await uploadEntityImage("Cards", upload.id, true, upload.file);
+        pendingPhotos.delete(upload.context);
+      } catch {
+        failed = true;
       }
-      await uploadEntityImage("Cards", id, false, file);
-      pendingPhotos.delete(context);
     }
+    return failed;
   }
 
   /**
@@ -198,7 +241,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
         if (!id) {
           return;
         }
-        const base64 = await odata.getMediaAsBase64(`Cards(ID='${encodeURIComponent(id)}',IsActiveEntity=false)/Image`);
+        const base64 = await odata.getMediaAsBase64(`Cards(ID='${encodeURIComponent(id)}',IsActiveEntity=true)/Image`);
         if (base64) {
           images[id] = base64;
         }
@@ -276,10 +319,10 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
       });
     },
     /**
-     * Shows the chosen photo as a row preview and uploads it into the card's
-     * draft row. Rows that already have an ID are uploaded immediately; rows
-     * created in this session are kept pending and uploaded on Save (their ID
-     * only exists after `submitPending`).
+     * Shows the chosen photo as a row preview and mirrors it into the ui model
+     * so the Home dashboard reflects it during the draft. The image itself is
+     * uploaded to the active entity on Save (after activation), never into the
+     * draft, because draft media breaks `draftActivate`.
      *
      * @param {Control} this the row's file uploader
      * @param {Event} event the `change` event
@@ -298,25 +341,26 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
       pendingPhotos.set(context, file);
       const reader = new FileReader();
       reader.onload = () => {
-        findAvatar(item)?.setSrc(reader.result);
+        const dataUrl = reader.result;
+        findAvatar(item)?.setSrc(dataUrl);
         const id = context.getObject()?.ID;
         if (!id) {
           return;
         }
-        void uploadEntityImage("Cards", id, false, file).then(() => {
-          if (pendingPhotos.get(context) === file) {
-            pendingPhotos.delete(context);
-          }
-        }).catch(() => {
-          // keep the photo pending so Save retries the upload
-        });
+        const dialog = findCardsDialog(this);
+        const ui = dialog?.getParent()?.getModel("ui");
+        if (ui) {
+          previewImageOnHome(ui, id, dataUrl);
+        }
       };
       reader.readAsDataURL(file);
     },
     /**
-     * Publishes the Card changes by activating the person draft they live in.
-     * Because Cards are compositions of the person, all the tree changes are
-     * contained in that single draft.
+     * Publishes the Card changes by activating the person draft they live in,
+     * then uploads any pending photos to the ACTIVE entities (the draft never
+     * holds media, so `draftActivate` does not hang). Because Cards are
+     * compositions of the person, all the tree changes are contained in that
+     * single draft.
      *
      * @param {Control} this the pressed save button
      */
@@ -340,12 +384,16 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
         }
         const odata = new ODataService(context?.getModel());
         await odata.submitPending();
-        await uploadPendingPhotos();
+        const pendingUploads = capturePendingPhotos();
         await odata.prepareDraft("Persons", person.ID);
         await odata.activateDraft("Persons", person.ID);
+        const imageFailed = await uploadPendingPhotos(pendingUploads);
         releaseDraftBinding(dialog);
         dialog.close();
         showToast(view, "cardsSaved");
+        if (imageFailed) {
+          showToast(view, "cardsImageFallback");
+        }
       } catch (error) {
         handleActionError(view, error, "cardsSaveError");
       } finally {
