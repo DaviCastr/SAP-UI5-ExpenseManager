@@ -13,9 +13,15 @@ import { ODataService } from "../../service/ODataService";
 import { uploadPersonImage } from "../../util/entityApi";
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
+import { createRejectedChangeGuard } from "../../util/rejectedChanges";
 import type Home from "../../controller/Home.controller";
 
 let personPhoto: File | null = null;
+
+// Watches the service model's `messageChange` event while the dialog is open so
+// rejected backend changes (e.g. field validation) are shown and reverted
+// instead of being silently dropped or re-sent by the next submit.
+const rejectedGuard = createRejectedChangeGuard();
 
 /**
  * Returns the ID of the person the given dialog is currently bound to.
@@ -169,7 +175,12 @@ const PersonDetail = {
     // discarded meanwhile. The Home screen is then reloaded so the draft
     // indicator banner reflects the current state (a preserved draft is shown
     // after Cancel; a saved/discarded draft disappears).
+    onDialogAfterOpen: function (this: Dialog): void {
+        rejectedGuard.attach(this, "personEditError", "personRejectedChanges");
+    },
+
     onDialogAfterClose: function (this: Dialog): void {
+        rejectedGuard.detach();
         flushPendingEdits(this);
         releaseDraftBinding(this);
 
@@ -188,6 +199,10 @@ const PersonDetail = {
 
         const view = dialog.getParent() as XMLView;
         const context = dialog.getBindingContext() as Context | undefined;
+
+        if (rejectedGuard.warnIfBlocked()) {
+            return;
+        }
 
         try {
 

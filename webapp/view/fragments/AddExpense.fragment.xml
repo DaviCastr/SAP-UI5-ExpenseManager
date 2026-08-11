@@ -1,101 +1,111 @@
 <core:FragmentDefinition
     xmlns:core="sap.ui.core"
     xmlns="sap.m"
+    xmlns:f="sap.ui.layout.form"
     id="AddExpense"
 >
     <Dialog
         id="expenseDialog"
         title="{i18n>expenseDialogTitle}"
         class="financeDialog expenseDialog"
-        contentWidth="28rem"
+        contentWidth="30rem"
+        stretch="{device>/system/phone}"
         core:require="{ handler: 'apps/dflc/expensemanager/controller/fragments/AddExpense' }"
     >
         <content>
-            <VBox class="dialogContent">
-                <Text
+            <VBox class="sapUiSmallMargin">
+                
+                <!-- Dica/Informação do Formulário -->
+                <MessageStrip
                     text="{i18n>expenseDialogIntro}"
-                    class="dialogIntro"
-                />
-                <Label
-                    text="{i18n>expenseDescriptionLabel}"
-                    labelFor="expenseDescription"
-                />
-                <Input
-                    id="expenseDescription"
-                    value="{ui>/newExpense/description}"
-                    placeholder="{i18n>expenseDescriptionPlaceholder}"
-                />
-                <Label
-                    text="{i18n>expenseAmountLabel}"
-                    labelFor="expenseAmount"
-                />
-                <Input
-                    id="expenseAmount"
-                    value="{ui>/newExpense/amount}"
-                    type="Number"
-                    placeholder="{i18n>expenseAmountPlaceholder}"
-                />
-                <Label
-                    text="{i18n>expenseDateLabel}"
-                    labelFor="expenseDate"
-                />
-                <DatePicker
-                    id="expenseDate"
-                    value="{ui>/newExpense/transactionDate}"
-                    displayFormat="dd/MM/yyyy"
-                    valueFormat="yyyy-MM-dd"
-                    width="100%"
-                />
-                <Label
-                    text="{i18n>expenseInstallmentsLabel}"
-                    labelFor="expenseInstallments"
-                />
-                <StepInput
-                    id="expenseInstallments"
-                    value="{ui>/newExpense/installments}"
-                    min="1"
-                    max="60"
-                    step="1"
-                    width="100%"
+                    type="Information"
+                    showIcon="true"
+                    class="sapUiSmallMarginBottom"
                 />
 
-                <CheckBox
-                    id="expenseFixed"
-                    text="{i18n>expenseFixedLabel}"
-                    selected="{ui>/newExpense/fixedExpense}"
-                    class="sapUiTinyMarginTopBottom"
-                />
+                <!-- Formulário Simples (Alinha Label/Input nativamente) -->
+                <f:SimpleForm
+                    editable="true"
+                    layout="ResponsiveGridLayout"
+                    labelSpanXL="4"
+                    labelSpanL="4"
+                    labelSpanM="4"
+                    labelSpanS="12"
+                    adjustLabelSpan="false"
+                    emptySpanXL="0"
+                    emptySpanL="0"
+                    emptySpanM="0"
+                    emptySpanS="0"
+                    columnsXL="1"
+                    columnsL="1"
+                    columnsM="1"
+                    class="sapUiNoContentPadding"
+                >
+                    <f:content>
+                        
+                        <Label text="{i18n>expenseDescriptionLabel}" labelFor="expenseDescription" />
+                        <Input
+                            id="expenseDescription"
+                            value="{ui>/newExpense/description}"
+                            placeholder="{i18n>expenseDescriptionPlaceholder}"
+                        />
+                        
+                        <Label text="{i18n>expenseAmountLabel}" labelFor="expenseAmount" />
+                        <Input
+                            id="expenseAmount"
+                            value="{ui>/newExpense/amount}"
+                            type="Number"
+                            placeholder="{i18n>expenseAmountPlaceholder}"
+                        />
+                        
+                        <Label text="{i18n>expenseDateLabel}" labelFor="expenseDate" />
+                        <DatePicker
+                            id="expenseDate"
+                            value="{ui>/newExpense/transactionDate}"
+                            displayFormat="dd/MM/yyyy"
+                            valueFormat="yyyy-MM-dd"
+                        />
+                        
+                        <Label text="{i18n>expenseInstallmentsLabel}" labelFor="expenseInstallments" />
+                        <StepInput
+                            id="expenseInstallments"
+                            value="{ui>/newExpense/installments}"
+                            min="1"
+                            max="60"
+                            step="1"
+                        />
 
-                <Label
-                    text="{i18n>expenseCardLabel}"
-                    labelFor="expenseCard"
-                />
-                <Select
-                    id="expenseCard"
-                    width="auto"
-                    items="{ path: 'Cards' }"
-                >
-                    <core:Item
-                        key="{ID}"
-                        text="{Name}"
-                    />
-                </Select>
-                <Label
-                    text="{i18n>expenseCategoryLabel}"
-                    labelFor="expenseCategory"
-                />
-                <Select
-                    id="expenseCategory"
-                    width="auto"
-                    items="{ path: 'Categories' }"
-                >
-                    <core:Item
-                        key="{ID}"
-                        text="{Name}"
-                    />
-                </Select>
+                        <!-- Label vazia para manter o CheckBox alinhado com os inputs no Desktop -->
+                        <Label text="" />
+                        <CheckBox
+                            id="expenseFixed"
+                            text="{i18n>expenseFixedLabel}"
+                            selected="{ui>/newExpense/fixedExpense}"
+                        />
+
+                        <Label text="{i18n>expenseCardLabel}" labelFor="expenseCard" />
+                        <Select
+                            id="expenseCard"
+                            items="{ path: 'Cards' }"
+                            width="100%"
+                        >
+                            <core:Item key="{ID}" text="{Name}" />
+                        </Select>
+                        
+                        <Label text="{i18n>expenseCategoryLabel}" labelFor="expenseCategory" />
+                        <Select
+                            id="expenseCategory"
+                            items="{ path: 'Categories' }"
+                            width="100%"
+                        >
+                            <core:Item key="{ID}" text="{Name}" />
+                        </Select>
+                        
+                    </f:content>
+                </f:SimpleForm>
             </VBox>
         </content>
+        
         <beginButton>
             <Button
                 text="{i18n>expenseSaveButton}"
@@ -108,6 +118,7 @@
             <Button
                 text="{i18n>expenseCancelButton}"
                 icon="sap-icon://decline"
+                type="Transparent"
                 press="handler.onCancelarGasto"
             />
         </endButton>

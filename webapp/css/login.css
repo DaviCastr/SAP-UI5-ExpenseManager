@@ -10,4 +10,37 @@
 .loginPrimary .sapMBtnInner { border-radius: .9rem; background: var(--teal-800); border-color: var(--teal-800); height: 3rem; }
 .loginPrimary .sapMBtnInner:active, .loginPrimary .sapMBtnInner:hover { background: #0a6b5c; border-color: #0a6b5c; }
 .loginPrimary .sapMBtnContent { font-weight: 600; letter-spacing: .01rem; }
+.loginPrimary { 
+    width: 100%; 
+    margin-top: 0.35rem; 
+}
+
+.loginPrimary .sapMBtnInner { 
+    height: 3rem;
+    border-radius: 0.9rem; 
+    background: var(--teal-800); 
+    border-color: var(--teal-800); 
+    
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    
+    text-shadow: none; 
+    
+    transition: all 0.2s ease-in-out; 
+}
+
+.loginPrimary:hover .sapMBtnInner,
+.loginPrimary .sapMBtnInner:active,
+.loginPrimary .sapMBtnInner.sapMBtnActive { 
+    background: #0a6b5c; 
+    border-color: #0a6b5c; 
+}
+
+.loginPrimary .sapMBtnContent,
+.loginPrimary .sapMBtnIcon { 
+    font-weight: 600; 
+    letter-spacing: 0.01rem;
+    color: #ffffff; 
+}
 .loginNote { color: #9aabab; font-size: .78rem; text-align: center; margin-top: .35rem; }
