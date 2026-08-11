@@ -13,6 +13,7 @@ import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import { ODataService } from "../../service/ODataService";
 import { uploadEntityImage } from "../../util/entityApi";
+import { request } from "../../util/http";
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import { createRejectedChangeGuard } from "../../util/rejectedChanges";
@@ -149,83 +150,73 @@ function trackCreate(
 const rejectedGuard = createRejectedChangeGuard();
 
 // Photos chosen for rows. They key off the row's OData context and are uploaded
-// into the ACTIVE entity right after the draft is activated. Writing the media
-// into the draft itself makes the CAP `draftActivate` hang, so the image bypasses
-// the draft and is stored directly in the active row once the draft is published.
+// into the category's DRAFT row (`IsActiveEntity = false`) as soon as the row
+// has a resolvable ID: immediately when an existing row's photo is picked, or on
+// Save for rows created in this dialog. Keeping the media inside the draft gives
+// it the same semantics as the rest of the tree (a discard reverts the photo
+// too), and CAP moves the `cds.LargeBinary` draft data to the active row during
+// `draftActivate` (`cds.fiori.move_media_data_in_db`).
 const pendingPhotos = new Map<Context, File>();
 
-interface PendingPhotoUpload {
-    context: Context;
-    id: string;
-    file: File;
-}
+// Immediate uploads started on photo selection. The Save flow waits for them so
+// activating the draft can never race a media PUT that is still in flight.
+const inflightPhotos = new Map<Context, Promise<boolean>>();
 
 /**
- * Shows the chosen category photo on the Home dashboard during the draft
- * session. The image only exists locally until the draft is activated, so it is
- * mirrored into the ui model entries that Home binds its category/transaction
- * avatars to.
+ * Uploads one chosen photo into the category's DRAFT row. The draft row is
+ * materialized upfront with an idempotent touch (a containment PATCH mimicking
+ * the model's draft edits). Rows without a server-side ID yet (created in this
+ * dialog) defer the upload to Save.
  *
- * @param {JSONModel} ui the ui model
- * @param {string} id the category ID
- * @param {string} dataUrl the base64 preview
+ * @param {string} personId the ID of the person whose draft owns the categories
+ * @param {Context} context the category's OData context
+ * @param {File} file the chosen image file
+ * @param {string} entitySet the entity set holding the category, defaults to "Categories"
+ * @returns {Promise<boolean>} whether the photo was uploaded now
  */
-function previewCategoryOnHome(ui: JSONModel, id: string, dataUrl: string): void {
-    ui.setProperty(`/dialogCategoryImages/${id}`, dataUrl);
-
-    const categories = (ui.getProperty("/categories") as { ID?: string }[] | undefined) || [];
-    const index = categories.findIndex((category) => category.ID === id);
-    if (index >= 0) {
-        ui.setProperty(`/categories/${index}/CategoryImageBase64`, dataUrl);
+async function uploadRowPhoto(personId: string, context: Context, file: File, entitySet = "Categories"): Promise<boolean> {
+    let id: string | undefined;
+    let name: string | undefined;
+    try {
+        const obj = context.getObject() as { ID?: string; Name?: string } | undefined;
+        id = obj?.ID;
+        name = obj?.Name;
+    } catch {
+        id = undefined;
+    }
+    if (!id) {
+        return false;
     }
 
-    const transactions = (ui.getProperty("/transactions") as { Category?: { ID?: string } }[] | undefined) || [];
-    transactions.forEach((transaction, txIndex) => {
-        if (transaction.Category?.ID === id) {
-            ui.setProperty(`/transactions/${txIndex}/Category/ImageBase64`, dataUrl);
-        }
-    });
-}
+    try {
+        await request(`Persons(ID='${encodeURIComponent(personId)}',IsActiveEntity=false)/${entitySet}(ID='${encodeURIComponent(id)}')`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ Name: name })
+        });
 
-/**
- * Captures the entity key of every pending photo while the dialog's row contexts
- * are still resolvable (after `submitPending`, but before the draft is
- * activated). The IDs are stable across draft/active in CAP, so they can be used
- * to write the image into the active entity once the draft is published.
- *
- * @returns {PendingPhotoUpload[]} the photos to upload, with their resolved IDs
- */
-function capturePendingPhotos(): PendingPhotoUpload[] {
-    const uploads: PendingPhotoUpload[] = [];
-    for (const [context, file] of Array.from(pendingPhotos.entries())) {
-        let id: string | undefined;
-        try {
-            id = (context.getObject() as { ID?: string } | undefined)?.ID;
-        } catch {
-            id = undefined;
-        }
-        if (id) {
-            uploads.push({ context, id, file });
-        }
+        await uploadEntityImage(entitySet, id, false, file);
+        pendingPhotos.delete(context);
+        return true;
+    } catch {
+        return false;
     }
-    return uploads;
 }
 
 /**
- * Uploads the given photos into the category's ACTIVE rows (`IsActiveEntity =
- * true`). Must run after `draftActivate` so no draft media exists (avoiding the
- * `draftActivate` hang) and the active row is no longer write-protected (409).
+ * Uploads every remaining pending row photo into the category's DRAFT row. Run
+ * on Save for the rows that were not uploaded immediately (newly created rows,
+ * or rows whose immediate upload failed). If a photo still cannot be uploaded
+ * the Save completes anyway and reports the fallback.
  *
- * @param {PendingPhotoUpload[]} uploads the photos with their active entity keys
+ * @param {string} personId the ID of the person whose draft owns the categories
  * @returns {Promise<boolean>} whether at least one photo could not be uploaded
  */
-async function uploadPendingPhotos(uploads: PendingPhotoUpload[]): Promise<boolean> {
+async function uploadPendingPhotos(personId: string): Promise<boolean> {
     let failed = false;
-    for (const upload of uploads) {
-        try {
-            await uploadEntityImage("Categories", upload.id, true, upload.file);
-            pendingPhotos.delete(upload.context);
-        } catch {
+    for (const [context, file] of Array.from(pendingPhotos.entries())) {
+        const uploaded = await uploadRowPhoto(personId, context, file);
+        if (!uploaded) {
             failed = true;
         }
     }
@@ -261,7 +252,12 @@ async function loadRowImages(dialog: Dialog): Promise<void> {
                 if (!id) {
                     return;
                 }
+                // The dialog is bound to the person draft, so the draft media
+                // (IsActiveEntity=false) has precedence, falling back to the
+                // active image when the category has no draft media (yet).
                 const base64 = await odata.getMediaAsBase64(
+                    `Categories(ID='${encodeURIComponent(id)}',IsActiveEntity=false)/Image`
+                ) ?? await odata.getMediaAsBase64(
                     `Categories(ID='${encodeURIComponent(id)}',IsActiveEntity=true)/Image`
                 );
                 if (base64) {
@@ -276,10 +272,38 @@ async function loadRowImages(dialog: Dialog): Promise<void> {
     }
 }
 
+/**
+ * Shows the chosen category photo on the Home dashboard during the draft
+ * session. The image only exists locally until the draft is activated, so it is
+ * mirrored into the ui model entries that Home binds its category/transaction
+ * avatars to.
+ *
+ * @param {JSONModel} ui the ui model
+ * @param {string} id the category ID
+ * @param {string} dataUrl the base64 preview
+ */
+function previewCategoryOnHome(ui: JSONModel, id: string, dataUrl: string): void {
+    ui.setProperty(`/dialogCategoryImages/${id}`, dataUrl);
+
+    const categories = (ui.getProperty("/categories") as { ID?: string }[] | undefined) || [];
+    const index = categories.findIndex((category) => category.ID === id);
+    if (index >= 0) {
+        ui.setProperty(`/categories/${index}/CategoryImageBase64`, dataUrl);
+    }
+
+    const transactions = (ui.getProperty("/transactions") as { Category?: { ID?: string } }[] | undefined) || [];
+    transactions.forEach((transaction, txIndex) => {
+        if (transaction.Category?.ID === id) {
+            ui.setProperty(`/transactions/${txIndex}/Category/ImageBase64`, dataUrl);
+        }
+    });
+}
+
 const Categories = {
 
     onDialogBeforeOpen: function (): void {
         pendingPhotos.clear();
+        inflightPhotos.clear();
         const view = Fragment.byId("Categories", "categoriesDialog")?.getParent() as XMLView | undefined;
         const ui = view?.getModel("ui") as JSONModel | undefined;
         if (ui) {
@@ -346,10 +370,12 @@ const Categories = {
     },
 
     /**
-     * Shows the chosen photo as a row preview and mirrors it into the ui model
-     * so the Home dashboard reflects it during the draft. The image itself is
-     * uploaded to the active entity on Save (after activation), never into the
-     * draft, because draft media breaks `draftActivate`.
+     * Shows the chosen photo as a row preview, mirrors it into the ui model so
+     * the Home dashboard reflects it during the draft, and uploads it into the
+     * category's DRAFT row immediately (for existing rows). Rows created in this
+     * dialog have no server-side ID yet, so their photo is deferred to Save.
+     * `draftActivate` later moves the media to the active row together with the
+     * rest of the draft.
      *
      * @param {Control} this the row's file uploader
      * @param {Event} event the `change` event
@@ -368,6 +394,20 @@ const Categories = {
         }
 
         pendingPhotos.set(context, file);
+
+        const dialog = findCategoriesDialog(this);
+        const person = dialog?.getBindingContext()?.getObject() as { ID?: string } | undefined;
+        if (person?.ID) {
+            const upload = uploadRowPhoto(person.ID, context, file);
+            inflightPhotos.set(context, upload);
+            void upload
+                .catch(() => undefined)
+                .finally(() => {
+                    if (inflightPhotos.get(context) === upload) {
+                        inflightPhotos.delete(context);
+                    }
+                });
+        }
 
         const reader = new FileReader();
         reader.onload = () => {
@@ -389,10 +429,11 @@ const Categories = {
 
     /**
      * Publishes the Category changes by activating the person draft they live
-     * in, then uploads any pending photos to the ACTIVE entities (the draft
-     * never holds media, so `draftActivate` does not hang). Because Categories
-     * are compositions of the person, all the tree changes are contained in
-     * that single draft.
+     * in. The chosen photos are written into the category draft rows first
+     * (they share the draft with the field changes), so `draftActivate` moves
+     * both the data and the `cds.LargeBinary` media to the active rows.
+     * Because Categories are compositions of the person, all the tree changes
+     * are contained in that single draft.
      *
      * @param {Control} this the pressed save button
      */
@@ -422,11 +463,11 @@ const Categories = {
 
             const odata = new ODataService(context?.getModel() as ODataModel);
             await odata.submitPending();
-            const pendingUploads = capturePendingPhotos();
+            await Promise.allSettled(Array.from(inflightPhotos.values()));
+            inflightPhotos.clear();
+            const imageFailed = await uploadPendingPhotos(person.ID);
             await odata.prepareDraft("Persons", person.ID);
             await odata.activateDraft("Persons", person.ID);
-
-            const imageFailed = await uploadPendingPhotos(pendingUploads);
 
             releaseDraftBinding(dialog);
             dialog.close();
@@ -494,6 +535,7 @@ const Categories = {
     onDialogAfterClose: function (this: Dialog): void {
         rejectedGuard.detach();
         pendingPhotos.clear();
+        inflightPhotos.clear();
         releaseDraftBinding(this);
 
         const view = this.getParent() as XMLView | undefined;
