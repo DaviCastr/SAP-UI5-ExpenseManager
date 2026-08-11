@@ -26,7 +26,7 @@ function unwrapControllerResult(value: unknown): unknown {
  * The filter lists active entities together with drafts that have no active
  * sibling, without duplicating entities that exist in both versions.
  */
-export const DRAFT_FILTER = "(IsActiveEntity eq true or SiblingEntity/IsActiveEntity eq null)";
+export const DRAFT_FILTER = "(IsActiveEntity eq false or SiblingEntity/IsActiveEntity eq null)";
 export const DRAFT_EXPAND = "DraftAdministrativeData($select=DraftUUID,InProcessByUser)";
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
