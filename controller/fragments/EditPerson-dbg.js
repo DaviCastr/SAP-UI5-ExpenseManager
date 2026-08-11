@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../../service/ODataService", "../../util/entityApi", "../../util/i18n", "../../util/feedback"], function (Dialog, Fragment, MessageBox, ____service_ODataService, ____util_entityApi, ____util_i18n, ____util_feedback) {
+sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../../service/ODataService", "../../util/entityApi", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, MessageBox, ____service_ODataService, ____util_entityApi, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
   "use strict";
 
   const ODataService = ____service_ODataService["ODataService"];
@@ -7,7 +7,13 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
   const handleActionError = ____util_feedback["handleActionError"];
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
+  const createRejectedChangeGuard = ____util_rejectedChanges["createRejectedChangeGuard"];
   let personPhoto = null;
+
+  // Watches the service model's `messageChange` event while the dialog is open so
+  // rejected backend changes (e.g. field validation) are shown and reverted
+  // instead of being silently dropped or re-sent by the next submit.
+  const rejectedGuard = createRejectedChangeGuard();
 
   /**
    * Returns the ID of the person the given dialog is currently bound to.
@@ -149,7 +155,11 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
     // discarded meanwhile. The Home screen is then reloaded so the draft
     // indicator banner reflects the current state (a preserved draft is shown
     // after Cancel; a saved/discarded draft disappears).
+    onDialogAfterOpen: function () {
+      rejectedGuard.attach(this, "personEditError", "personRejectedChanges");
+    },
     onDialogAfterClose: function () {
+      rejectedGuard.detach();
       flushPendingEdits(this);
       releaseDraftBinding(this);
       const view = this.getParent();
@@ -164,6 +174,9 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
       }
       const view = dialog.getParent();
       const context = dialog.getBindingContext();
+      if (rejectedGuard.warnIfBlocked()) {
+        return;
+      }
       try {
         view.getModel("ui").setProperty("/busy", true);
         if (!context) {

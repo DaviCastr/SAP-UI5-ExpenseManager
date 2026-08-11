@@ -64,3 +64,81 @@
 .simulationBarRow { gap: .75rem; }
 .simulationBarLabel { min-width: 8rem; }
 .simulationBar .sapMProgressIndicator { height: .6rem; border-radius: .5rem; }
+
+.shareAddRow { gap: .75rem; padding-bottom: .8rem; border-bottom: 1px solid #eef3f3; }
+.shareAddEntityRow { width: 100%; gap: .5rem; padding: .4rem 0; }
+.shareDialogFooter { gap: .5rem; }
+.shareList { background: transparent; }
+.shareItem { padding: .5rem 0; gap: .6rem; }
+.shareItemHeader { gap: .75rem; }
+.shareEntityTable { border-radius: .6rem; border: 1px solid var(--line); }
+.shareEntityToolbar { background: var(--teal-050); }
+.shareEntitiesLabel { font-weight: 700; color: var(--teal-700); }
+.shareList .sapMInput .sapMInputBaseInner { height: 2rem; }
+
+.responsiveTopActions {
+    justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+    .responsiveTopActions {
+        width: 100% !important;
+        justify-content: center !important;
+        margin-top: 0.5rem;
+    }
+    
+    .responsiveTopActions > * {
+        margin-bottom: 0.25rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .personDraftBanner {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important; 
+        align-items: center !important;    
+        justify-content: center !important;
+        text-align: center;
+    }
+
+    .personDraftBanner .sapMMsgStrip {
+        margin-right: 0 !important;
+        margin-bottom: 0.5rem !important;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    .personDraftBanner button {
+        margin: 0 auto !important;
+        display: block !important;
+    }
+}
+
+.shareEntityTable .sapMListTblRow {
+    border-bottom: 0.0625rem solid #f2f2f2 !important;
+}
+
+.shareEntityTable .sapMListTblCell {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+}
+
+/* Força um espaçamento e visual de "card" separado para cada linha da tabela de entidades */
+.shareEntityTable .sapMListTblRow {
+    background-color: #ffffff !important;
+    border: 0.0625rem solid #eaedf1 !important;
+    border-radius: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    box-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.02);
+}
+
+.shareEntityTable .sapMListTblCell {
+    padding: 0.625rem 0.75rem !important;
+}
+
+.shareEntityTable table {
+    border-collapse: separate !important;
+    border-spacing: 0 0.5rem !important;
+}
+

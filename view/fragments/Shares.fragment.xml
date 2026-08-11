@@ -1,0 +1,199 @@
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:layout="sap.ui.layout"
+    id="Shares"
+    core:require="{
+        handler: 'apps/dflc/expensemanager/controller/fragments/Shares'
+    }"
+>
+    <Dialog
+        id="sharesDialog"
+        title="{i18n>sharesDialogTitle}"
+        class="financeDialog"
+        contentWidth="40rem"
+        stretch="{device>/system/phone}" 
+        beforeOpen="handler.onDialogBeforeOpen"
+        afterOpen="handler.onDialogAfterOpen"
+        afterClose="handler.onDialogAfterClose"
+        busy="{ui>/busy}"
+    >
+        <!-- Nota: Removi o contentHeight="75%" para o modal se ajustar ao conteúdo no PC -->
+        
+        <content>
+            <VBox class="sapUiSmallMargin">
+                
+                <MessageStrip
+                    text="{i18n>sharesDialogIntro}"
+                    type="Information"
+                    showIcon="true"
+                    class="sapUiSmallMarginBottom"
+                />
+
+                <HBox wrap="Wrap" alignItems="Center" class="sapUiSmallMarginBottom" justifyContent="SpaceBetween">
+                    <Title text="{i18n>sharesAddShareLabel}" level="H5" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
+                    
+                    <HBox wrap="Wrap" alignItems="Center">
+                        <Input
+                            id="shareUser"
+                            value="{ui>/newShare/shareUser}"
+                            placeholder="{i18n>sharesUserPlaceholder}"
+                            width="100%"
+                            class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                        >
+                            <layoutData>
+                                <FlexItemData minWidth="15rem" maxWidth="20rem" growFactor="1" />
+                            </layoutData>
+                        </Input>
+                        <Button
+                            text="{i18n>sharesAddShareLabel}"
+                            icon="sap-icon://add-contact"
+                            type="Emphasized"
+                            press="handler.onAddShare"
+                            class="sapUiTinyMarginBottom"
+                        />
+                    </HBox>
+                </HBox>
+
+                <List
+                    id="sharesList"
+                    items="{Shares}"
+                    mode="None"
+                    growing="true"
+                    noDataText="{i18n>sharesNoData}"
+                    class="shareList"
+                >
+                    <CustomListItem class="sapUiTinyMarginBottom">
+                        <Panel accessibleRole="Region" class="sapUiNoContentPadding">
+                            <headerToolbar>
+                                <Toolbar height="auto" class="sapUiTinyMarginTopBottom">
+                                    <f:Avatar src="sap-icon://person-placeholder" displaySize="XS" class="sapUiTinyMarginEnd" />
+                                    <Input
+                                        value="{User}"
+                                        placeholder="{i18n>sharesUserPlaceholder}"
+                                        width="100%"
+                                    >
+                                        <layoutData>
+                                            <ToolbarLayoutData shrinkable="true" minWidth="8rem" />
+                                        </layoutData>
+                                    </Input>
+                                    <ToolbarSpacer />
+                                    <Button
+                                        icon="sap-icon://delete"
+                                        type="Transparent"
+                                        tooltip="{i18n>sharesRemoveShareTooltip}"
+                                        press="handler.onRemoveShare"
+                                    />
+                                </Toolbar>
+                            </headerToolbar>
+                            
+                            <content>
+                                <Table
+                                    items="{Entities}"
+                                    width="100%"
+                                    class="shareEntityTable"
+                                >
+                                    <headerToolbar>
+                                        <OverflowToolbar>
+                                            <Title
+                                                text="{i18n>sharesEntitiesLabel}"
+                                                level="H6"
+                                                class="shareEntitiesLabel"
+                                            />
+                                            <ToolbarSpacer />
+                                            <Select
+                                                selectedKey="{ui>/newShare/entity}"
+                                                items="{ui>/entityOptions}"
+                                                width="auto"
+                                            >
+                                                <core:Item key="{ui>key}" text="{ui>text}" />
+                                                <layoutData>
+                                                    <OverflowToolbarLayoutData minWidth="8rem" shrinkable="true" priority="High"/>
+                                                </layoutData>
+                                            </Select>
+                                            <Select
+                                                selectedKey="{ui>/newShare/permission}"
+                                                items="{ui>/permissionOptions}"
+                                                width="auto"
+                                            >
+                                                <core:Item key="{ui>key}" text="{ui>text}" />
+                                                <layoutData>
+                                                    <OverflowToolbarLayoutData minWidth="7rem" shrinkable="true" priority="High"/>
+                                                </layoutData>
+                                            </Select>
+                                            <Button
+                                                icon="sap-icon://add"
+                                                type="Ghost"
+                                                tooltip="{i18n>sharesAddEntityTooltip}"
+                                                press="handler.onAddEntity"
+                                            >
+                                                <layoutData>
+                                                    <OverflowToolbarLayoutData priority="NeverOverflow"/>
+                                                </layoutData>
+                                            </Button>
+                                        </OverflowToolbar>
+                                    </headerToolbar>
+                                    <columns>
+                                        <Column>
+                                            <Text text="{i18n>sharesEntityColumn}" />
+                                        </Column>
+                                        <!-- CORREÇÃO: popinDisplay="Block" faz o campo descer de linha e ocupar 100% da tela mobile -->
+                                        <Column minScreenWidth="Tablet" demandPopin="true" popinDisplay="Block">
+                                            <Text text="{i18n>sharesPermissionColumn}" />
+                                        </Column>
+                                        <Column width="3rem" hAlign="End"/>
+                                    </columns>
+                                    <items>
+                                        <ColumnListItem>
+                                            <cells>
+                                                <Select
+                                                    selectedKey="{Entity}"
+                                                    items="{ui>/entityOptions}"
+                                                    width="100%"
+                                                >
+                                                    <core:Item key="{ui>key}" text="{ui>text}" />
+                                                </Select>
+                                                <Select
+                                                    selectedKey="{Permission}"
+                                                    items="{ui>/permissionOptions}"
+                                                    width="100%"
+                                                >
+                                                    <core:Item key="{ui>key}" text="{ui>text}" />
+                                                </Select>
+                                                <Button
+                                                    icon="sap-icon://sys-cancel"
+                                                    type="Transparent"
+                                                    tooltip="{i18n>sharesRemoveEntityTooltip}"
+                                                    press="handler.onRemoveEntity"
+                                                />
+                                            </cells>
+                                        </ColumnListItem>
+                                    </items>
+                                </Table>
+                            </content>
+                        </Panel>
+                    </CustomListItem>
+                </List>
+            </VBox>
+        </content>
+        <buttons>
+                <Button
+                    text="{i18n>sharesSaveButton}"
+                    icon="sap-icon://save"
+                    type="Emphasized"
+                    press="handler.onSaveShares"
+                />
+                <Button
+                    text="{i18n>sharesCancelButton}"
+                    icon="sap-icon://cancel"
+                    press="handler.onCancelShares"
+                />
+            <Button
+                text="{i18n>sharesDiscardButton}"
+                type="Transparent"
+                press="handler.onDiscardShares"
+            />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

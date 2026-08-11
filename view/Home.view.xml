@@ -42,9 +42,11 @@
                                 />
                             </VBox>
                         </HBox>
+
                         <HBox
                             alignItems="Center"
-                            class="topActions"
+                            justifyContent="End"
+                            class="topActions responsiveTopActions"
                             wrap="Wrap"
                         >
                             <Text
@@ -81,29 +83,44 @@
                                     text="{= ${Name} + (${IsActiveEntity} === false ? ' (rascunho)' : '')}"
                                 />
                             </Select>
-                            <Button
-                                icon="sap-icon://edit"
-                                type="Transparent"
-                                tooltip="{i18n>personEditTooltip}"
-                                press=".onOpenPersonDetailDialog"
-                                class="iconAction"
-                                visible="{= !${ui>/personsEmpty} }"
-                            />
-                            <Button
-                                icon="sap-icon://add"
-                                type="Transparent"
-                                tooltip="{i18n>personAddButton}"
-                                press=".onOpenPersonDialog"
-                                class="iconAction"
-                                visible="{= !${ui>/personsEmpty} }"
-                            />
-                            <Button
-                                icon="sap-icon://log"
-                                type="Transparent"
-                                tooltip="{i18n>logoutTooltip}"
-                                press=".onLogout"
-                                class="iconAction"
-                            />
+
+                            <HBox
+                                alignItems="Center"
+                                justifyContent="Center"
+                                class="actionButtonsGroup"
+                            >
+                                <Button
+                                    icon="sap-icon://share-2"
+                                    type="Transparent"
+                                    tooltip="{i18n>sharesTooltip}"
+                                    press=".onOpenSharesDialog"
+                                    class="iconAction"
+                                    visible="{= !${ui>/personsEmpty} }"
+                                />
+                                <Button
+                                    icon="sap-icon://edit"
+                                    type="Transparent"
+                                    tooltip="{i18n>personEditTooltip}"
+                                    press=".onOpenPersonDetailDialog"
+                                    class="iconAction"
+                                    visible="{= !${ui>/personsEmpty} }"
+                                />
+                                <Button
+                                    icon="sap-icon://add"
+                                    type="Transparent"
+                                    tooltip="{i18n>personAddButton}"
+                                    press=".onOpenPersonDialog"
+                                    class="iconAction"
+                                    visible="{= !${ui>/personsEmpty} }"
+                                />
+                                <Button
+                                    icon="sap-icon://log"
+                                    type="Transparent"
+                                    tooltip="{i18n>logoutTooltip}"
+                                    press=".onLogout"
+                                    class="iconAction"
+                                />
+                            </HBox>
                         </HBox>
                     </HBox>
 
@@ -111,6 +128,8 @@
                         <HBox
                             visible="{= ${ui>/selectedPersonDraft} &amp;&amp; !${ui>/personsEmpty} }"
                             alignItems="Center"
+                            justifyContent="Center"
+                            width="100%"
                             class="sapUiTinyMarginBottom personDraftBanner"
                         >
                             <MessageStrip

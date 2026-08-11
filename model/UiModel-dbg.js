@@ -54,6 +54,61 @@ sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
         newCategory: {
           name: ""
         },
+        newShare: {
+          shareUser: "",
+          entity: "1",
+          permission: "1"
+        },
+        entityOptions: [{
+          key: "1",
+          text: "Persons"
+        }, {
+          key: "2",
+          text: "Shares"
+        }, {
+          key: "3",
+          text: "Entities"
+        }, {
+          key: "4",
+          text: "Categories"
+        }, {
+          key: "5",
+          text: "Cards"
+        }, {
+          key: "6",
+          text: "Invoices"
+        }, {
+          key: "7",
+          text: "Transactions"
+        }, {
+          key: "8",
+          text: "Backups"
+        }, {
+          key: "9",
+          text: "Liabilities"
+        }, {
+          key: "10",
+          text: "LiabilityTransactions"
+        }, {
+          key: "11",
+          text: "Financings"
+        }, {
+          key: "12",
+          text: "FinancingInstallments"
+        }],
+        permissionOptions: [{
+          key: "1",
+          text: "Viewer"
+        }, {
+          key: "2",
+          text: "Creator"
+        }, {
+          key: "3",
+          text: "Modifier"
+        }, {
+          key: "4",
+          text: "Deleter"
+        }],
         simulation: {
           month: "",
           year: ""

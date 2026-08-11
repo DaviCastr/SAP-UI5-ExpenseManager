@@ -514,6 +514,41 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     }
 
     /**
+     * Opens the Shares management dialog for the selected person. Because
+     * Shares/Entities are compositions of the selected person, the dialog is
+     * bound to the person's (draft) OData context, so every change made there is
+     * contained in the same person draft as the rest of the entity tree. Saving
+     * activates that draft; discarding drops it.
+     */
+    async onOpenSharesDialog() {
+      const personId = this.getSelectedPersonId();
+      if (!personId) {
+        this.showErrorMessage("errorMissingPerson");
+        return;
+      }
+      const ui = this.getUiModel();
+      ui.setProperty("/busy", true);
+      try {
+        const person = this.getPersonsFromSource().find(candidate => candidate.ID === personId);
+        const isDraft = person?.IsActiveEntity === false || person?.hasDraft === true;
+        if (this._odata && !isDraft) {
+          await this._odata.enableDraftEdit("Persons", personId);
+        }
+        const path = this._odata?.draftPath("Persons", personId) ?? "";
+        await this.openPreparedDialog("Shares", dialog => {
+          dialog.setModel(this.getServiceModel());
+          dialog.unbindObject();
+          dialog.bindObject(path);
+          dialog.open();
+        });
+      } catch (error) {
+        this.handleError(error, "sharesOpenError");
+      } finally {
+        ui.setProperty("/busy", false);
+      }
+    }
+
+    /**
      * Detaches the PersonDetail dialog from its OData draft binding, if present,
      * so a model refresh does not re-read a draft that is about to be discarded.
      */
