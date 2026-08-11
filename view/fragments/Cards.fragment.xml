@@ -1,0 +1,204 @@
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m"
+    xmlns:u="sap.ui.unified"
+    id="Cards"
+    core:require="{
+        formatter: 'apps/dflc/expensemanager/util/format',
+        handler: 'apps/dflc/expensemanager/controller/fragments/Cards'
+    }"
+>
+    <Dialog
+        id="cardsDialog"
+        title="{i18n>cardsDialogTitle}"
+        class="financeDialog"
+        contentWidth="46rem"
+        stretch="{device>/system/phone}"
+        beforeOpen="handler.onDialogBeforeOpen"
+        afterOpen="handler.onDialogAfterOpen"
+        afterClose="handler.onDialogAfterClose"
+        busy="{ui>/busy}"
+    >
+        <content>
+            <VBox class="sapUiSmallMargin">
+                <MessageStrip
+                    text="{i18n>cardsDialogIntro}"
+                    type="Information"
+                    showIcon="true"
+                    class="sapUiSmallMarginBottom"
+                />
+
+                <HBox
+                    wrap="Wrap"
+                    alignItems="End"
+                    class="sapUiSmallMarginBottom"
+                    justifyContent="SpaceBetween"
+                >
+                    <Title text="{i18n>cardsAddLabel}" level="H5" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
+                    <HBox wrap="Wrap" alignItems="End">
+                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                            <Label text="{i18n>cardNameLabel}" labelFor="newCardName" />
+                            <Input
+                                id="newCardName"
+                                value="{ui>/newCard/name}"
+                                placeholder="{i18n>cardNamePlaceholder}"
+                                width="13rem"
+                            />
+                        </VBox>
+                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                            <Label text="{i18n>cardLimitLabel}" labelFor="newCardLimit" />
+                            <Input
+                                id="newCardLimit"
+                                value="{ui>/newCard/limit}"
+                                type="Number"
+                                placeholder="{i18n>cardLimitPlaceholder}"
+                                width="6rem"
+                            />
+                        </VBox>
+                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                            <Label text="{i18n>cardCurrencyLabel}" labelFor="newCardCurrency" />
+                            <Select
+                                id="newCardCurrency"
+                                selectedKey="{ui>/newCard/currency}"
+                                width="12rem"
+                            >
+                                <core:Item key="BRL" text="Real brasileiro (BRL)" />
+                                <core:Item key="USD" text="Dólar americano (USD)" />
+                            </Select>
+                        </VBox>
+                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                            <Label text="{i18n>cardsClosingLabel}" labelFor="newCardClosing" />
+                            <Input
+                                id="newCardClosing"
+                                value="{ui>/newCard/closingDay}"
+                                type="Number"
+                                placeholder="{i18n>cardsDayPlaceholder}"
+                                width="4rem"
+                            />
+                        </VBox>
+                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                            <Label text="{i18n>cardsDueLabel}" labelFor="newCardDue" />
+                            <Input
+                                id="newCardDue"
+                                value="{ui>/newCard/dueDay}"
+                                type="Number"
+                                placeholder="{i18n>cardsDayPlaceholder}"
+                                width="4rem"
+                            />
+                        </VBox>
+                        <Button
+                            text="{i18n>cardsAddLabel}"
+                            icon="sap-icon://add"
+                            type="Emphasized"
+                            press="handler.onAddCard"
+                        />
+                    </HBox>
+                </HBox>
+
+                <List
+                    id="cardsList"
+                    items="{Cards}"
+                    mode="None"
+                    noDataText="{i18n>cardsNoData}"
+                    class="shareList"
+                >
+                    <CustomListItem class="sapUiTinyMarginBottom">
+                        <VBox class="sapUiTinyMarginTopBottom">
+                            <HBox
+                                alignItems="Center"
+                                justifyContent="SpaceBetween"
+                                class="sapUiSmallMarginBottom"
+                            >
+                                <Avatar
+                                    src="{ parts: [ { path: 'ID' }, { path: 'ui>/dialogCardImages' } ], formatter: 'formatter.cardImageValue' }"
+                                    displaySize="Custom"
+                                    customDisplaySize="3rem"
+                                    displayShape="Circle"
+                                    initials="{ parts: [ { path: 'Name' } ], formatter: 'formatter.initials' }"
+                                    class="sapUiTinyMarginEnd"
+                                />
+                                <Input
+                                    value="{Name}"
+                                    placeholder="{i18n>cardNamePlaceholder}"
+                                    width="50%"
+                                />
+                                <ToolbarSpacer />
+                                <Button
+                                    icon="sap-icon://delete"
+                                    type="Transparent"
+                                    tooltip="{i18n>cardsRemoveTooltip}"
+                                    press="handler.onRemoveCard"
+                                />
+                            </HBox>
+                            <HBox
+                                wrap="Wrap"
+                                alignItems="Center"
+                                class="sapUiSmallMarginBottom"
+                            >
+                                <Label text="{i18n>cardLimitLabel}" class="sapUiTinyMarginEnd" />
+                                <Input
+                                    value="{Limit}"
+                                    type="Number"
+                                    width="6rem"
+                                    class="sapUiTinyMarginEnd"
+                                />
+                                <Label text="{i18n>cardCurrencyLabel}" class="sapUiTinyMarginEnd" />
+                                <Select
+                                    selectedKey="{Currency_code}"
+                                    forceSelection="false"
+                                    width="11rem"
+                                    class="sapUiTinyMarginEnd"
+                                >
+                                    <core:Item key="BRL" text="Real brasileiro (BRL)" />
+                                    <core:Item key="USD" text="Dólar americano (USD)" />
+                                </Select>
+                                <Label text="{i18n>cardsClosingLabel}" class="sapUiTinyMarginEnd" />
+                                <Input
+                                    value="{ClosingDay}"
+                                    type="Number"
+                                    width="4rem"
+                                    class="sapUiTinyMarginEnd"
+                                />
+                                <Label text="{i18n>cardsDueLabel}" class="sapUiTinyMarginEnd" />
+                                <Input
+                                    value="{DueDay}"
+                                    type="Number"
+                                    width="4rem"
+                                />
+                            </HBox>
+                            <HBox alignItems="Center">
+                                <u:FileUploader
+                                    buttonText="{i18n>cardsPhotoButton}"
+                                    placeholder="{i18n>cardsPhotoPlaceholder}"
+                                    fileType="png,jpg,jpeg"
+                                    uploadOnChange="false"
+                                    multiple="false"
+                                    change="handler.onCardPhotoChanged"
+                                    width="100%"
+                                />
+                            </HBox>
+                        </VBox>
+                    </CustomListItem>
+                </List>
+            </VBox>
+        </content>
+        <buttons>
+            <Button
+                text="{i18n>cardsSaveButton}"
+                icon="sap-icon://save"
+                type="Emphasized"
+                press="handler.onSaveCards"
+            />
+            <Button
+                text="{i18n>cardsCancelButton}"
+                icon="sap-icon://cancel"
+                press="handler.onCancelCards"
+            />
+            <Button
+                text="{i18n>cardsDiscardButton}"
+                type="Transparent"
+                press="handler.onDiscardCards"
+            />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

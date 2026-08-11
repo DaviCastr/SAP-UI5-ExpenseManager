@@ -52,6 +52,8 @@ export interface NewCard {
     name: string;
     limit: string;
     currency: string;
+    closingDay: string;
+    dueDay: string;
 }
 
 export interface NewCategory {
@@ -165,7 +167,9 @@ export default class UiModel extends JSONModel {
             newCard: {
                 name: "",
                 limit: "",
-                currency: "BRL"
+                currency: "BRL",
+                closingDay: "3",
+                dueDay: "10"
             },
 
             newCategory: {

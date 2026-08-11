@@ -191,7 +191,7 @@
                                         text="{i18n>actionAddCard}"
                                         icon="sap-icon://credit-card"
                                         type="Transparent"
-                                        press=".onOpenCardDialog"
+                                        press=".onOpenCardManagerDialog"
                                         class="secondaryAction"
                                     />
                                     <Button
@@ -628,8 +628,8 @@
                             <Button
                                 icon="sap-icon://add"
                                 type="Transparent"
-                                press=".onOpenCategoryDialog"
-                                tooltip="{i18n>categoryAddButton}"
+                                press=".onOpenCategoryManagerDialog"
+                                tooltip="{i18n>categoriesDialogTitle}"
                             />
                         </HBox>
                         <List
@@ -705,8 +705,8 @@
                             <Button
                                 icon="sap-icon://add"
                                 type="Transparent"
-                                press=".onOpenCardDialog"
-                                tooltip="{i18n>cardDialogTitle}"
+                                press=".onOpenCardManagerDialog"
+                                tooltip="{i18n>cardsDialogTitle}"
                             />
                         </HBox>
                         <VBox id="cardsList">

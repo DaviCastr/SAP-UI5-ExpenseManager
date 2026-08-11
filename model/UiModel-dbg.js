@@ -49,7 +49,9 @@ sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
         newCard: {
           name: "",
           limit: "",
-          currency: "BRL"
+          currency: "BRL",
+          closingDay: "3",
+          dueDay: "10"
         },
         newCategory: {
           name: ""

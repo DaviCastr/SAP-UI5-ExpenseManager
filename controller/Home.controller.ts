@@ -232,16 +232,12 @@ export default class Home extends BaseController {
         }
     }
 
-    public onOpenCardDialog(): void {
-        const ui = this.getUiModel();
-        ui.setProperty("/newCard", { name: "", limit: "", currency: "BRL" });
-        void this.openPreparedDialog("AddCard", (dialog) => dialog.open());
+    public onOpenCardManagerDialog(): void {
+        void this.openDraftManagerDialog("Cards", "cardsOpenError");
     }
 
-    public onOpenCategoryDialog(): void {
-        const ui = this.getUiModel();
-        ui.setProperty("/newCategory", { name: "" });
-        void this.openPreparedDialog("AddCategory", (dialog) => dialog.open());
+    public onOpenCategoryManagerDialog(): void {
+        void this.openDraftManagerDialog("Categories", "categoriesOpenError");
     }
 
     public onRestoreBackup(): void {
@@ -695,6 +691,51 @@ export default class Home extends BaseController {
             });
         } catch (error) {
             this.handleError(error, "sharesOpenError");
+        } finally {
+            ui.setProperty("/busy", false);
+        }
+    }
+
+    /**
+     * Opens the Cards or Categories management dialog for the selected person.
+     * Because Cards/Categories are compositions of the selected person, the
+     * dialog is bound to the person's (draft) OData context, so every change
+     * made there is contained in the same person draft as the rest of the entity
+     * tree. Saving activates that draft; discarding drops it.
+     *
+     * @param {string} fragmentName the dialog fragment to open
+     * @param {string} errorKey i18n key shown when the dialog cannot be opened
+     * @returns {Promise<void>} resolves once the dialog is open
+     */
+    private async openDraftManagerDialog(fragmentName: "Cards" | "Categories", errorKey: string): Promise<void> {
+        const personId = this.getSelectedPersonId();
+
+        if (!personId) {
+            this.showErrorMessage("errorMissingPerson");
+            return;
+        }
+
+        const ui = this.getUiModel();
+        ui.setProperty("/busy", true);
+
+        try {
+            const person = this.getPersonsFromSource().find((candidate) => candidate.ID === personId);
+            const isDraft = person?.IsActiveEntity === false || person?.hasDraft === true;
+
+            if (this._odata && !isDraft) {
+                await this._odata.enableDraftEdit("Persons", personId);
+            }
+
+            const path = this._odata?.draftPath("Persons", personId) ?? "";
+
+            await this.openPreparedDialog(fragmentName, (dialog) => {
+                dialog.setModel(this.getServiceModel());
+                dialog.unbindObject();
+                dialog.bindObject(path);
+                dialog.open();
+            });
+        } catch (error) {
+            this.handleError(error, errorKey);
         } finally {
             ui.setProperty("/busy", false);
         }
