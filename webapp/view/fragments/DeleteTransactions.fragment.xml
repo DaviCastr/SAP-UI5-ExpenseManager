@@ -1,0 +1,97 @@
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m"
+    id="DeleteTransactions"
+    core:require="{
+        formatter: 'apps/dflc/expensemanager/util/format',
+        handler: 'apps/dflc/expensemanager/controller/fragments/DeleteTransactions'
+    }"
+>
+    <Dialog
+        id="deleteTransactionsDialog"
+        title="{i18n>deleteTransactionsTitle}"
+        class="financeDialog"
+        contentWidth="46rem"
+        stretch="{device>/system/phone}"
+        beforeOpen="handler.onDialogBeforeOpen"
+        busy="{ui>/invoiceBusy}"
+    >
+        <content>
+            <VBox class="sapUiSmallMargin">
+                <MessageStrip
+                    text="{i18n>deleteTransactionsIntro}"
+                    type="Warning"
+                    showIcon="true"
+                    class="sapUiSmallMarginBottom"
+                />
+
+                <HBox
+                    justifyContent="SpaceBetween"
+                    alignItems="Center"
+                    class="sapUiSmallMarginBottom"
+                >
+                    <Text
+                        text="{ui>/deleteTransactionsCountText}"
+                        class="invoiceAffectedCount"
+                    />
+                    <CheckBox
+                        id="deleteSelectAll"
+                        text="{i18n>deleteTransactionsSelectAll}"
+                        selected="{ui>/deleteSelectAll}"
+                        select="handler.onSelectAll"
+                    />
+                </HBox>
+
+                <List
+                    id="deleteTransactionList"
+                    items="{ path: 'ui>/deleteTransactions' }"
+                    showSeparators="None"
+                    noDataText="{i18n>deleteTransactionsNoData}"
+                    class="invoiceTransactionList"
+                >
+                    <CustomListItem>
+                        <HBox
+                            width="100%"
+                            alignItems="Center"
+                            justifyContent="SpaceBetween"
+                            class="sapUiTinyMarginTopBottom deleteTxItem"
+                        >
+                            <CheckBox selected="{ui>selected}" />
+                            <VBox class="sapUiTinyMarginBegin">
+                                <Text text="{ui>Description}" class="transactionTitle" />
+                                <Text text="{ui>InvoicePeriodText}" class="transactionDate" />
+                            </VBox>
+                            <Text text="{ui>DateText}" class="transactionDate" />
+                            <ObjectNumber
+                                number="{
+                                    parts: [
+                                        { path: 'ui>Amount' },
+                                        { path: 'ui>CurrencyCode' }
+                                    ],
+                                    formatter: 'formatter.formatCurrency'
+                                }"
+                                class="transactionAmount"
+                            />
+                        </HBox>
+                    </CustomListItem>
+                </List>
+            </VBox>
+        </content>
+        <beginButton>
+            <Button
+                text="{i18n>deleteTransactionsDeleteButton}"
+                icon="sap-icon://delete"
+                type="Reject"
+                press="handler.onDeleteConfirmed"
+            />
+        </beginButton>
+        <endButton>
+            <Button
+                text="{i18n>deleteTransactionsCancelButton}"
+                icon="sap-icon://decline"
+                type="Transparent"
+                press="handler.onCancelDelete"
+            />
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>

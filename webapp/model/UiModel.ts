@@ -99,6 +99,31 @@ export interface IUiState {
     simulation: UiSimulation;
     simulationMonthOptions: UiOption[];
     simulationResult: unknown;
+    invoiceCards: unknown[];
+    invoiceCardImages: Record<string, string>;
+    invoiceCardsEmpty: boolean;
+    invoiceYearOptions: unknown[];
+    invoiceMonthOptions: unknown[];
+    invoiceYear: string;
+    invoiceMonth: string;
+    invoicePeriodLabel: string;
+    invoiceCardId: string;
+    invoiceId: string;
+    invoiceLoaded: boolean;
+    invoiceBusy: boolean;
+    invoiceHeader: unknown;
+    invoiceTransactions: unknown[];
+    invoiceCategories: unknown[];
+    invoiceCategoryImages: Record<string, string>;
+    invoiceSelectedCategoryId: string;
+    invoiceSelectedIdentifier: string;
+    invoiceCurrentCategoryId: string;
+    invoiceCurrentCategoryName: string;
+    invoiceCategoryAffected: unknown[];
+    invoiceCategoryAffectedText: string;
+    deleteTransactions: unknown[];
+    deleteTransactionsCountText: string;
+    deleteSelectAll: boolean;
 }
 
 export default class UiModel extends JSONModel {
@@ -211,7 +236,57 @@ export default class UiModel extends JSONModel {
 
             simulationMonthOptions: [],
 
-            simulationResult: null
+            simulationResult: null,
+
+            invoiceCards: [],
+
+            invoiceCardImages: {},
+
+            invoiceCardsEmpty: false,
+
+            invoiceYearOptions: [],
+
+            invoiceMonthOptions: [],
+
+            invoiceYear: String(now.getFullYear()),
+
+            invoiceMonth: String(now.getMonth() + 1),
+
+            invoicePeriodLabel: "",
+
+            invoiceCardId: "",
+
+            invoiceId: "",
+
+            invoiceLoaded: false,
+
+            invoiceBusy: false,
+
+            invoiceHeader: {},
+
+            invoiceTransactions: [],
+
+            invoiceCategories: [],
+
+            invoiceCategoryImages: {},
+
+            invoiceSelectedCategoryId: "",
+
+            invoiceSelectedIdentifier: "",
+
+            invoiceCurrentCategoryId: "",
+
+            invoiceCurrentCategoryName: "",
+
+            invoiceCategoryAffected: [],
+
+            invoiceCategoryAffectedText: "",
+
+            deleteTransactions: [],
+
+            deleteTransactionsCountText: "",
+
+            deleteSelectAll: true
 
         };
 

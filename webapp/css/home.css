@@ -142,3 +142,37 @@
     border-spacing: 0 0.5rem !important;
 }
 
+.invoiceSectionLabel {
+    font-weight: 700;
+    font-size: .8rem;
+    letter-spacing: .06em;
+    color: var(--teal-700);
+    margin: .25rem 0 .35rem;
+}
+.invoiceCardList {
+    background: transparent;
+    max-height: 14rem;
+    overflow-y: auto;
+}
+.invoiceCardAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.invoiceCardName { font-weight: 700; color: var(--ink); }
+.invoiceCardLabel { color: var(--muted); font-size: .78rem; }
+.invoicePeriodBar { gap: .75rem; }
+.invoicePeriodLabel { font-weight: 700; color: var(--ink); min-width: 10rem; text-align: center; }
+.invoiceEmpty { gap: .4rem; padding: 1.5rem; }
+.invoiceEmptyIcon { font-size: 2rem; color: #9fbbb7; }
+.invoiceSummary { padding: 1.1rem; }
+.invoiceTotalAmount .sapMObjectNumberText { font-size: 1.6rem; font-weight: 700; color: var(--ink); }
+.invoiceSentIcon { color: var(--teal-700); }
+.invoiceNotSentIcon { color: #d98e3d; }
+.invoiceTransactionList { background: transparent; max-height: 20rem; overflow-y: auto; }
+.invoiceTransactionItem { gap: .75rem; }
+.invoiceTxAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.invoiceTxCategory { color: var(--muted); font-size: .75rem; }
+.invoiceTxActions { gap: .25rem; margin-left: .5rem; }
+.invoiceAffectedText { color: var(--muted); font-size: .85rem; margin-top: .4rem; }
+.invoiceAffectedCount { font-weight: 700; color: var(--teal-700); font-size: .85rem; margin-top: .3rem; }
+.invoiceAffectedList { background: transparent; max-height: 10rem; overflow-y: auto; margin-top: .3rem; }
+.invoiceCategoryAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.deleteTxItem { gap: .75rem; }
+
