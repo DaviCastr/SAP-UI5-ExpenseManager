@@ -9,11 +9,11 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "./i18n", "./http"], fu
    * literals and therefore cannot extend BaseController). Keeps the repeated
    * `if (isSessionExpiredError) return; MessageBox.error(...)` blocks in one place.
    */
-  function showWarning(view, messageKey) {
-    MessageBox.warning(getText(view, messageKey));
+  function showWarning(view, messageKey, parameters) {
+    MessageBox.warning(getText(view, messageKey, parameters));
   }
-  function showToast(view, messageKey) {
-    MessageToast.show(getText(view, messageKey));
+  function showToast(view, messageKey, parameters) {
+    MessageToast.show(getText(view, messageKey, parameters));
   }
 
   /**

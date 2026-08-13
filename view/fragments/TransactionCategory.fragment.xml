@@ -1,0 +1,106 @@
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m"
+    id="TransactionCategory"
+    core:require="{
+        formatter: 'apps/dflc/expensemanager/util/format',
+        handler: 'apps/dflc/expensemanager/controller/fragments/TransactionCategory'
+    }"
+>
+    <Dialog
+        id="transactionCategoryDialog"
+        title="{i18n>transactionCategoryTitle}"
+        class="financeDialog"
+        contentWidth="38rem"
+        stretch="{device>/system/phone}"
+        beforeOpen="handler.onDialogBeforeOpen"
+        busy="{ui>/invoiceBusy}"
+    >
+        <content>
+            <VBox class="sapUiSmallMargin">
+                <MessageStrip
+                    text="{i18n>transactionCategoryIntro}"
+                    type="Information"
+                    showIcon="true"
+                    class="sapUiSmallMarginBottom"
+                />
+
+                <Text
+                    text="{ parts: [ { path: 'i18n>transactionCategoryCurrent' }, { path: 'ui>/invoiceCurrentCategoryName' } ], formatter: 'formatter.formatTemplate' }"
+                    class="invoiceAffectedText"
+                />
+
+                <Text
+                    id="categoryAffectedText"
+                    text="{ui>/invoiceCategoryAffectedText}"
+                    class="invoiceAffectedCount"
+                />
+
+                <List
+                    id="transactionCategoryAffectedList"
+                    items="{ path: 'ui>/invoiceCategoryAffected' }"
+                    showSeparators="None"
+                    class="invoiceAffectedList"
+                    noDataText="{i18n>invoiceTransactionsNoData}"
+                >
+                    <CustomListItem>
+                        <HBox
+                            width="100%"
+                            alignItems="Center"
+                            justifyContent="SpaceBetween"
+                        >
+                            <Text text="{ui>Description}" class="transactionTitle" />
+                            <Text text="{ui>DateText}" class="transactionDate" />
+                        </HBox>
+                    </CustomListItem>
+                </List>
+
+                <Title
+                    text="{i18n>transactionCategoryField}"
+                    level="H5"
+                    class="sapUiMediumMarginTop"
+                />
+
+                <List
+                    id="transactionCategoryList"
+                    items="{ path: 'ui>/invoiceCategories' }"
+                    mode="SingleSelectMaster"
+                    selectionChange="handler.onCategoryChanged"
+                    noDataText="{i18n>categoriesNoData}"
+                    class="shareList"
+                >
+                    <CustomListItem type="Active">
+                        <HBox
+                            alignItems="Center"
+                            class="sapUiTinyMarginTopBottom"
+                        >
+                            <Avatar
+                                src="{ui>ImageBase64}"
+                                initials="{ parts: [ { path: 'ui>Name' } ], formatter: 'formatter.initials' }"
+                                displayShape="Circle"
+                                class="invoiceCategoryAvatar sapUiTinyMarginEnd"
+                            />
+                            <Text text="{ui>Name}" class="transactionTitle" />
+                        </HBox>
+                    </CustomListItem>
+                </List>
+            </VBox>
+        </content>
+        <beginButton>
+            <Button
+                text="{i18n>transactionCategorySaveButton}"
+                icon="sap-icon://save"
+                type="Emphasized"
+                press="handler.onApplyCategory"
+            />
+        </beginButton>
+        <endButton>
+            <Button
+                text="{i18n>transactionCategoryCancelButton}"
+                icon="sap-icon://decline"
+                type="Transparent"
+                press="handler.onCancelCategory"
+            />
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>

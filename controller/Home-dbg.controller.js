@@ -190,6 +190,43 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     onOpenCategoryManagerDialog() {
       void this.openDraftManagerDialog("Categories", "categoriesOpenError");
     }
+    onOpenInvoicesDialog() {
+      void this.openInvoicesDialog();
+    }
+
+    /**
+     * Opens the invoice management dialog. The dialog is read-only for the
+     * invoice data itself; the per-transaction actions (recategorization and
+     * batch exclusion) are opened on top of it through the manager methods below.
+     */
+    async openInvoicesDialog() {
+      const personId = this.getSelectedPersonId();
+      if (!personId) {
+        this.showErrorMessage("errorMissingPerson");
+        return;
+      }
+      try {
+        await this.openPreparedDialog("Invoices", dialog => dialog.open());
+      } catch (error) {
+        this.handleError(error, "invoicesOpenError");
+      }
+    }
+
+    /**
+     * Opens the category-picker dialog for the transaction whose Identifier is
+     * stored in `ui>/invoiceSelectedIdentifier`.
+     */
+    openTransactionCategoryDialog() {
+      void this.openPreparedDialog("TransactionCategory", dialog => dialog.open()).catch(error => this.handleError(error, "invoicesOpenError"));
+    }
+
+    /**
+     * Opens the batch-exclusion dialog for the transaction whose Identifier is
+     * stored in `ui>/invoiceSelectedIdentifier`.
+     */
+    openDeleteTransactionsDialog() {
+      void this.openPreparedDialog("DeleteTransactions", dialog => dialog.open()).catch(error => this.handleError(error, "invoicesOpenError"));
+    }
     onRestoreBackup() {
       void this.openPreparedDialog("Backup", dialog => dialog.open());
     }

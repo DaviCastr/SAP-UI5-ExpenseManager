@@ -57,7 +57,7 @@ export function criticalityState(value?: number | string): string {
     return "None";
 }
 
-export function formatDate(dateValue: string | number | Date): string {
+export function formatDate(dateValue?: string | number | Date): string {
     if (!dateValue) {
         return "";
     }

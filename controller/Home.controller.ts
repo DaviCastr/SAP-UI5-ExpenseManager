@@ -240,6 +240,48 @@ export default class Home extends BaseController {
         void this.openDraftManagerDialog("Categories", "categoriesOpenError");
     }
 
+    public onOpenInvoicesDialog(): void {
+        void this.openInvoicesDialog();
+    }
+
+    /**
+     * Opens the invoice management dialog. The dialog is read-only for the
+     * invoice data itself; the per-transaction actions (recategorization and
+     * batch exclusion) are opened on top of it through the manager methods below.
+     */
+    private async openInvoicesDialog(): Promise<void> {
+        const personId = this.getSelectedPersonId();
+
+        if (!personId) {
+            this.showErrorMessage("errorMissingPerson");
+            return;
+        }
+
+        try {
+            await this.openPreparedDialog("Invoices", (dialog) => dialog.open());
+        } catch (error) {
+            this.handleError(error, "invoicesOpenError");
+        }
+    }
+
+    /**
+     * Opens the category-picker dialog for the transaction whose Identifier is
+     * stored in `ui>/invoiceSelectedIdentifier`.
+     */
+    public openTransactionCategoryDialog(): void {
+        void this.openPreparedDialog("TransactionCategory", (dialog) => dialog.open())
+            .catch((error) => this.handleError(error, "invoicesOpenError"));
+    }
+
+    /**
+     * Opens the batch-exclusion dialog for the transaction whose Identifier is
+     * stored in `ui>/invoiceSelectedIdentifier`.
+     */
+    public openDeleteTransactionsDialog(): void {
+        void this.openPreparedDialog("DeleteTransactions", (dialog) => dialog.open())
+            .catch((error) => this.handleError(error, "invoicesOpenError"));
+    }
+
     public onRestoreBackup(): void {
         void this.openPreparedDialog("Backup", (dialog) => dialog.open());
     }

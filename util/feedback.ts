@@ -10,12 +10,12 @@ import { isSessionExpiredError, isBackendUnavailableError } from "./http";
  * `if (isSessionExpiredError) return; MessageBox.error(...)` blocks in one place.
  */
 
-export function showWarning(view: XMLView, messageKey: string): void {
-    MessageBox.warning(getText(view, messageKey));
+export function showWarning(view: XMLView, messageKey: string, parameters?: string[]): void {
+    MessageBox.warning(getText(view, messageKey, parameters));
 }
 
-export function showToast(view: XMLView, messageKey: string): void {
-    MessageToast.show(getText(view, messageKey));
+export function showToast(view: XMLView, messageKey: string, parameters?: string[]): void {
+    MessageToast.show(getText(view, messageKey, parameters));
 }
 
 /**

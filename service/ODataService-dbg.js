@@ -224,6 +224,21 @@ sap.ui.define(["../util/http"], function (___util_http) {
     }
 
     /**
+     * Publishes an open Person draft into the active entity, flushing any
+     * pending changes first. Every change of the person-scoped tree (cards,
+     * invoices, transactions) lives inside the single person draft, so this is
+     * the shared "save" step after transaction-level writes.
+     *
+     * @param {string} personId the id of the person whose draft is published
+     * @returns {Promise<void>} resolves once the draft was activated
+     */
+    async publishPersonDraft(personId) {
+      await this.submitPending();
+      await this.prepareDraft("Persons", personId);
+      await this.activateDraft("Persons", personId);
+    }
+
+    /**
      * Discards an open draft without touching the active entity
      * (DELETE <entity>(ID,IsActiveEntity=false)). Used when a save flow fails
      * after the draft was created, so no orphan drafts are left behind if the

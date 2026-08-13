@@ -116,7 +116,32 @@ sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
           year: ""
         },
         simulationMonthOptions: [],
-        simulationResult: null
+        simulationResult: null,
+        invoiceCards: [],
+        invoiceCardImages: {},
+        invoiceCardsEmpty: false,
+        invoiceYearOptions: [],
+        invoiceMonthOptions: [],
+        invoiceYear: String(now.getFullYear()),
+        invoiceMonth: String(now.getMonth() + 1),
+        invoicePeriodLabel: "",
+        invoiceCardId: "",
+        invoiceId: "",
+        invoiceLoaded: false,
+        invoiceBusy: false,
+        invoiceHeader: {},
+        invoiceTransactions: [],
+        invoiceCategories: [],
+        invoiceCategoryImages: {},
+        invoiceSelectedCategoryId: "",
+        invoiceSelectedIdentifier: "",
+        invoiceCurrentCategoryId: "",
+        invoiceCurrentCategoryName: "",
+        invoiceCategoryAffected: [],
+        invoiceCategoryAffectedText: "",
+        deleteTransactions: [],
+        deleteTransactionsCountText: "",
+        deleteSelectAll: true
       };
       super(data);
     }
