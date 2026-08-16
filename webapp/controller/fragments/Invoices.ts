@@ -10,7 +10,7 @@ import Filter from "sap/ui/model/Filter";
 import FilterOperator from "sap/ui/model/FilterOperator";
 import { ODataService, DRAFT_FILTER, DRAFT_EXPAND } from "../../service/ODataService";
 import { InvoiceService, type InvoiceQueryTransaction } from "../../service/InvoiceService";
-import { formatDate, formatMonth } from "../../util/format";
+import { formatDate, formatCurrency, formatMonth } from "../../util/format";
 import { handleActionError } from "../../util/feedback";
 import type Home from "../../controller/Home.controller";
 
@@ -31,6 +31,7 @@ interface InvoiceTransactionRow extends InvoiceQueryTransaction {
     CurrencyCode?: string;
     Subtitle?: string;
     DateText?: string;
+    TotalAmountText?: string;
 }
 
 /**
@@ -202,12 +203,20 @@ export async function loadInvoice(view: XMLView): Promise<void> {
             InvoiceSent: invoice.InvoiceSent === true
         });
 
-        const rows: InvoiceTransactionRow[] = (invoice.Transactions || []).map((transaction) => ({
-            ...transaction,
-            CurrencyCode: transaction.Currency?.code || currency,
-            DateText: formatDate(transaction.Date),
-            Subtitle: buildSubtitle(transaction)
-        }));
+        const rows: InvoiceTransactionRow[] = (invoice.Transactions || [])
+            .slice()
+            .sort((a, b) => String(b.Date || "").localeCompare(String(a.Date || "")))
+            .map((transaction) => {
+                const total = Number(transaction.TotalAmount) || 0;
+                const amount = Number(transaction.Amount) || 0;
+                return {
+                    ...transaction,
+                    CurrencyCode: transaction.Currency?.code || currency,
+                    DateText: formatDate(transaction.Date),
+                    TotalAmountText: total > 0 && total !== amount ? formatCurrency(total, currency) : "",
+                    Subtitle: buildSubtitle(transaction)
+                };
+            });
         ui.setProperty("/invoiceTransactions", rows);
 
         await resolveTransactionCategoryImages(view, rows);

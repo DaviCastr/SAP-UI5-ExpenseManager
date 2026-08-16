@@ -232,16 +232,26 @@
                                         <Text text="{ui>Subtitle}" class="transactionDate" />
                                     </VBox>
                                 </HBox>
-                                <ObjectNumber
-                                    number="{
-                                        parts: [
-                                            { path: 'ui>Amount' },
-                                            { path: 'ui>CurrencyCode' }
-                                        ],
-                                        formatter: 'formatter.formatCurrency'
-                                    }"
-                                    class="transactionAmount invoiceTxAmount"
-                                />
+                                <VBox
+                                    alignItems="End"
+                                    class="sapUiTinyMarginEnd"
+                                >
+                                    <ObjectNumber
+                                        number="{
+                                            parts: [
+                                                { path: 'ui>Amount' },
+                                                { path: 'ui>CurrencyCode' }
+                                            ],
+                                            formatter: 'formatter.formatCurrency'
+                                        }"
+                                        class="transactionAmount invoiceTxAmount"
+                                    />
+                                    <Text
+                                        text="{ parts: [ { path: 'i18n>transactionTotalLabel' }, { path: 'ui>TotalAmountText' } ], formatter: 'formatter.formatTemplate' }"
+                                        class="invoiceTxCategory"
+                                        visible="{= ${ui>TotalAmountText} !== '' }"
+                                    />
+                                </VBox>
                                 <HBox class="invoiceTxActions">
                                     <Button
                                         icon="sap-icon://puzzle"

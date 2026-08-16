@@ -51,10 +51,13 @@ export class DashboardRenderer {
         const available = income - expenses;
         const targetPercent = target > 0 ? Math.round((expenses / target) * 100) : 0;
 
-        const transactions = (invoice.Transactions || []).map((transaction) => ({
-            ...transaction,
-            Currency: currency
-        }));
+        const transactions = (invoice.Transactions || [])
+            .slice()
+            .sort((a, b) => String(b.Date || "").localeCompare(String(a.Date || "")))
+            .map((transaction) => ({
+                ...transaction,
+                Currency: currency
+            }));
 
         this.ui.setProperty("/summary", {
             available: formatCurrency(available, currency),
