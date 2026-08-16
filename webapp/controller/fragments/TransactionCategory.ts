@@ -1,6 +1,7 @@
 import Control from "sap/ui/core/Control";
 import Dialog from "sap/m/Dialog";
 import XMLView from "sap/ui/core/mvc/XMLView";
+import Fragment from "sap/ui/core/Fragment";
 import List from "sap/m/List";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
@@ -95,7 +96,11 @@ async function loadCategories(view: XMLView): Promise<void> {
     const images: Record<string, string> = {};
     await Promise.all(
         categories.map(async (category) => {
-            const base64 = await odata.getMediaAsBase64(`Categories(ID='${encodeURIComponent(category.ID)}',IsActiveEntity=true)/Image`);
+            // A freshly created category may only exist as a draft row, so the
+            // draft media (IsActiveEntity=false) has precedence, falling back to
+            // the active image when the category has no draft media (yet).
+            const base64 = await odata.getMediaAsBase64(`Categories(ID='${encodeURIComponent(category.ID)}',IsActiveEntity=false)/Image`)
+                ?? await odata.getMediaAsBase64(`Categories(ID='${encodeURIComponent(category.ID)}',IsActiveEntity=true)/Image`);
             if (base64) {
                 images[category.ID] = base64;
             }
@@ -142,14 +147,45 @@ async function loadAffected(view: XMLView): Promise<void> {
     ui.setProperty("/invoiceCategoryAffectedText", getText(view, "transactionCategoryAffected", [String(rows.length)]));
 }
 
+/**
+ * Preselects the category currently assigned to the transaction (if present)
+ * on the selector list, mirroring it into `invoiceSelectedCategoryId`. Runs
+ * after the categories are loaded so the list items already exist.
+ *
+ * @param {XMLView} view the Home view
+ * @returns {void}
+ */
+function preselectCurrentCategory(view: XMLView): void {
+    const ui = uiOf(view);
+    const currentId = ui.getProperty("/invoiceCurrentCategoryId") as string;
+    const list = Fragment.byId("TransactionCategory", "transactionCategoryList") as List | undefined;
+
+    if (!currentId || !list) {
+        return;
+    }
+
+    list.getItems().some((item) => {
+        const row = item.getBindingContext("ui")?.getObject() as CategorySelectorRow | undefined;
+        if (row?.ID === currentId) {
+            list.setSelectedItem(item, true);
+            ui.setProperty("/invoiceSelectedCategoryId", row.ID);
+            return true;
+        }
+        return false;
+    });
+}
+
 const TransactionCategory = {
 
     onDialogBeforeOpen: function (this: Dialog): void {
         const view = this.getParent() as XMLView;
         const ui = uiOf(view);
         ui.setProperty("/invoiceSelectedCategoryId", "");
+        ui.setProperty("/invoiceCategoryAffected", []);
+        ui.setProperty("/invoiceCategoryAffectedText", "");
         ui.setProperty("/invoiceBusy", true);
         void Promise.all([loadCategories(view), loadAffected(view)])
+            .then(() => preselectCurrentCategory(view))
             .catch((error) => handleActionError(view, error, "transactionCategorySaveError"))
             .finally(() => ui.setProperty("/invoiceBusy", false));
     },

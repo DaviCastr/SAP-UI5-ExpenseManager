@@ -206,7 +206,7 @@
                     </HBox>
                     <List
                         id="invoiceTransactionList"
-                        items="{ path: 'Transactions', sorter: { path: 'Date', descending: true }, parameters: { $expand: 'Category,Currency' } }"
+                        items="{ path: 'Transactions', sorter: { path: 'Date', descending: true }, parameters: { $expand: 'Category,Currency', $select: 'Identifier,Currency_code' } }"
                         showSeparators="None"
                         noDataText="{i18n>invoiceTransactionsNoData}"
                         class="invoiceTransactionList"

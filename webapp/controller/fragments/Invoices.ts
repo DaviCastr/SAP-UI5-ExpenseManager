@@ -142,6 +142,101 @@ async function loadCards(view: XMLView): Promise<void> {
     }
 }
 
+
+/**
+ * Detaches the Invoices dialog from its invoice binding. Used when no invoice
+ * exists for the selected card/period so the transaction list shows its empty
+ * text instead of stale rows.
+ *
+ * @returns {void}
+ */
+function unbindTransactionList(): void {
+    const dialog = Fragment.byId("Invoices", "invoicesDialog") as Dialog | undefined;
+    dialog?.unbindObject();
+}
+
+
+/**
+ * Binds the invoice transaction list to the transactions navigation of the
+ * resolved invoice. The path uses the invoice key and its active/draft state,
+ * so the OData V4 model reads exactly the transactions of the entity being
+ * shown. `$orderby` (descending date) runs on the server.
+ *
+ * @param {XMLView} view the Home view
+ * @param {string} invoiceId the resolved invoice ID
+ * @param {boolean} isDraft whether the invoice is being shown as a draft
+ * @returns {void}
+ */
+function bindTransactionList(view: XMLView, invoiceId: string, isDraft: boolean): void {
+    const dialog = Fragment.byId("Invoices", "invoicesDialog") as Dialog | undefined;
+    if (!dialog) {
+        return;
+    }
+
+    const path = `/Invoices(ID='${encodeURIComponent(invoiceId)}',IsActiveEntity=${isDraft ? "false" : "true"})`;
+    dialog.unbindObject();
+    dialog.bindObject(path);
+}
+
+
+/**
+ * Resolves the thumbnail of every distinct category used by the bound invoice
+ * transactions and mirrors it into `ui>/invoiceTransactionImages` (keyed by
+ * category ID). When the invoice being shown is a draft, the draft media is
+ * tried first, falling back to the active category image. Best effort.
+ *
+ * @param {XMLView} view the Home view
+ * @returns {Promise<void>} resolves once the images were resolved
+ */
+async function resolveTransactionCategoryImages(view: XMLView): Promise<void> {
+    const ui = uiOf(view);
+    const odata = new ODataService(view.getModel() as ODataModel);
+    const list = Fragment.byId("Invoices", "invoiceTransactionList") as List | undefined;
+    const binding = list?.getBinding("items") as ODataListBinding | undefined;
+
+    if (!binding) {
+        return;
+    }
+
+    try {
+        const contexts = await binding.requestContexts();
+        const byId = new Set<string>();
+
+        contexts.forEach((context) => {
+            const transaction = context.getObject() as InvoiceTransaction | undefined;
+            const categoryId = transaction?.Category?.ID;
+            if (categoryId) {
+                byId.add(categoryId);
+            }
+        });
+
+        if (byId.size === 0) {
+            return;
+        }
+
+        const images: Record<string, string> = {};
+        await Promise.all(
+            Array.from(byId).map(async (categoryId) => {
+                const states: boolean[] = invoiceShowsDraft(view) ? [false, true] : [true];
+                for (const isActiveEntity of states) {
+                    const base64 = await odata.getMediaAsBase64(
+                        `Categories(ID='${encodeURIComponent(categoryId)}',IsActiveEntity=${isActiveEntity})/Image`
+                    );
+                    if (base64) {
+                        images[categoryId] = base64;
+                        return;
+                    }
+                }
+            })
+        );
+
+        ui.setProperty("/invoiceTransactionImages", images);
+    } catch {
+        // keep initials; image loading must not break the dialog
+    }
+}
+
+
 /**
  * Loads the invoice of the currently selected card/period into the ui model
  * (`invoiceHeader`) and binds the transaction list to the resolved invoice.
@@ -205,96 +300,6 @@ export async function loadInvoice(view: XMLView): Promise<void> {
     }
 }
 
-/**
- * Binds the invoice transaction list to the transactions navigation of the
- * resolved invoice. The path uses the invoice key and its active/draft state,
- * so the OData V4 model reads exactly the transactions of the entity being
- * shown. `$orderby` (descending date) runs on the server.
- *
- * @param {XMLView} view the Home view
- * @param {string} invoiceId the resolved invoice ID
- * @param {boolean} isDraft whether the invoice is being shown as a draft
- * @returns {void}
- */
-function bindTransactionList(view: XMLView, invoiceId: string, isDraft: boolean): void {
-    const dialog = Fragment.byId("Invoices", "invoicesDialog") as Dialog | undefined;
-    if (!dialog) {
-        return;
-    }
-
-    const path = `/Invoices(ID='${encodeURIComponent(invoiceId)}',IsActiveEntity=${isDraft ? "false" : "true"})`;
-    dialog.unbindObject();
-    dialog.bindObject(path);
-}
-
-/**
- * Detaches the Invoices dialog from its invoice binding. Used when no invoice
- * exists for the selected card/period so the transaction list shows its empty
- * text instead of stale rows.
- *
- * @returns {void}
- */
-function unbindTransactionList(): void {
-    const dialog = Fragment.byId("Invoices", "invoicesDialog") as Dialog | undefined;
-    dialog?.unbindObject();
-}
-
-/**
- * Resolves the thumbnail of every distinct category used by the bound invoice
- * transactions and mirrors it into `ui>/invoiceTransactionImages` (keyed by
- * category ID). When the invoice being shown is a draft, the draft media is
- * tried first, falling back to the active category image. Best effort.
- *
- * @param {XMLView} view the Home view
- * @returns {Promise<void>} resolves once the images were resolved
- */
-async function resolveTransactionCategoryImages(view: XMLView): Promise<void> {
-    const ui = uiOf(view);
-    const odata = new ODataService(view.getModel() as ODataModel);
-    const list = Fragment.byId("Invoices", "invoiceTransactionList") as List | undefined;
-    const binding = list?.getBinding("items") as ODataListBinding | undefined;
-
-    if (!binding) {
-        return;
-    }
-
-    try {
-        const contexts = await binding.requestContexts();
-        const byId = new Set<string>();
-
-        contexts.forEach((context) => {
-            const transaction = context.getObject() as InvoiceTransaction | undefined;
-            const categoryId = transaction?.Category?.ID;
-            if (categoryId) {
-                byId.add(categoryId);
-            }
-        });
-
-        if (byId.size === 0) {
-            return;
-        }
-
-        const images: Record<string, string> = {};
-        await Promise.all(
-            Array.from(byId).map(async (categoryId) => {
-                const states: boolean[] = invoiceShowsDraft(view) ? [false, true] : [true];
-                for (const isActiveEntity of states) {
-                    const base64 = await odata.getMediaAsBase64(
-                        `Categories(ID='${encodeURIComponent(categoryId)}',IsActiveEntity=${isActiveEntity})/Image`
-                    );
-                    if (base64) {
-                        images[categoryId] = base64;
-                        return;
-                    }
-                }
-            })
-        );
-
-        ui.setProperty("/invoiceTransactionImages", images);
-    } catch {
-        // keep initials; image loading must not break the dialog
-    }
-}
 
 /**
  * Tells whether the transaction list is currently showing a draft invoice.
