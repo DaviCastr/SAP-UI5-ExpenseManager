@@ -144,7 +144,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
         unbindTransactionList();
         return;
       }
-      const isDraft = invoice.IsActiveEntity !== true;
+      const isDraft = invoice.IsActiveEntity === false;
       const currency = invoice.Currency?.code || invoice.Currency_code || "BRL";
       ui.setProperty("/invoiceId", invoice.ID);
       ui.setProperty("/invoiceIsDraft", isDraft);
@@ -177,28 +177,25 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
    * @returns {void}
    */
   function bindTransactionList(view, invoiceId, isDraft) {
-    const list = Fragment.byId("Invoices", "invoiceTransactionList");
-    if (!list) {
+    const dialog = Fragment.byId("Invoices", "invoicesDialog");
+    if (!dialog) {
       return;
     }
-    list.bindItems({
-      path: `/Invoices(ID='${encodeURIComponent(invoiceId)}',IsActiveEntity=${isDraft ? "false" : "true"})/Transactions`,
-      parameters: {
-        $orderby: "Date desc",
-        $expand: "Category,Currency"
-      }
-    });
+    const path = `/Invoices(ID='${encodeURIComponent(invoiceId)}',IsActiveEntity=${isDraft ? "false" : "true"})`;
+    dialog.unbindObject();
+    dialog.bindObject(path);
   }
 
   /**
-   * Detaches the transaction list from its previous OData binding. Used when no
-   * invoice exists for the selected card/period so the list shows its empty text.
+   * Detaches the Invoices dialog from its invoice binding. Used when no invoice
+   * exists for the selected card/period so the transaction list shows its empty
+   * text instead of stale rows.
    *
    * @returns {void}
    */
   function unbindTransactionList() {
-    const list = Fragment.byId("Invoices", "invoiceTransactionList");
-    list?.unbindItems();
+    const dialog = Fragment.byId("Invoices", "invoicesDialog");
+    dialog?.unbindObject();
   }
 
   /**
