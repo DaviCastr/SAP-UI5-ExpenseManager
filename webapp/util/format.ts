@@ -107,6 +107,72 @@ export function transactionSubtle(category?: string, date?: string): string {
     return category || formatted || "";
 }
 
+/**
+ * Builds the subtitle of a transaction row: the date, plus the installments
+ * information when the purchase was paid in more than one parcel.
+ *
+ * @param {string} [date] the transaction date
+ * @param {number|string} [installment] current installment index
+ * @param {number|string} [totalInstallments] total number of installments
+ * @returns {string} the human readable subtitle (e.g. "15/08/2026 • Parcela 1 de 2")
+ */
+export function transactionSubtitle(date?: string, installment?: number | string, totalInstallments?: number | string): string {
+    const formatted = formatDate(date);
+    const total = Number(totalInstallments) || 0;
+    if (total > 1) {
+        const current = Number(installment) || 1;
+        return `${formatted} • Parcela ${current} de ${total}`;
+    }
+    return formatted;
+}
+
+/**
+ * Formats the amount of a transaction row. Prefers the transaction's own
+ * currency code, falling back to the invoice currency like the previous rows.
+ *
+ * @param {number|string} [amount] the transaction amount
+ * @param {string} [transactionCurrency] the code of the transaction's currency
+ * @param {string} [invoiceCurrency] the invoice currency code to fall back on
+ * @returns {string} the formatted amount
+ */
+export function formatTransactionAmount(amount?: number | string, transactionCurrency?: string, invoiceCurrency?: string): string {
+    const code = (typeof transactionCurrency === "string" && transactionCurrency) || invoiceCurrency || "BRL";
+    return formatCurrency(Number(amount) || 0, code);
+}
+
+/**
+ * Formats the total amount of a transaction row inside the shared i18n label
+ * (e.g. "Total R$ 1.234,56") when it differs from the per-installment amount,
+ * otherwise returns an empty string.
+ *
+ * @param {string} [template] the i18n label with a `{0}` placeholder
+ * @param {number|string} [total] the total amount of the purchase
+ * @param {number|string} [amount] the per-transaction amount
+ * @param {string} [currency] the currency code
+ * @returns {string} the labeled formatted total, or an empty string when not applicable
+ */
+export function formatTotalWithLabel(template?: string, total?: number | string, amount?: number | string, currency?: string): string {
+    if (!hasTotalAmount(total, amount)) {
+        return "";
+    }
+    const code = (typeof currency === "string" && currency) || "BRL";
+    return formatTemplate(template, formatCurrency(Number(total), code));
+}
+
+/**
+ * Tells whether a total amount should be shown for a transaction row, i.e.
+ * when the total exists and differs from the per-installment amount.
+ *
+ * @param {number|string} [total] the total amount of the purchase
+ * @param {number|string} [amount] the per-transaction amount
+ * @returns {boolean} whether the total label must be rendered
+ */
+export function hasTotalAmount(total?: number | string, amount?: number | string): boolean {
+    const parsedTotal = toNumber(total ?? 0);
+    const parsedAmount = toNumber(amount ?? 0);
+    return parsedTotal > 0 && parsedTotal !== parsedAmount;
+}
+
 export function formatTemplate(template?: string, ...args: Array<string | number>): string {
     if (!template) {
         return "";

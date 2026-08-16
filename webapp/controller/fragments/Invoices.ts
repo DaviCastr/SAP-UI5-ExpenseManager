@@ -6,11 +6,12 @@ import List from "sap/m/List";
 import Select from "sap/m/Select";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
+import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
 import Filter from "sap/ui/model/Filter";
 import FilterOperator from "sap/ui/model/FilterOperator";
 import { ODataService, DRAFT_FILTER, DRAFT_EXPAND } from "../../service/ODataService";
-import { InvoiceService, type InvoiceQueryTransaction } from "../../service/InvoiceService";
-import { formatDate, formatCurrency, formatMonth } from "../../util/format";
+import { InvoiceService } from "../../service/InvoiceService";
+import { formatMonth } from "../../util/format";
 import { handleActionError } from "../../util/feedback";
 import type Home from "../../controller/Home.controller";
 
@@ -27,11 +28,15 @@ interface InvoiceCardRow {
     ImageBase64: string;
 }
 
-interface InvoiceTransactionRow extends InvoiceQueryTransaction {
-    CurrencyCode?: string;
-    Subtitle?: string;
-    DateText?: string;
-    TotalAmountText?: string;
+interface InvoiceTransaction {
+    ID: string;
+    Identifier?: string;
+    Description?: string;
+    Amount?: number | string;
+    TotalAmount?: number | string;
+    Date?: string;
+    Category?: { ID: string; Name?: string } | null;
+    Currency?: { code?: string } | null;
 }
 
 /**
@@ -53,23 +58,6 @@ function findInvoicesDialog(control: Control): Dialog | undefined {
 }
 
 const uiOf = (view: XMLView): JSONModel => view.getModel("ui") as JSONModel;
-
-/**
- * Builds the subtitle of an invoice transaction row: date plus installments
- * information when the purchase was paid in more than one installment.
- *
- * @param {InvoiceQueryTransaction} transaction the raw transaction
- * @returns {string} the human readable subtitle
- */
-function buildSubtitle(transaction: InvoiceQueryTransaction): string {
-    const date = formatDate(transaction.Date);
-    const installments = Number(transaction.TotalInstallments) || 0;
-    if (installments > 1) {
-        const current = Number(transaction.Installment) || 1;
-        return `${date} • Parcela ${current} de ${installments}`;
-    }
-    return date;
-}
 
 /**
  * Moves the invoice period forward/backward by one month, wrapping years, and
@@ -156,8 +144,9 @@ async function loadCards(view: XMLView): Promise<void> {
 
 /**
  * Loads the invoice of the currently selected card/period into the ui model
- * (`invoiceHeader`, `invoiceTransactions`) and resolves the category images of
- * every shown transaction.
+ * (`invoiceHeader`) and binds the transaction list to the resolved invoice.
+ * The transaction ordering (date desc) and the draft/active resolution happen
+ * server-side via the OData V4 binding.
  *
  * @param {XMLView} view the Home view
  * @returns {Promise<void>} resolves once the invoice data is ready
@@ -172,7 +161,6 @@ export async function loadInvoice(view: XMLView): Promise<void> {
     if (!personId || !cardId || !year || !month) {
         ui.setProperty("/invoiceLoaded", false);
         ui.setProperty("/invoiceHeader", {});
-        ui.setProperty("/invoiceTransactions", []);
         return;
     }
 
@@ -187,15 +175,18 @@ export async function loadInvoice(view: XMLView): Promise<void> {
 
         if (!invoice) {
             ui.setProperty("/invoiceId", "");
+            ui.setProperty("/invoiceIsDraft", false);
             ui.setProperty("/invoiceLoaded", false);
             ui.setProperty("/invoiceHeader", {});
-            ui.setProperty("/invoiceTransactions", []);
+            unbindTransactionList();
             return;
         }
 
+        const isDraft = invoice.IsActiveEntity !== true;
         const currency = invoice.Currency?.code || invoice.Currency_code || "BRL";
 
         ui.setProperty("/invoiceId", invoice.ID);
+        ui.setProperty("/invoiceIsDraft", isDraft);
         ui.setProperty("/invoiceHeader", {
             Description: invoice.Description || "",
             TotalAmount: Number(invoice.TotalAmount) || 0,
@@ -203,23 +194,8 @@ export async function loadInvoice(view: XMLView): Promise<void> {
             InvoiceSent: invoice.InvoiceSent === true
         });
 
-        const rows: InvoiceTransactionRow[] = (invoice.Transactions || [])
-            .slice()
-            .sort((a, b) => String(b.Date || "").localeCompare(String(a.Date || "")))
-            .map((transaction) => {
-                const total = Number(transaction.TotalAmount) || 0;
-                const amount = Number(transaction.Amount) || 0;
-                return {
-                    ...transaction,
-                    CurrencyCode: transaction.Currency?.code || currency,
-                    DateText: formatDate(transaction.Date),
-                    TotalAmountText: total > 0 && total !== amount ? formatCurrency(total, currency) : "",
-                    Subtitle: buildSubtitle(transaction)
-                };
-            });
-        ui.setProperty("/invoiceTransactions", rows);
-
-        await resolveTransactionCategoryImages(view, rows);
+        bindTransactionList(view, invoice.ID, isDraft);
+        await resolveTransactionCategoryImages(view);
         ui.setProperty("/invoiceLoaded", true);
     } catch (error) {
         ui.setProperty("/invoiceLoaded", false);
@@ -230,38 +206,107 @@ export async function loadInvoice(view: XMLView): Promise<void> {
 }
 
 /**
- * Resolves the thumbnail of every distinct category used by the shown invoice
- * transactions and stores it back into the ui model rows.
+ * Binds the invoice transaction list to the transactions navigation of the
+ * resolved invoice. The path uses the invoice key and its active/draft state,
+ * so the OData V4 model reads exactly the transactions of the entity being
+ * shown. `$orderby` (descending date) runs on the server.
  *
  * @param {XMLView} view the Home view
- * @param {InvoiceTransactionRow[]} rows the transaction rows
- * @returns {Promise<void>} resolves once the images were resolved (best effort)
+ * @param {string} invoiceId the resolved invoice ID
+ * @param {boolean} isDraft whether the invoice is being shown as a draft
+ * @returns {void}
  */
-async function resolveTransactionCategoryImages(view: XMLView, rows: InvoiceTransactionRow[]): Promise<void> {
-    const ui = uiOf(view);
-    const odata = new ODataService(view.getModel() as ODataModel);
+function bindTransactionList(view: XMLView, invoiceId: string, isDraft: boolean): void {
+    const list = Fragment.byId("Invoices", "invoiceTransactionList") as List | undefined;
+    if (!list) {
+        return;
+    }
 
-    const byId = new Map<string, number[]>();
-    rows.forEach((row, index) => {
-        const categoryId = row.Category?.ID;
-        if (categoryId) {
-            const indexes = byId.get(categoryId) || [];
-            indexes.push(index);
-            byId.set(categoryId, indexes);
+    list.bindItems({
+        path: `/Invoices(ID='${encodeURIComponent(invoiceId)}',IsActiveEntity=${isDraft ? "false" : "true"})/Transactions`,
+        parameters: {
+            $orderby: "Date desc",
+            $expand: "Category,Currency"
         }
     });
+}
 
-    await Promise.all(
-        Array.from(byId.entries()).map(async ([categoryId, indexes]) => {
-            const base64 = await odata.getMediaAsBase64(`Categories(ID='${encodeURIComponent(categoryId)}',IsActiveEntity=true)/Image`);
-            if (!base64) {
-                return;
+/**
+ * Detaches the transaction list from its previous OData binding. Used when no
+ * invoice exists for the selected card/period so the list shows its empty text.
+ *
+ * @returns {void}
+ */
+function unbindTransactionList(): void {
+    const list = Fragment.byId("Invoices", "invoiceTransactionList") as List | undefined;
+    list?.unbindItems();
+}
+
+/**
+ * Resolves the thumbnail of every distinct category used by the bound invoice
+ * transactions and mirrors it into `ui>/invoiceTransactionImages` (keyed by
+ * category ID). When the invoice being shown is a draft, the draft media is
+ * tried first, falling back to the active category image. Best effort.
+ *
+ * @param {XMLView} view the Home view
+ * @returns {Promise<void>} resolves once the images were resolved
+ */
+async function resolveTransactionCategoryImages(view: XMLView): Promise<void> {
+    const ui = uiOf(view);
+    const odata = new ODataService(view.getModel() as ODataModel);
+    const list = Fragment.byId("Invoices", "invoiceTransactionList") as List | undefined;
+    const binding = list?.getBinding("items") as ODataListBinding | undefined;
+
+    if (!binding) {
+        return;
+    }
+
+    try {
+        const contexts = await binding.requestContexts();
+        const byId = new Set<string>();
+
+        contexts.forEach((context) => {
+            const transaction = context.getObject() as InvoiceTransaction | undefined;
+            const categoryId = transaction?.Category?.ID;
+            if (categoryId) {
+                byId.add(categoryId);
             }
-            for (const index of indexes) {
-                ui.setProperty(`/invoiceTransactions/${index}/Category/ImageBase64`, base64);
-            }
-        })
-    );
+        });
+
+        if (byId.size === 0) {
+            return;
+        }
+
+        const images: Record<string, string> = {};
+        await Promise.all(
+            Array.from(byId).map(async (categoryId) => {
+                const states: boolean[] = invoiceShowsDraft(view) ? [false, true] : [true];
+                for (const isActiveEntity of states) {
+                    const base64 = await odata.getMediaAsBase64(
+                        `Categories(ID='${encodeURIComponent(categoryId)}',IsActiveEntity=${isActiveEntity})/Image`
+                    );
+                    if (base64) {
+                        images[categoryId] = base64;
+                        return;
+                    }
+                }
+            })
+        );
+
+        ui.setProperty("/invoiceTransactionImages", images);
+    } catch {
+        // keep initials; image loading must not break the dialog
+    }
+}
+
+/**
+ * Tells whether the transaction list is currently showing a draft invoice.
+ *
+ * @param {XMLView} view the Home view
+ * @returns {boolean} whether the draft media should be preferred
+ */
+function invoiceShowsDraft(view: XMLView): boolean {
+    return uiOf(view).getProperty("/invoiceIsDraft") === true;
 }
 
 /**
@@ -301,9 +346,10 @@ const Invoices = {
         ui.setProperty("/invoiceMonth", String(now.getMonth() + 1));
         ui.setProperty("/invoiceCardId", "");
         ui.setProperty("/invoiceId", "");
+        ui.setProperty("/invoiceIsDraft", false);
         ui.setProperty("/invoiceLoaded", false);
         ui.setProperty("/invoiceHeader", {});
-        ui.setProperty("/invoiceTransactions", []);
+        ui.setProperty("/invoiceTransactionImages", {});
 
         void reloadInvoiceData(view);
     },
@@ -368,7 +414,7 @@ const Invoices = {
     onEditCategoryPress: function (this: Control): void {
         const dialog = findInvoicesDialog(this);
         const view = dialog?.getParent() as XMLView | undefined;
-        const transaction = this.getBindingContext("ui")?.getObject() as InvoiceTransactionRow | undefined;
+        const transaction = this.getBindingContext()?.getObject() as InvoiceTransaction | undefined;
 
         if (!view || !transaction?.Identifier) {
             return;
@@ -384,7 +430,7 @@ const Invoices = {
     onDeletePress: function (this: Control): void {
         const dialog = findInvoicesDialog(this);
         const view = dialog?.getParent() as XMLView | undefined;
-        const transaction = this.getBindingContext("ui")?.getObject() as InvoiceTransactionRow | undefined;
+        const transaction = this.getBindingContext()?.getObject() as InvoiceTransaction | undefined;
 
         if (!view || !transaction?.Identifier) {
             return;

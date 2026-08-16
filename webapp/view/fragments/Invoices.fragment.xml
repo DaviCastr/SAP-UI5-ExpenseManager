@@ -206,7 +206,6 @@
                     </HBox>
                     <List
                         id="invoiceTransactionList"
-                        items="{ path: 'ui>/invoiceTransactions' }"
                         showSeparators="None"
                         noDataText="{i18n>invoiceTransactionsNoData}"
                         class="invoiceTransactionList"
@@ -220,16 +219,19 @@
                             >
                                 <HBox alignItems="Center">
                                     <Avatar
-                                        src="{ui>Category/ImageBase64}"
-                                        initials="{ path: 'ui>Category/Name', formatter: 'formatter.initials' }"
+                                        src="{ parts: [ { path: 'Category/ID' }, { path: 'ui>/invoiceTransactionImages' } ], formatter: 'formatter.cardImageValue' }"
+                                        initials="{ path: 'Category/Name', formatter: 'formatter.initials' }"
                                         displayShape="Circle"
-                                        tooltip="{ path: 'ui>Category/Name' }"
+                                        tooltip="{ path: 'Category/Name' }"
                                         class="invoiceTxAvatar sapUiTinyMarginEnd"
                                     />
                                     <VBox>
-                                        <Text text="{ui>Description}" class="transactionTitle" />
-                                        <Text text="{ui>Category/Name}" class="invoiceTxCategory" />
-                                        <Text text="{ui>Subtitle}" class="transactionDate" />
+                                        <Text text="{Description}" class="transactionTitle" />
+                                        <Text text="{Category/Name}" class="invoiceTxCategory" />
+                                        <Text
+                                            text="{ parts: [ { path: 'Date' }, { path: 'Installment' }, { path: 'TotalInstallments' } ], formatter: 'formatter.transactionSubtitle' }"
+                                            class="transactionDate"
+                                        />
                                     </VBox>
                                 </HBox>
                                 <VBox
@@ -237,19 +239,13 @@
                                     class="sapUiTinyMarginEnd"
                                 >
                                     <ObjectNumber
-                                        number="{
-                                            parts: [
-                                                { path: 'ui>Amount' },
-                                                { path: 'ui>CurrencyCode' }
-                                            ],
-                                            formatter: 'formatter.formatCurrency'
-                                        }"
+                                        number="{ parts: [ { path: 'Amount' }, { path: 'Currency/code' }, { path: 'ui>/invoiceHeader/CurrencyCode' } ], formatter: 'formatter.formatTransactionAmount' }"
                                         class="transactionAmount invoiceTxAmount"
                                     />
                                     <Text
-                                        text="{ parts: [ { path: 'i18n>transactionTotalLabel' }, { path: 'ui>TotalAmountText' } ], formatter: 'formatter.formatTemplate' }"
+                                        text="{ parts: [ { path: 'i18n>transactionTotalLabel' }, { path: 'TotalAmount' }, { path: 'Amount' }, { path: 'Currency/code' } ], formatter: 'formatter.formatTotalWithLabel' }"
                                         class="invoiceTxCategory"
-                                        visible="{= ${ui>TotalAmountText} !== '' }"
+                                        visible="{ parts: [ { path: 'TotalAmount' }, { path: 'Amount' } ], formatter: 'formatter.hasTotalAmount' }"
                                     />
                                 </VBox>
                                 <HBox class="invoiceTxActions">
