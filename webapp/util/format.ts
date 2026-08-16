@@ -127,6 +127,28 @@ export function transactionSubtitle(date?: string, installment?: number | string
 }
 
 /**
+ * Builds the subtitle of an affected transaction row: the installments
+ * information when the purchase was paid in more than one parcel, followed by
+ * the invoice month of that transaction (e.g. "Parcela 1 de 2 • Março de 2026").
+ *
+ * @param {number|string} [installment] current installment index
+ * @param {number|string} [totalInstallments] total number of installments
+ * @param {number|string} [year] the invoice year
+ * @param {number|string} [month] the invoice month (1-12)
+ * @returns {string} the human readable subtitle
+ */
+export function installmentSubtitle(installment?: number | string, totalInstallments?: number | string, year?: number | string, month?: number | string): string {
+    const total = Number(totalInstallments) || 0;
+    const parcel = total > 1
+        ? `Parcela ${Number(installment) || 1} de ${total}`
+        : "";
+    const monthText = year && month
+        ? formatMonth(Number(year), Number(month))?.trim()
+        : "";
+    return [parcel, monthText].filter(Boolean).join(" • ");
+}
+
+/**
  * Formats the amount of a transaction row. Prefers the transaction's own
  * currency code, falling back to the invoice currency like the previous rows.
  *

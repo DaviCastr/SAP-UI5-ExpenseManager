@@ -114,13 +114,11 @@ export interface IUiState {
     invoiceBusy: boolean;
     invoiceHeader: unknown;
     invoiceTransactionImages: Record<string, string>;
-    invoiceCategories: unknown[];
     invoiceCategoryImages: Record<string, string>;
     invoiceSelectedCategoryId: string;
     invoiceSelectedIdentifier: string;
     invoiceCurrentCategoryId: string;
     invoiceCurrentCategoryName: string;
-    invoiceCategoryAffected: unknown[];
     invoiceCategoryAffectedText: string;
     deleteTransactions: unknown[];
     deleteTransactionsCountText: string;
@@ -269,8 +267,6 @@ export default class UiModel extends JSONModel {
 
             invoiceTransactionImages: {},
 
-            invoiceCategories: [],
-
             invoiceCategoryImages: {},
 
             invoiceSelectedCategoryId: "",
@@ -280,8 +276,6 @@ export default class UiModel extends JSONModel {
             invoiceCurrentCategoryId: "",
 
             invoiceCurrentCategoryName: "",
-
-            invoiceCategoryAffected: [],
 
             invoiceCategoryAffectedText: "",
 
