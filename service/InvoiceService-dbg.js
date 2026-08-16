@@ -31,7 +31,7 @@ sap.ui.define(["./ODataService", "sap/ui/model/Filter", "sap/ui/model/FilterOper
       void personId;
       const invoices = await this.odata.requestEntitySet("/Invoices", {
         filterExpression: `Card/ID eq '${cardId}' and Year eq ${period.year} and Month eq ${period.month} and ${DRAFT_FILTER}`,
-        expand: "Transactions($expand=Category),Currency"
+        expand: "Currency"
       });
       return invoices[0];
     }

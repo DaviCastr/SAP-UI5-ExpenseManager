@@ -5,8 +5,6 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
   const DRAFT_FILTER = ____service_ODataService["DRAFT_FILTER"];
   const DRAFT_EXPAND = ____service_ODataService["DRAFT_EXPAND"];
   const InvoiceService = ____service_InvoiceService["InvoiceService"];
-  const formatDate = ____util_format["formatDate"];
-  const formatCurrency = ____util_format["formatCurrency"];
   const formatMonth = ____util_format["formatMonth"];
   const handleActionError = ____util_feedback["handleActionError"];
   const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
@@ -28,23 +26,6 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
     return undefined;
   }
   const uiOf = view => view.getModel("ui");
-
-  /**
-   * Builds the subtitle of an invoice transaction row: date plus installments
-   * information when the purchase was paid in more than one installment.
-   *
-   * @param {InvoiceQueryTransaction} transaction the raw transaction
-   * @returns {string} the human readable subtitle
-   */
-  function buildSubtitle(transaction) {
-    const date = formatDate(transaction.Date);
-    const installments = Number(transaction.TotalInstallments) || 0;
-    if (installments > 1) {
-      const current = Number(transaction.Installment) || 1;
-      return `${date} • Parcela ${current} de ${installments}`;
-    }
-    return date;
-  }
 
   /**
    * Moves the invoice period forward/backward by one month, wrapping years, and
@@ -127,8 +108,9 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
 
   /**
    * Loads the invoice of the currently selected card/period into the ui model
-   * (`invoiceHeader`, `invoiceTransactions`) and resolves the category images of
-   * every shown transaction.
+   * (`invoiceHeader`) and binds the transaction list to the resolved invoice.
+   * The transaction ordering (date desc) and the draft/active resolution happen
+   * server-side via the OData V4 binding.
    *
    * @param {XMLView} view the Home view
    * @returns {Promise<void>} resolves once the invoice data is ready
@@ -142,7 +124,6 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
     if (!personId || !cardId || !year || !month) {
       ui.setProperty("/invoiceLoaded", false);
       ui.setProperty("/invoiceHeader", {});
-      ui.setProperty("/invoiceTransactions", []);
       return;
     }
     const odata = new ODataService(view.getModel());
@@ -157,32 +138,24 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
       ui.setProperty("/invoicePeriodLabel", label ? label.charAt(0).toUpperCase() + label.slice(1) : "");
       if (!invoice) {
         ui.setProperty("/invoiceId", "");
+        ui.setProperty("/invoiceIsDraft", false);
         ui.setProperty("/invoiceLoaded", false);
         ui.setProperty("/invoiceHeader", {});
-        ui.setProperty("/invoiceTransactions", []);
+        unbindTransactionList();
         return;
       }
+      const isDraft = invoice.IsActiveEntity !== true;
       const currency = invoice.Currency?.code || invoice.Currency_code || "BRL";
       ui.setProperty("/invoiceId", invoice.ID);
+      ui.setProperty("/invoiceIsDraft", isDraft);
       ui.setProperty("/invoiceHeader", {
         Description: invoice.Description || "",
         TotalAmount: Number(invoice.TotalAmount) || 0,
         CurrencyCode: currency,
         InvoiceSent: invoice.InvoiceSent === true
       });
-      const rows = (invoice.Transactions || []).slice().sort((a, b) => String(b.Date || "").localeCompare(String(a.Date || ""))).map(transaction => {
-        const total = Number(transaction.TotalAmount) || 0;
-        const amount = Number(transaction.Amount) || 0;
-        return {
-          ...transaction,
-          CurrencyCode: transaction.Currency?.code || currency,
-          DateText: formatDate(transaction.Date),
-          TotalAmountText: total > 0 && total !== amount ? formatCurrency(total, currency) : "",
-          Subtitle: buildSubtitle(transaction)
-        };
-      });
-      ui.setProperty("/invoiceTransactions", rows);
-      await resolveTransactionCategoryImages(view, rows);
+      bindTransactionList(view, invoice.ID, isDraft);
+      await resolveTransactionCategoryImages(view);
       ui.setProperty("/invoiceLoaded", true);
     } catch (error) {
       ui.setProperty("/invoiceLoaded", false);
@@ -193,34 +166,96 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
   }
 
   /**
-   * Resolves the thumbnail of every distinct category used by the shown invoice
-   * transactions and stores it back into the ui model rows.
+   * Binds the invoice transaction list to the transactions navigation of the
+   * resolved invoice. The path uses the invoice key and its active/draft state,
+   * so the OData V4 model reads exactly the transactions of the entity being
+   * shown. `$orderby` (descending date) runs on the server.
    *
    * @param {XMLView} view the Home view
-   * @param {InvoiceTransactionRow[]} rows the transaction rows
-   * @returns {Promise<void>} resolves once the images were resolved (best effort)
+   * @param {string} invoiceId the resolved invoice ID
+   * @param {boolean} isDraft whether the invoice is being shown as a draft
+   * @returns {void}
    */
-  async function resolveTransactionCategoryImages(view, rows) {
-    const ui = uiOf(view);
-    const odata = new ODataService(view.getModel());
-    const byId = new Map();
-    rows.forEach((row, index) => {
-      const categoryId = row.Category?.ID;
-      if (categoryId) {
-        const indexes = byId.get(categoryId) || [];
-        indexes.push(index);
-        byId.set(categoryId, indexes);
+  function bindTransactionList(view, invoiceId, isDraft) {
+    const list = Fragment.byId("Invoices", "invoiceTransactionList");
+    if (!list) {
+      return;
+    }
+    list.bindItems({
+      path: `/Invoices(ID='${encodeURIComponent(invoiceId)}',IsActiveEntity=${isDraft ? "false" : "true"})/Transactions`,
+      parameters: {
+        $orderby: "Date desc",
+        $expand: "Category,Currency"
       }
     });
-    await Promise.all(Array.from(byId.entries()).map(async ([categoryId, indexes]) => {
-      const base64 = await odata.getMediaAsBase64(`Categories(ID='${encodeURIComponent(categoryId)}',IsActiveEntity=true)/Image`);
-      if (!base64) {
+  }
+
+  /**
+   * Detaches the transaction list from its previous OData binding. Used when no
+   * invoice exists for the selected card/period so the list shows its empty text.
+   *
+   * @returns {void}
+   */
+  function unbindTransactionList() {
+    const list = Fragment.byId("Invoices", "invoiceTransactionList");
+    list?.unbindItems();
+  }
+
+  /**
+   * Resolves the thumbnail of every distinct category used by the bound invoice
+   * transactions and mirrors it into `ui>/invoiceTransactionImages` (keyed by
+   * category ID). When the invoice being shown is a draft, the draft media is
+   * tried first, falling back to the active category image. Best effort.
+   *
+   * @param {XMLView} view the Home view
+   * @returns {Promise<void>} resolves once the images were resolved
+   */
+  async function resolveTransactionCategoryImages(view) {
+    const ui = uiOf(view);
+    const odata = new ODataService(view.getModel());
+    const list = Fragment.byId("Invoices", "invoiceTransactionList");
+    const binding = list?.getBinding("items");
+    if (!binding) {
+      return;
+    }
+    try {
+      const contexts = await binding.requestContexts();
+      const byId = new Set();
+      contexts.forEach(context => {
+        const transaction = context.getObject();
+        const categoryId = transaction?.Category?.ID;
+        if (categoryId) {
+          byId.add(categoryId);
+        }
+      });
+      if (byId.size === 0) {
         return;
       }
-      for (const index of indexes) {
-        ui.setProperty(`/invoiceTransactions/${index}/Category/ImageBase64`, base64);
-      }
-    }));
+      const images = {};
+      await Promise.all(Array.from(byId).map(async categoryId => {
+        const states = invoiceShowsDraft(view) ? [false, true] : [true];
+        for (const isActiveEntity of states) {
+          const base64 = await odata.getMediaAsBase64(`Categories(ID='${encodeURIComponent(categoryId)}',IsActiveEntity=${isActiveEntity})/Image`);
+          if (base64) {
+            images[categoryId] = base64;
+            return;
+          }
+        }
+      }));
+      ui.setProperty("/invoiceTransactionImages", images);
+    } catch {
+      // keep initials; image loading must not break the dialog
+    }
+  }
+
+  /**
+   * Tells whether the transaction list is currently showing a draft invoice.
+   *
+   * @param {XMLView} view the Home view
+   * @returns {boolean} whether the draft media should be preferred
+   */
+  function invoiceShowsDraft(view) {
+    return uiOf(view).getProperty("/invoiceIsDraft") === true;
   }
 
   /**
@@ -262,9 +297,10 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
       ui.setProperty("/invoiceMonth", String(now.getMonth() + 1));
       ui.setProperty("/invoiceCardId", "");
       ui.setProperty("/invoiceId", "");
+      ui.setProperty("/invoiceIsDraft", false);
       ui.setProperty("/invoiceLoaded", false);
       ui.setProperty("/invoiceHeader", {});
-      ui.setProperty("/invoiceTransactions", []);
+      ui.setProperty("/invoiceTransactionImages", {});
       void reloadInvoiceData(view);
     },
     onDialogAfterOpen: function () {
@@ -319,7 +355,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
     onEditCategoryPress: function () {
       const dialog = findInvoicesDialog(this);
       const view = dialog?.getParent();
-      const transaction = this.getBindingContext("ui")?.getObject();
+      const transaction = this.getBindingContext()?.getObject();
       if (!view || !transaction?.Identifier) {
         return;
       }
@@ -332,7 +368,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
     onDeletePress: function () {
       const dialog = findInvoicesDialog(this);
       const view = dialog?.getParent();
-      const transaction = this.getBindingContext("ui")?.getObject();
+      const transaction = this.getBindingContext()?.getObject();
       if (!view || !transaction?.Identifier) {
         return;
       }

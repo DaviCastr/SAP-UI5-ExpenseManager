@@ -109,10 +109,11 @@ export interface IUiState {
     invoicePeriodLabel: string;
     invoiceCardId: string;
     invoiceId: string;
+    invoiceIsDraft: boolean;
     invoiceLoaded: boolean;
     invoiceBusy: boolean;
     invoiceHeader: unknown;
-    invoiceTransactions: unknown[];
+    invoiceTransactionImages: Record<string, string>;
     invoiceCategories: unknown[];
     invoiceCategoryImages: Record<string, string>;
     invoiceSelectedCategoryId: string;
@@ -258,13 +259,15 @@ export default class UiModel extends JSONModel {
 
             invoiceId: "",
 
+            invoiceIsDraft: false,
+
             invoiceLoaded: false,
 
             invoiceBusy: false,
 
             invoiceHeader: {},
 
-            invoiceTransactions: [],
+            invoiceTransactionImages: {},
 
             invoiceCategories: [],
 

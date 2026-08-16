@@ -69,6 +69,7 @@ export interface InvoiceQueryResult {
     Currency_code?: string;
     Currency?: { code?: string };
     InvoiceSent?: boolean;
+    IsActiveEntity?: boolean;
     Card?: { ID?: string };
     Transactions?: InvoiceQueryTransaction[];
 }
@@ -125,7 +126,7 @@ export class InvoiceService {
         void personId;
         const invoices = await this.odata.requestEntitySet<InvoiceQueryResult>("/Invoices", {
             filterExpression: `Card/ID eq '${cardId}' and Year eq ${period.year} and Month eq ${period.month} and ${DRAFT_FILTER}`,
-            expand: "Transactions($expand=Category),Currency"
+            expand: "Currency"
         });
         return invoices[0];
     }
