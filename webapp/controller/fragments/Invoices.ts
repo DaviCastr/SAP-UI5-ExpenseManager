@@ -182,7 +182,7 @@ export async function loadInvoice(view: XMLView): Promise<void> {
             return;
         }
 
-        const isDraft = invoice.IsActiveEntity !== true;
+        const isDraft = invoice.IsActiveEntity === false;
         const currency = invoice.Currency?.code || invoice.Currency_code || "BRL";
 
         ui.setProperty("/invoiceId", invoice.ID);
@@ -217,29 +217,26 @@ export async function loadInvoice(view: XMLView): Promise<void> {
  * @returns {void}
  */
 function bindTransactionList(view: XMLView, invoiceId: string, isDraft: boolean): void {
-    const list = Fragment.byId("Invoices", "invoiceTransactionList") as List | undefined;
-    if (!list) {
+    const dialog = Fragment.byId("Invoices", "invoicesDialog") as Dialog | undefined;
+    if (!dialog) {
         return;
     }
 
-    list.bindItems({
-        path: `/Invoices(ID='${encodeURIComponent(invoiceId)}',IsActiveEntity=${isDraft ? "false" : "true"})/Transactions`,
-        parameters: {
-            $orderby: "Date desc",
-            $expand: "Category,Currency"
-        }
-    });
+    const path = `/Invoices(ID='${encodeURIComponent(invoiceId)}',IsActiveEntity=${isDraft ? "false" : "true"})`;
+    dialog.unbindObject();
+    dialog.bindObject(path);
 }
 
 /**
- * Detaches the transaction list from its previous OData binding. Used when no
- * invoice exists for the selected card/period so the list shows its empty text.
+ * Detaches the Invoices dialog from its invoice binding. Used when no invoice
+ * exists for the selected card/period so the transaction list shows its empty
+ * text instead of stale rows.
  *
  * @returns {void}
  */
 function unbindTransactionList(): void {
-    const list = Fragment.byId("Invoices", "invoiceTransactionList") as List | undefined;
-    list?.unbindItems();
+    const dialog = Fragment.byId("Invoices", "invoicesDialog") as Dialog | undefined;
+    dialog?.unbindObject();
 }
 
 /**
