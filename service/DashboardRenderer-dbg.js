@@ -24,7 +24,7 @@ sap.ui.define(["./PeriodService", "../util/format"], function (___PeriodService,
       const currency = currencyCode(invoice.Currency?.code, currencyCode(person.Currency));
       const available = income - expenses;
       const targetPercent = target > 0 ? Math.round(expenses / target * 100) : 0;
-      const transactions = (invoice.Transactions || []).map(transaction => ({
+      const transactions = (invoice.Transactions || []).slice().sort((a, b) => String(b.Date || "").localeCompare(String(a.Date || ""))).map(transaction => ({
         ...transaction,
         Currency: currency
       }));

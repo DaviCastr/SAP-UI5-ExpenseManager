@@ -1,7 +1,6 @@
-sap.ui.define(["./http", "../service/ODataService"], function (___http, ___service_ODataService) {
+sap.ui.define(["../service/ODataService"], function (___service_ODataService) {
   "use strict";
 
-  const request = ___http["request"];
   const ODataService = ___service_ODataService["ODataService"];
   /**
    * A transaction that lives inside the person's tree. The deep draft path is
@@ -20,27 +19,6 @@ sap.ui.define(["./http", "../service/ODataService"], function (___http, ___servi
   function transactionDraftPath(personId, target) {
     const part = value => encodeURIComponent(value);
     return `Persons(ID='${part(personId)}',IsActiveEntity=false)/Cards(ID='${part(target.cardId)}',IsActiveEntity=false)/Invoices(ID='${part(target.invoiceId)}',IsActiveEntity=false)/Transactions(ID='${part(target.ID)}',IsActiveEntity=false)`;
-  }
-
-  /**
-   * PATCHes a transaction draft row. The first write to a deep draft row also
-   * materializes the whole path (the "idempotent touch" used by the Cards
-   * dialog), so a single call both prepares and updates the row.
-   *
-   * @param {string} personId the person draft owner
-   * @param {TransactionWriteTarget} target the transaction coordinates
-   * @param {object} body the patch payload
-   * @returns {Promise<boolean>} whether the backend accepted the change
-   */
-  async function patchTransactionDraft(personId, target, body) {
-    const response = await request(transactionDraftPath(personId, target), {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    });
-    return response.ok;
   }
 
   /**
@@ -98,11 +76,13 @@ sap.ui.define(["./http", "../service/ODataService"], function (___http, ___servi
   }
 
   /**
-   * Deletes the selected transactions via a single OData batch. The target draft
-   * rows are materialized first (idempotent touch), then one DELETE per row is
-   * queued on the `$auto` group and flushed together by `submitPending` — so the
-   * whole exclusion travels inside one `$batch` changeset. Publish the person
-   * draft afterwards.
+   * Deletes the selected transactions through the model bindings only. Every
+   * removed row is bound against the open person draft (`bindContext` +
+   * `requestObject` + `delete`) and flushed together by `submitPending`, so all
+   * the deletes travel inside one `$batch` changeset. Deleting a row through the
+   * model works no matter whether the invoice keeps other transactions or is
+   * emptied completely. The targets are grouped by invoice and the person draft
+   * is published afterwards.
    *
    * @param {ODataModel} model the shared service model
    * @param {string} personId the person that owns the transactions
@@ -112,26 +92,23 @@ sap.ui.define(["./http", "../service/ODataService"], function (___http, ___servi
   async function deleteTransactionsViaBatch(model, personId, targets) {
     const odata = new ODataService(model);
     await odata.enableDraftEdit("Persons", personId);
-    let batchConstexts = [];
-    let bindings = [];
+    const batchContexts = [];
+    const bindings = [];
     try {
       for (const target of targets) {
         const binding = model.bindContext(`/${transactionDraftPath(personId, target)}`);
-        batchConstexts.push({
+        batchContexts.push({
           binding,
           data: binding.requestObject()
         });
       }
-      await Promise.all(batchConstexts.map(item => item.data));
-      bindings = batchConstexts.map(item => item.binding);
-      let batchDelete = [];
-      for (const binding of bindings) {
+      await Promise.all(batchContexts.map(item => item.data));
+      bindings.push(...batchContexts.map(item => item.binding));
+      const rowDeletes = bindings.map(binding => {
         const context = binding.getBoundContext();
-        if (context) {
-          batchDelete.push(context.delete().catch(() => undefined));
-        }
-      }
-      await Promise.all(batchDelete);
+        return context ? context.delete().catch(() => undefined) : Promise.resolve();
+      });
+      await Promise.all(rowDeletes);
       await odata.submitPending();
     } catch {
       return false;

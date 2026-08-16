@@ -49,7 +49,10 @@
                             alignItems="Center"
                             justifyContent="SpaceBetween"
                         >
-                            <Text text="{ui>Description}" class="transactionTitle" />
+                            <VBox>
+                                <Text text="{ui>Description}" class="transactionTitle" />
+                                <Text text="{ui>Subtitle}" class="invoiceTxCategory" />
+                            </VBox>
                             <Text text="{ui>DateText}" class="transactionDate" />
                         </HBox>
                     </CustomListItem>

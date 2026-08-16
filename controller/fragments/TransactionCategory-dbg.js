@@ -7,12 +7,28 @@ sap.ui.define(["sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../../serv
   const InvoiceService = ____service_InvoiceService["InvoiceService"];
   const applyCategoryToTransactions = ____util_invoiceWriter["applyCategoryToTransactions"];
   const formatDate = ____util_format["formatDate"];
+  const formatMonth = ____util_format["formatMonth"];
   const getText = ____util_i18n["getText"];
   const handleActionError = ____util_feedback["handleActionError"];
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
   const reloadInvoiceData = ___Invoices["reloadInvoiceData"];
   const uiOf = view => view.getModel("ui");
+
+  /**
+   * Builds the subtitle of an affected transaction row: the installments
+   * information when the purchase was paid in more than one parcel, followed by
+   * the invoice month of that transaction (e.g. "Parcela 1 de 2 • Março de 2026").
+   *
+   * @param {IdentifierTransaction} transaction the affected transaction
+   * @returns {string} the human readable subtitle
+   */
+  function buildSubtitle(transaction) {
+    const installments = Number(transaction.TotalInstallments) || 0;
+    const parcel = installments > 1 ? `Parcela ${Number(transaction.Installment) || 1} de ${installments}` : "";
+    const month = transaction.Invoice?.Year && transaction.Invoice?.Month ? formatMonth(transaction.Invoice.Year, transaction.Invoice.Month)?.trim() : "";
+    return [parcel, month].filter(Boolean).join(" • ");
+  }
 
   /**
    * Builds the write targets of every affected transaction. Rows without the
@@ -94,9 +110,10 @@ sap.ui.define(["sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../../serv
     }
     const service = new InvoiceService(new ODataService(view.getModel()));
     const list = await service.listTransactionsByIdentifier(personId, identifier);
-    const rows = list.map(transaction => ({
+    const rows = list.slice().sort((a, b) => String(b.Date || "").localeCompare(String(a.Date || ""))).map(transaction => ({
       ...transaction,
-      DateText: formatDate(transaction.Date)
+      DateText: formatDate(transaction.Date),
+      Subtitle: buildSubtitle(transaction)
     }));
     ui.setProperty("/invoiceCategoryAffected", rows);
     ui.setProperty("/invoiceCategoryAffectedText", getText(view, "transactionCategoryAffected", [String(rows.length)]));

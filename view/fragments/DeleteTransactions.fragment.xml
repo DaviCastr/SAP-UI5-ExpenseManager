@@ -59,7 +59,7 @@
                             <CheckBox selected="{ui>selected}" />
                             <VBox class="sapUiTinyMarginBegin">
                                 <Text text="{ui>Description}" class="transactionTitle" />
-                                <Text text="{ui>InvoicePeriodText}" class="transactionDate" />
+                                <Text text="{ui>Subtitle}" class="transactionDate" />
                             </VBox>
                             <Text text="{ui>DateText}" class="transactionDate" />
                             <ObjectNumber

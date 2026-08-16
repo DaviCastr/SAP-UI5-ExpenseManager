@@ -2,6 +2,7 @@ import Control from "sap/ui/core/Control";
 import Dialog from "sap/m/Dialog";
 import XMLView from "sap/ui/core/mvc/XMLView";
 import CheckBox from "sap/m/CheckBox";
+import MessageBox from "sap/m/MessageBox";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import { ODataService } from "../../service/ODataService";
@@ -14,12 +15,31 @@ import { reloadInvoiceData } from "./Invoices";
 
 interface DeleteTransactionRow extends IdentifierTransaction {
     DateText?: string;
-    InvoicePeriodText?: string;
+    Subtitle?: string;
     CurrencyCode?: string;
     selected: boolean;
 }
 
 const uiOf = (view: XMLView): JSONModel => view.getModel("ui") as JSONModel;
+
+/**
+ * Builds the subtitle of a transaction row: the installments information when
+ * the purchase was paid in more than one parcel, followed by the invoice month
+ * of that transaction (e.g. "Parcela 1 de 2 • Março de 2026").
+ *
+ * @param {IdentifierTransaction} transaction the transaction
+ * @returns {string} the human readable subtitle
+ */
+function buildSubtitle(transaction: IdentifierTransaction): string {
+    const installments = Number(transaction.TotalInstallments) || 0;
+    const parcel = installments > 1
+        ? `Parcela ${Number(transaction.Installment) || 1} de ${installments}`
+        : "";
+    const month = transaction.Invoice?.Year && transaction.Invoice?.Month
+        ? formatMonth(transaction.Invoice.Year, transaction.Invoice.Month)?.trim()
+        : "";
+    return [parcel, month].filter(Boolean).join(" • ");
+}
 
 /**
  * Builds the write targets of the selected rows. Rows without the
@@ -68,9 +88,7 @@ async function loadTransactions(view: XMLView): Promise<void> {
     const rows: DeleteTransactionRow[] = list.map((transaction) => ({
         ...transaction,
         DateText: formatDate(transaction.Date),
-        InvoicePeriodText: transaction.Invoice?.Year && transaction.Invoice?.Month
-            ? formatMonth(transaction.Invoice.Year, transaction.Invoice.Month)?.trim()
-            : "",
+        Subtitle: buildSubtitle(transaction),
         CurrencyCode: transaction.Currency?.code || "BRL",
         selected: true
     }));
@@ -101,7 +119,7 @@ const DeleteTransactions = {
         });
     },
 
-    onDeleteConfirmed: async function (this: Control): Promise<void> {
+    onDeleteConfirmed: function (this: Control): void {
         const dialog = this.getParent() as Dialog;
         const view = dialog.getParent() as XMLView;
         const ui = uiOf(view);
@@ -120,26 +138,53 @@ const DeleteTransactions = {
             return;
         }
 
-        ui.setProperty("/invoiceBusy", true);
-        try {
-            const published = await deleteTransactionsViaBatch(view.getModel() as ODataModel, personId, targets);
-            if (!published) {
-                showWarning(view, "deleteTransactionsError");
-                return;
+        MessageBox.confirm(getText(view, "deleteTransactionsConfirm", [String(targets.length)]), {
+            title: getText(view, "deleteTransactionsConfirmTitle"),
+            onClose: (action) => {
+                if (action === MessageBox.Action.OK) {
+                    void performDelete(dialog, view, personId, targets);
+                }
             }
-            showToast(view, "deleteTransactionsDeleted", [String(targets.length)]);
-            dialog.close();
-            void reloadInvoiceData(view);
-        } catch (error) {
-            handleActionError(view, error, "deleteTransactionsError");
-        } finally {
-            ui.setProperty("/invoiceBusy", false);
-        }
+        });
     },
 
     onCancelDelete: function (this: Control): void {
         (this.getParent() as Dialog).close();
     }
 };
+
+/**
+ * Executes the batch deletion of the confirmed targets, reloads the invoice
+ * dialog data and reports the result.
+ *
+ * @param {Dialog} dialog the delete dialog
+ * @param {XMLView} view the Home view
+ * @param {string} personId the person that owns the transactions
+ * @param {TransactionWriteTarget[]} targets the transactions to remove
+ * @returns {Promise<void>} resolves once the deletion finished
+ */
+async function performDelete(
+    dialog: Dialog,
+    view: XMLView,
+    personId: string,
+    targets: TransactionWriteTarget[]
+): Promise<void> {
+    const ui = uiOf(view);
+    ui.setProperty("/invoiceBusy", true);
+    try {
+        const published = await deleteTransactionsViaBatch(view.getModel() as ODataModel, personId, targets);
+        if (!published) {
+            showWarning(view, "deleteTransactionsError");
+            return;
+        }
+        showToast(view, "deleteTransactionsDeleted", [String(targets.length)]);
+        dialog.close();
+        void reloadInvoiceData(view);
+    } catch (error) {
+        handleActionError(view, error, "deleteTransactionsError");
+    } finally {
+        ui.setProperty("/invoiceBusy", false);
+    }
+}
 
 export default DeleteTransactions;

@@ -6,6 +6,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
   const DRAFT_EXPAND = ____service_ODataService["DRAFT_EXPAND"];
   const InvoiceService = ____service_InvoiceService["InvoiceService"];
   const formatDate = ____util_format["formatDate"];
+  const formatCurrency = ____util_format["formatCurrency"];
   const formatMonth = ____util_format["formatMonth"];
   const handleActionError = ____util_feedback["handleActionError"];
   const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
@@ -169,12 +170,17 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
         CurrencyCode: currency,
         InvoiceSent: invoice.InvoiceSent === true
       });
-      const rows = (invoice.Transactions || []).map(transaction => ({
-        ...transaction,
-        CurrencyCode: transaction.Currency?.code || currency,
-        DateText: formatDate(transaction.Date),
-        Subtitle: buildSubtitle(transaction)
-      }));
+      const rows = (invoice.Transactions || []).slice().sort((a, b) => String(b.Date || "").localeCompare(String(a.Date || ""))).map(transaction => {
+        const total = Number(transaction.TotalAmount) || 0;
+        const amount = Number(transaction.Amount) || 0;
+        return {
+          ...transaction,
+          CurrencyCode: transaction.Currency?.code || currency,
+          DateText: formatDate(transaction.Date),
+          TotalAmountText: total > 0 && total !== amount ? formatCurrency(total, currency) : "",
+          Subtitle: buildSubtitle(transaction)
+        };
+      });
       ui.setProperty("/invoiceTransactions", rows);
       await resolveTransactionCategoryImages(view, rows);
       ui.setProperty("/invoiceLoaded", true);

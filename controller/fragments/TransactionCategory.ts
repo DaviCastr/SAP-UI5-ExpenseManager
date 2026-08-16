@@ -9,7 +9,7 @@ import FilterOperator from "sap/ui/model/FilterOperator";
 import { ODataService, DRAFT_FILTER, DRAFT_EXPAND } from "../../service/ODataService";
 import { InvoiceService, type IdentifierTransaction } from "../../service/InvoiceService";
 import { applyCategoryToTransactions, type TransactionWriteTarget } from "../../util/invoiceWriter";
-import { formatDate } from "../../util/format";
+import { formatDate, formatMonth } from "../../util/format";
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import { reloadInvoiceData } from "./Invoices";
@@ -22,9 +22,29 @@ interface CategorySelectorRow {
 
 interface AffectedTransactionRow extends IdentifierTransaction {
     DateText?: string;
+    Subtitle?: string;
 }
 
 const uiOf = (view: XMLView): JSONModel => view.getModel("ui") as JSONModel;
+
+/**
+ * Builds the subtitle of an affected transaction row: the installments
+ * information when the purchase was paid in more than one parcel, followed by
+ * the invoice month of that transaction (e.g. "Parcela 1 de 2 • Março de 2026").
+ *
+ * @param {IdentifierTransaction} transaction the affected transaction
+ * @returns {string} the human readable subtitle
+ */
+function buildSubtitle(transaction: IdentifierTransaction): string {
+    const installments = Number(transaction.TotalInstallments) || 0;
+    const parcel = installments > 1
+        ? `Parcela ${Number(transaction.Installment) || 1} de ${installments}`
+        : "";
+    const month = transaction.Invoice?.Year && transaction.Invoice?.Month
+        ? formatMonth(transaction.Invoice.Year, transaction.Invoice.Month)?.trim()
+        : "";
+    return [parcel, month].filter(Boolean).join(" • ");
+}
 
 /**
  * Builds the write targets of every affected transaction. Rows without the
@@ -110,10 +130,14 @@ async function loadAffected(view: XMLView): Promise<void> {
 
     const service = new InvoiceService(new ODataService(view.getModel() as ODataModel));
     const list = await service.listTransactionsByIdentifier(personId, identifier);
-    const rows: AffectedTransactionRow[] = list.map((transaction) => ({
-        ...transaction,
-        DateText: formatDate(transaction.Date)
-    }));
+    const rows: AffectedTransactionRow[] = list
+        .slice()
+        .sort((a, b) => String(b.Date || "").localeCompare(String(a.Date || "")))
+        .map((transaction) => ({
+            ...transaction,
+            DateText: formatDate(transaction.Date),
+            Subtitle: buildSubtitle(transaction)
+        }));
     ui.setProperty("/invoiceCategoryAffected", rows);
     ui.setProperty("/invoiceCategoryAffectedText", getText(view, "transactionCategoryAffected", [String(rows.length)]));
 }
