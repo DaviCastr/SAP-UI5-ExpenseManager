@@ -195,15 +195,15 @@
                                         class="secondaryAction"
                                     />
                                     <Button
-                                        text="{i18n>actionSimulate}"
-                                        icon="sap-icon://customer-view"
+                                        text="{i18n>actionManageCategories}"
+                                        icon="sap-icon://tags"
                                         type="Transparent"
-                                        press=".onOpenSimulationDialog"
+                                        press=".onOpenCategoryManagerDialog"
                                         class="secondaryAction"
                                     />
                                     <Button
                                         text="{i18n>actionInvoices}"
-                                        icon="sap-icon://customer-invoice"
+                                        icon="sap-icon://monitor-payments"
                                         type="Transparent"
                                         press=".onOpenInvoicesDialog"
                                         class="secondaryAction"
@@ -213,13 +213,6 @@
                                         icon="sap-icon://upload-to-cloud"
                                         type="Transparent"
                                         press=".onRestoreBackup"
-                                        class="secondaryAction"
-                                    />
-                                    <Button
-                                        text="{i18n>actionExportBackup}"
-                                        icon="sap-icon://download-to-cloud"
-                                        type="Transparent"
-                                        press=".onExportBackup"
                                         class="secondaryAction"
                                     />
                                 </HBox>
@@ -265,27 +258,68 @@
                         alignItems="Center"
                         class="periodNavActions"
                     >
-                        <Button
-                            icon="sap-icon://slim-arrow-left"
-                            type="Transparent"
-                            press=".onPreviousMonth"
-                            tooltip="{i18n>previousMonthTooltip}"
-                            class="iconAction"
-                        />
-                        <Button
-                            text="{ui>/monthLabel}"
-                            type="Transparent"
-                            press=".onThisMonth"
-                            tooltip="{i18n>currentMonthTooltip}"
-                            class="periodNavLabel"
-                        />
-                        <Button
-                            icon="sap-icon://slim-arrow-right"
-                            type="Transparent"
-                            press=".onNextMonth"
-                            tooltip="{i18n>nextMonthTooltip}"
-                            class="iconAction"
-                        />
+                        <HBox
+                            alignItems="End"
+                            wrap="Wrap"
+                            class="periodSelectors"
+                        >
+                            <VBox class="sapUiTinyMarginEnd">
+                                <Label
+                                    text="{i18n>invoiceYearLabel}"
+                                    labelFor="homeYearSelect"
+                                />
+                                <Select
+                                    id="homeYearSelect"
+                                    selectedKey="{ui>/periodSelector/year}"
+                                    change=".onHomeYearChanged"
+                                    width="7rem"
+                                    items="{ path: 'ui>/periodSelector/yearOptions' }"
+                                >
+                                    <core:Item key="{ui>key}" text="{ui>text}" />
+                                </Select>
+                            </VBox>
+                            <VBox class="sapUiTinyMarginEnd">
+                                <Label
+                                    text="{i18n>invoiceMonthLabel}"
+                                    labelFor="homeMonthSelect"
+                                />
+                                <Select
+                                    id="homeMonthSelect"
+                                    selectedKey="{ui>/periodSelector/month}"
+                                    change=".onHomeMonthChanged"
+                                    width="11rem"
+                                    items="{ path: 'ui>/periodSelector/monthOptions' }"
+                                >
+                                    <core:Item key="{ui>key}" text="{ui>text}" />
+                                </Select>
+                            </VBox>
+                        </HBox>
+                        <HBox
+                            alignItems="Center"
+                            class="periodNavButtons"
+                        >
+                            <Button
+                                icon="sap-icon://slim-arrow-left"
+                                type="Transparent"
+                                press=".onPreviousMonth"
+                                tooltip="{i18n>previousMonthTooltip}"
+                                class="iconAction"
+                            />
+                            <Button
+                                text="{ui>/monthLabel}"
+                                type="Transparent"
+                                press=".onThisMonth"
+                                tooltip="{i18n>currentMonthTooltip}"
+                                class="periodNavLabel"
+                            />
+                            <Button
+                                icon="sap-icon://slim-arrow-right"
+                                type="Transparent"
+                                press=".onNextMonth"
+                                tooltip="{i18n>nextMonthTooltip}"
+                                class="iconAction"
+                            />
+                        </HBox>
                     </HBox>
                 </HBox>
 

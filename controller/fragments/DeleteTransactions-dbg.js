@@ -10,6 +10,13 @@ sap.ui.define(["sap/m/MessageBox", "sap/ui/core/Fragment", "sap/ui/model/Filter"
   const uiOf = view => view.getModel("ui");
 
   /**
+   * Whether the next list `updateFinished` should select every rendered row.
+   * Set when the dialog opens so the OData binding has time to create the items
+   * (they are not available in `afterOpen` yet).
+   */
+  let selectAllPending = false;
+
+  /**
    * Builds the write targets of the selected rows. Rows without the
    * invoice/card coordinates (deep path) cannot be addressed and are skipped.
    *
@@ -43,11 +50,22 @@ sap.ui.define(["sap/m/MessageBox", "sap/ui/core/Fragment", "sap/ui/model/Filter"
    */
   function setAllItemsSelected(list, view, selected) {
     list.getItems().forEach(item => item.setSelected(selected));
-    uiOf(view).setProperty("/deleteSelectAll", selected);
+    uiOf(view).setProperty("/deleteTransactions/selectAll", selected);
+  }
+
+  /**
+   * Tells whether every item currently bound to the delete list is selected.
+   *
+   * @param {List} list the delete list
+   * @returns {boolean} whether the selection matches the "select all" state
+   */
+  function isAllItemsSelected(list) {
+    const items = list.getItems();
+    return items.length > 0 && items.every(item => item.getSelected());
   }
   async function performDelete(dialog, view, personId, targets) {
     const ui = uiOf(view);
-    ui.setProperty("/invoiceBusy", true);
+    ui.setProperty("/busy", true);
     try {
       const published = await deleteTransactionsViaBatch(view.getModel(), personId, targets);
       if (!published) {
@@ -60,7 +78,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/ui/core/Fragment", "sap/ui/model/Filter"
     } catch (error) {
       handleActionError(view, error, "deleteTransactionsError");
     } finally {
-      ui.setProperty("/invoiceBusy", false);
+      ui.setProperty("/busy", false);
     }
   }
   const DeleteTransactions = {
@@ -68,16 +86,18 @@ sap.ui.define(["sap/m/MessageBox", "sap/ui/core/Fragment", "sap/ui/model/Filter"
       const view = this.getParent();
       const ui = uiOf(view);
       const personId = ui.getProperty("/selectedPersonId");
-      const identifier = ui.getProperty("/invoiceSelectedIdentifier");
+      const identifier = ui.getProperty("/deleteTransactions/selectedIdentifier");
       const list = Fragment.byId("DeleteTransactions", "deleteTransactionList");
       const binding = list?.getBinding("items");
+      selectAllPending = false;
       if (!personId || !identifier || !binding) {
-        ui.setProperty("/deleteTransactionsCount", 0);
-        ui.setProperty("/deleteTransactionsCountText", "");
+        ui.setProperty("/deleteTransactions/count", 0);
+        ui.setProperty("/deleteTransactions/countText", "");
         setAllItemsSelected(list, view, false);
         return;
       }
-      ui.setProperty("/invoiceBusy", true);
+      selectAllPending = true;
+      ui.setProperty("/busy", true);
       void (async () => {
         try {
           binding.filter([new Filter({
@@ -90,25 +110,30 @@ sap.ui.define(["sap/m/MessageBox", "sap/ui/core/Fragment", "sap/ui/model/Filter"
             value1: identifier
           })]);
           const contexts = await binding.requestContexts();
-          ui.setProperty("/deleteTransactionsCount", contexts.length);
-          ui.setProperty("/deleteTransactionsCountText", getText(view, "deleteTransactionsFound", [String(contexts.length)]));
+          ui.setProperty("/deleteTransactions/count", contexts.length);
+          ui.setProperty("/deleteTransactions/countText", getText(view, "deleteTransactionsFound", [String(contexts.length)]));
           if (contexts.length === 0) {
+            selectAllPending = false;
             setAllItemsSelected(list, view, false);
           }
         } catch (error) {
           handleActionError(view, error, "deleteTransactionsError");
         } finally {
-          ui.setProperty("/invoiceBusy", false);
+          ui.setProperty("/busy", false);
         }
       })();
     },
-    onDialogAfterOpen: function () {
-      const view = this.getParent();
-      const ui = uiOf(view);
-      const list = Fragment.byId("DeleteTransactions", "deleteTransactionList");
-      if (list && ui.getProperty("/deleteTransactionsCount") > 0) {
-        setAllItemsSelected(list, view, true);
+    onListUpdated: function () {
+      if (!selectAllPending) {
+        return;
       }
+      selectAllPending = false;
+      const hasItems = this.getItems().length > 0;
+      this.getModel("ui").setProperty("/deleteTransactions/selectAll", hasItems);
+      this.getItems().forEach(item => item.setSelected(hasItems));
+    },
+    onSelectionChanged: function () {
+      this.getModel("ui").setProperty("/deleteTransactions/selectAll", isAllItemsSelected(this));
     },
     onSelectAll: function () {
       const view = this.getParent();
@@ -116,7 +141,7 @@ sap.ui.define(["sap/m/MessageBox", "sap/ui/core/Fragment", "sap/ui/model/Filter"
       if (list) {
         setAllItemsSelected(list, view, this.getSelected());
       } else {
-        uiOf(view).setProperty("/deleteSelectAll", this.getSelected());
+        uiOf(view).setProperty("/deleteTransactions/selectAll", this.getSelected());
       }
     },
     onDeleteConfirmed: function () {
@@ -152,6 +177,12 @@ sap.ui.define(["sap/m/MessageBox", "sap/ui/core/Fragment", "sap/ui/model/Filter"
     },
     onCancelDelete: function () {
       this.getParent().close();
+    },
+    onDialogAfterClose: function () {
+      const view = this.getParent();
+      if (view) {
+        view.getController().reload();
+      }
     }
   };
   return DeleteTransactions;

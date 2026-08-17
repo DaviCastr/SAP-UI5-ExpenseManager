@@ -3,6 +3,10 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/backupApi", "../../util/feedb
 
   const createBackupRow = ____util_backupApi["createBackupRow"];
   const uploadBackupStream = ____util_backupApi["uploadBackupStream"];
+  const requestExportBackup = ____util_backupApi["requestExportBackup"];
+  const fetchBackupStream = ____util_backupApi["fetchBackupStream"];
+  const deleteBackupRow = ____util_backupApi["deleteBackupRow"];
+  const downloadBlob = ____util_backupApi["downloadBlob"];
   const handleActionError = ____util_feedback["handleActionError"];
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
@@ -38,6 +42,23 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/backupApi", "../../util/feedb
         void view.getController().reload();
       } catch (error) {
         handleActionError(view, error, "errorImportBackup");
+      } finally {
+        uiModel.setProperty("/busy", false);
+      }
+    },
+    onExportBackup: async function () {
+      const dialog = this.getParent();
+      const view = dialog.getParent();
+      const uiModel = view.getModel("ui");
+      uiModel.setProperty("/busy", true);
+      try {
+        const guid = await requestExportBackup();
+        const blob = await fetchBackupStream(guid);
+        downloadBlob(blob, `meu-fluxo-backup-${new Date().toISOString().slice(0, 10)}.zip`);
+        await deleteBackupRow(guid);
+        showToast(view, "backupExported");
+      } catch (error) {
+        handleActionError(view, error, "errorExportBackup");
       } finally {
         uiModel.setProperty("/busy", false);
       }

@@ -35,7 +35,7 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/Filt
 
   /**
    * Filters the person's categories on the category selector list and resolves
-   * their thumbnails into `ui>/invoiceCategoryImages` (keyed by category ID).
+   * their thumbnails into `ui>/transactionCategory/categoryImages` (keyed by category ID).
    * The list itself is bound to the OData `/Categories` entity set
    * declaratively; the person filter is server-side, applied on the binding.
    *
@@ -48,7 +48,7 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/Filt
     const list = Fragment.byId("TransactionCategory", "transactionCategoryList");
     const binding = list?.getBinding("items");
     if (!personId || !binding) {
-      ui.setProperty("/invoiceCategoryImages", {});
+      ui.setProperty("/transactionCategory/categoryImages", {});
       return;
     }
     binding.filter([new Filter({
@@ -72,7 +72,7 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/Filt
         images[category.ID] = base64;
       }
     }));
-    ui.setProperty("/invoiceCategoryImages", images);
+    ui.setProperty("/transactionCategory/categoryImages", images);
   }
 
   /**
@@ -87,11 +87,11 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/Filt
   async function filterAffected(view) {
     const ui = uiOf(view);
     const personId = ui.getProperty("/selectedPersonId");
-    const identifier = ui.getProperty("/invoiceSelectedIdentifier");
+    const identifier = ui.getProperty("/transactionCategory/selectedIdentifier");
     const list = Fragment.byId("TransactionCategory", "transactionCategoryAffectedList");
     const binding = list?.getBinding("items");
     if (!personId || !identifier || !binding) {
-      ui.setProperty("/invoiceCategoryAffectedText", "");
+      ui.setProperty("/transactionCategory/affectedText", "");
       return;
     }
     binding.filter([new Filter({
@@ -104,19 +104,19 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/Filt
       value1: identifier
     })]);
     const contexts = await binding.requestContexts();
-    ui.setProperty("/invoiceCategoryAffectedText", getText(view, "transactionCategoryAffected", [String(contexts.length)]));
+    ui.setProperty("/transactionCategory/affectedText", getText(view, "transactionCategoryAffected", [String(contexts.length)]));
   }
 
   /**
    * Preselects the category currently assigned to the transaction (if present)
-   * on the selector list, mirroring it into `invoiceSelectedCategoryId`.
+   * on the selector list, mirroring it into `transactionCategory/selectedCategoryId`.
    *
    * @param {XMLView} view the Home view
    * @returns {void}
    */
   function preselectCurrentCategory(view) {
     const ui = uiOf(view);
-    const currentId = ui.getProperty("/invoiceCurrentCategoryId");
+    const currentId = ui.getProperty("/transactionCategory/currentCategoryId");
     const list = Fragment.byId("TransactionCategory", "transactionCategoryList");
     if (!currentId || !list) {
       return;
@@ -125,7 +125,7 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/Filt
       const row = item.getBindingContext()?.getObject();
       if (row?.ID === currentId) {
         list.setSelectedItem(item, true);
-        ui.setProperty("/invoiceSelectedCategoryId", row.ID);
+        ui.setProperty("/transactionCategory/selectedCategoryId", row.ID);
         return true;
       }
       return false;
@@ -135,10 +135,10 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/Filt
     onDialogBeforeOpen: function () {
       const view = this.getParent();
       const ui = uiOf(view);
-      ui.setProperty("/invoiceSelectedCategoryId", "");
-      ui.setProperty("/invoiceCategoryAffectedText", "");
-      ui.setProperty("/invoiceBusy", true);
-      void Promise.all([filterCategories(view), filterAffected(view)]).catch(error => handleActionError(view, error, "transactionCategorySaveError")).finally(() => ui.setProperty("/invoiceBusy", false));
+      ui.setProperty("/transactionCategory/selectedCategoryId", "");
+      ui.setProperty("/transactionCategory/affectedText", "");
+      ui.setProperty("/busy", true);
+      void Promise.all([filterCategories(view), filterAffected(view)]).catch(error => handleActionError(view, error, "transactionCategorySaveError")).finally(() => ui.setProperty("/busy", false));
     },
     onDialogAfterOpen: function () {
       const view = this.getParent();
@@ -147,7 +147,7 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/Filt
     onCategoryChanged: function () {
       const row = this.getSelectedItem()?.getBindingContext()?.getObject();
       if (row?.ID) {
-        uiOf(this.getParent()).setProperty("/invoiceSelectedCategoryId", row.ID);
+        uiOf(this.getParent()).setProperty("/transactionCategory/selectedCategoryId", row.ID);
       }
     },
     onApplyCategory: async function () {
@@ -155,7 +155,7 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/Filt
       const view = dialog.getParent();
       const ui = uiOf(view);
       const personId = ui.getProperty("/selectedPersonId");
-      const categoryId = ui.getProperty("/invoiceSelectedCategoryId");
+      const categoryId = ui.getProperty("/transactionCategory/selectedCategoryId");
       if (!categoryId) {
         showWarning(view, "transactionCategorySelectHint");
         return;
@@ -173,7 +173,7 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/Filt
         showWarning(view, "transactionCategoryNoTargets");
         return;
       }
-      ui.setProperty("/invoiceBusy", true);
+      ui.setProperty("/busy", true);
       try {
         const published = await applyCategoryToTransactions(view.getModel(), personId, targets, categoryId);
         if (!published) {
@@ -186,11 +186,17 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/Filt
       } catch (error) {
         handleActionError(view, error, "transactionCategorySaveError");
       } finally {
-        ui.setProperty("/invoiceBusy", false);
+        ui.setProperty("/busy", false);
       }
     },
     onCancelCategory: function () {
       this.getParent().close();
+    },
+    onDialogAfterClose: function () {
+      const view = this.getParent();
+      if (view) {
+        view.getController().reload();
+      }
     }
   };
   return TransactionCategory;

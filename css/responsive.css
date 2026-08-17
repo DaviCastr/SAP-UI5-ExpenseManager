@@ -13,4 +13,8 @@
     .personDraftBanner { flex-direction: column; align-items: flex-start; }
     .personDraftBanner .sapUiTinyMarginEnd { margin-right: 0; }
     .personDraftBanner .sapMBtn { margin-top: .25rem; }
+    .periodNav { flex-direction: column; align-items: stretch; }
+    .periodNavActions { flex-direction: column; align-items: stretch; }
+    .periodSelectors { justify-content: center; }
+    .periodNavButtons { justify-content: center; }
 }

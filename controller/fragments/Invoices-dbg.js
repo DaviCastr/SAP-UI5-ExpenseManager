@@ -61,22 +61,22 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
    */
   function shiftPeriod(view, delta) {
     const ui = uiOf(view);
-    let year = Number(ui.getProperty("/invoiceYear"));
-    let month = Number(ui.getProperty("/invoiceMonth"));
+    let year = Number(ui.getProperty("/invoice/year"));
+    let month = Number(ui.getProperty("/invoice/month"));
     if (!year || !month) {
       return;
     }
     const total = year * 12 + (month - 1) + delta;
     year = Math.floor(total / 12);
     month = total % 12 + 1;
-    ui.setProperty("/invoiceYear", String(year));
-    ui.setProperty("/invoiceMonth", String(month));
+    ui.setProperty("/invoice/year", String(year));
+    ui.setProperty("/invoice/month", String(month));
     void loadInvoice(view);
   }
 
   /**
-   * Loads the person's cards into the ui model (`invoiceCards`) together with
-   * their thumbnails and keeps `invoiceCardId` pointing at a valid card.
+   * Loads the person's cards into the ui model (`invoice/cards`) together with
+   * their thumbnails and keeps `invoice/cardId` pointing at a valid card.
    *
    * @param {XMLView} view the Home view
    * @returns {Promise<void>} resolves once the cards are loaded
@@ -86,12 +86,12 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
     const personId = ui.getProperty("/selectedPersonId");
     const odata = new ODataService(view.getModel());
     if (!personId) {
-      ui.setProperty("/invoiceCards", []);
-      ui.setProperty("/invoiceCardsEmpty", false);
-      ui.setProperty("/invoiceCardId", "");
+      ui.setProperty("/invoice/cards", []);
+      ui.setProperty("/invoice/cardsEmpty", false);
+      ui.setProperty("/invoice/cardId", "");
       return;
     }
-    ui.setProperty("/invoiceBusy", true);
+    ui.setProperty("/busy", true);
     try {
       const cards = await odata.requestEntitySet("Cards", {
         select: ["ID", "Name", "Limit", "Currency_code"],
@@ -117,16 +117,16 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
         Currency_code: card.Currency_code,
         ImageBase64: images[card.ID] || ""
       }));
-      ui.setProperty("/invoiceCards", rows);
-      ui.setProperty("/invoiceCardsEmpty", rows.length === 0);
-      const current = ui.getProperty("/invoiceCardId");
+      ui.setProperty("/invoice/cards", rows);
+      ui.setProperty("/invoice/cardsEmpty", rows.length === 0);
+      const current = ui.getProperty("/invoice/cardId");
       if (!current || !rows.some(card => card.ID === current)) {
-        ui.setProperty("/invoiceCardId", rows[0]?.ID || "");
+        ui.setProperty("/invoice/cardId", rows[0]?.ID || "");
       }
     } catch (error) {
       handleActionError(view, error, "invoicesCardsLoadError");
     } finally {
-      ui.setProperty("/invoiceBusy", false);
+      ui.setProperty("/busy", false);
     }
   }
 
@@ -184,7 +184,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
 
   /**
    * Resolves the thumbnail of every distinct category used by the bound invoice
-   * transactions and mirrors it into `ui>/invoiceTransactionImages` (keyed by
+   * transactions and mirrors it into `ui>/invoice/transactionImages` (keyed by
    * category ID). When the invoice being shown is a draft, the draft media is
    * tried first, falling back to the active category image. Best effort.
    *
@@ -223,7 +223,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
           }
         }
       }));
-      ui.setProperty("/invoiceTransactionImages", images);
+      ui.setProperty("/invoice/transactionImages", images);
     } catch {
       // keep initials; image loading must not break the dialog
     }
@@ -231,7 +231,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
 
   /**
    * Loads the invoice of the currently selected card/period into the ui model
-   * (`invoiceHeader`) and binds the transaction list to the resolved invoice.
+   * (`invoice/header`) and binds the transaction list to the resolved invoice.
    * The transaction ordering (date desc) and the draft/active resolution happen
    * server-side via the OData V4 binding.
    *
@@ -241,37 +241,37 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
   async function loadInvoice(view) {
     const ui = uiOf(view);
     const personId = ui.getProperty("/selectedPersonId");
-    const cardId = ui.getProperty("/invoiceCardId");
-    const year = Number(ui.getProperty("/invoiceYear"));
-    const month = Number(ui.getProperty("/invoiceMonth"));
+    const cardId = ui.getProperty("/invoice/cardId");
+    const year = Number(ui.getProperty("/invoice/year"));
+    const month = Number(ui.getProperty("/invoice/month"));
     if (!personId || !cardId || !year || !month) {
-      ui.setProperty("/invoiceLoaded", false);
-      ui.setProperty("/invoiceHeader", {});
+      ui.setProperty("/invoice/loaded", false);
+      ui.setProperty("/invoice/header", {});
       return;
     }
     const odata = new ODataService(view.getModel());
     const service = new InvoiceService(odata);
-    ui.setProperty("/invoiceBusy", true);
+    ui.setProperty("/busy", true);
     try {
       const invoice = await service.findInvoice(personId, cardId, {
         year,
         month
       });
       const label = formatMonth(year, month)?.trim();
-      ui.setProperty("/invoicePeriodLabel", label ? label.charAt(0).toUpperCase() + label.slice(1) : "");
+      ui.setProperty("/invoice/periodLabel", label ? label.charAt(0).toUpperCase() + label.slice(1) : "");
       if (!invoice) {
-        ui.setProperty("/invoiceId", "");
-        ui.setProperty("/invoiceIsDraft", false);
-        ui.setProperty("/invoiceLoaded", false);
-        ui.setProperty("/invoiceHeader", {});
+        ui.setProperty("/invoice/id", "");
+        ui.setProperty("/invoice/isDraft", false);
+        ui.setProperty("/invoice/loaded", false);
+        ui.setProperty("/invoice/header", {});
         unbindTransactionList();
         return;
       }
       const isDraft = invoice.IsActiveEntity === false;
       const currency = invoice.Currency?.code || invoice.Currency_code || "BRL";
-      ui.setProperty("/invoiceId", invoice.ID);
-      ui.setProperty("/invoiceIsDraft", isDraft);
-      ui.setProperty("/invoiceHeader", {
+      ui.setProperty("/invoice/id", invoice.ID);
+      ui.setProperty("/invoice/isDraft", isDraft);
+      ui.setProperty("/invoice/header", {
         Description: invoice.Description || "",
         TotalAmount: Number(invoice.TotalAmount) || 0,
         CurrencyCode: currency,
@@ -279,12 +279,12 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
       });
       bindTransactionList(view, invoice.ID, isDraft);
       await resolveTransactionCategoryImages(view);
-      ui.setProperty("/invoiceLoaded", true);
+      ui.setProperty("/invoice/loaded", true);
     } catch (error) {
-      ui.setProperty("/invoiceLoaded", false);
+      ui.setProperty("/invoice/loaded", false);
       handleActionError(view, error, "invoicesLoadError");
     } finally {
-      ui.setProperty("/invoiceBusy", false);
+      ui.setProperty("/busy", false);
     }
   }
 
@@ -295,7 +295,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
    * @returns {boolean} whether the draft media should be preferred
    */
   function invoiceShowsDraft(view) {
-    return uiOf(view).getProperty("/invoiceIsDraft") === true;
+    return uiOf(view).getProperty("/invoice/isDraft") === true;
   }
 
   /**
@@ -307,7 +307,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
    */
   async function reloadInvoiceData(view) {
     await loadCards(view);
-    if (uiOf(view).getProperty("/invoiceCardId")) {
+    if (uiOf(view).getProperty("/invoice/cardId")) {
       await loadInvoice(view);
     }
   }
@@ -320,7 +320,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
       const ui = uiOf(view);
       const now = new Date();
       const currentYear = now.getFullYear();
-      ui.setProperty("/invoiceYearOptions", Array.from({
+      ui.setProperty("/invoice/yearOptions", Array.from({
         length: 6
       }, (_, offset) => {
         const year = currentYear - 4 + offset;
@@ -329,24 +329,24 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
           text: String(year)
         };
       }));
-      ui.setProperty("/invoiceMonthOptions", MONTH_NAMES.map((name, index) => ({
+      ui.setProperty("/invoice/monthOptions", MONTH_NAMES.map((name, index) => ({
         key: String(index + 1),
         text: name
       })));
-      ui.setProperty("/invoiceYear", String(currentYear));
-      ui.setProperty("/invoiceMonth", String(now.getMonth() + 1));
-      ui.setProperty("/invoiceCardId", "");
-      ui.setProperty("/invoiceId", "");
-      ui.setProperty("/invoiceIsDraft", false);
-      ui.setProperty("/invoiceLoaded", false);
-      ui.setProperty("/invoiceHeader", {});
-      ui.setProperty("/invoiceTransactionImages", {});
+      ui.setProperty("/invoice/year", String(currentYear));
+      ui.setProperty("/invoice/month", String(now.getMonth() + 1));
+      ui.setProperty("/invoice/cardId", "");
+      ui.setProperty("/invoice/id", "");
+      ui.setProperty("/invoice/isDraft", false);
+      ui.setProperty("/invoice/loaded", false);
+      ui.setProperty("/invoice/header", {});
+      ui.setProperty("/invoice/transactionImages", {});
       void reloadInvoiceData(view);
     },
     onDialogAfterOpen: function () {
       const list = Fragment.byId("Invoices", "invoiceCardList");
       const view = this.getParent();
-      const id = uiOf(view).getProperty("/invoiceCardId");
+      const id = uiOf(view).getProperty("/invoice/cardId");
       if (!list || !id) {
         return;
       }
@@ -365,17 +365,17 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
         return;
       }
       const view = this.getParent();
-      uiOf(view).setProperty("/invoiceCardId", row.ID);
+      uiOf(view).setProperty("/invoice/cardId", row.ID);
       void loadInvoice(view);
     },
     onYearChange: function () {
       const view = this.getParent();
-      uiOf(view).setProperty("/invoiceYear", this.getSelectedKey());
+      uiOf(view).setProperty("/invoice/year", this.getSelectedKey());
       void loadInvoice(view);
     },
     onMonthChange: function () {
       const view = this.getParent();
-      uiOf(view).setProperty("/invoiceMonth", this.getSelectedKey());
+      uiOf(view).setProperty("/invoice/month", this.getSelectedKey());
       void loadInvoice(view);
     },
     onTransactionSearch: function () {
@@ -430,9 +430,9 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
         return;
       }
       const ui = uiOf(view);
-      ui.setProperty("/invoiceSelectedIdentifier", transaction.Identifier);
-      ui.setProperty("/invoiceCurrentCategoryId", transaction.Category?.ID || "");
-      ui.setProperty("/invoiceCurrentCategoryName", transaction.Category?.Name || "");
+      ui.setProperty("/transactionCategory/selectedIdentifier", transaction.Identifier);
+      ui.setProperty("/transactionCategory/currentCategoryId", transaction.Category?.ID || "");
+      ui.setProperty("/transactionCategory/currentCategoryName", transaction.Category?.Name || "");
       view.getController().openTransactionCategoryDialog();
     },
     onDeletePress: function () {
@@ -442,7 +442,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
       if (!view || !transaction?.Identifier) {
         return;
       }
-      uiOf(view).setProperty("/invoiceSelectedIdentifier", transaction.Identifier);
+      uiOf(view).setProperty("/deleteTransactions/selectedIdentifier", transaction.Identifier);
       view.getController().openDeleteTransactionsDialog();
     },
     onCloseInvoice: function () {

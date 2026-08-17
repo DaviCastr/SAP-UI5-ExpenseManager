@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox", "./BaseController", "../auth/AuthenticationService", "../service/ODataService", "../service/InvoiceService", "../service/PeriodService", "../service/MediaService", "../service/DashboardRenderer", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/backupApi", "../util/http", "../util/feedback"], function (MessageToast, Fragment, MessageBox, ___BaseController, ___auth_AuthenticationService, ___service_ODataService, ___service_InvoiceService, ___service_PeriodService, ___service_MediaService, ___service_DashboardRenderer, Filter, FilterOperator, ___util_expenseApi, ___util_backupApi, ___util_http, ___util_feedback) {
+sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox", "./BaseController", "../auth/AuthenticationService", "../service/ODataService", "../service/InvoiceService", "../service/PeriodService", "../service/MediaService", "../service/DashboardRenderer", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/http", "../util/feedback"], function (MessageToast, Fragment, MessageBox, ___BaseController, ___auth_AuthenticationService, ___service_ODataService, ___service_InvoiceService, ___service_PeriodService, ___service_MediaService, ___service_DashboardRenderer, Filter, FilterOperator, ___util_expenseApi, ___util_http, ___util_feedback) {
   "use strict";
 
   const BaseController = ___BaseController["BaseController"];
@@ -11,10 +11,6 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
   const MediaService = ___service_MediaService["MediaService"];
   const DashboardRenderer = ___service_DashboardRenderer["DashboardRenderer"];
   const getTransactionsByCategory = ___util_expenseApi["getTransactionsByCategory"];
-  const requestExportBackup = ___util_backupApi["requestExportBackup"];
-  const fetchBackupStream = ___util_backupApi["fetchBackupStream"];
-  const deleteBackupRow = ___util_backupApi["deleteBackupRow"];
-  const downloadBlob = ___util_backupApi["downloadBlob"];
   const isSessionExpiredError = ___util_http["isSessionExpiredError"];
   const isBackendUnavailableError = ___util_http["isBackendUnavailableError"];
   const getBackendErrorMessage = ___util_feedback["getBackendErrorMessage"];
@@ -69,6 +65,20 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     onThisMonth() {
       const period = this.periodService.current();
       this.getUiModel().setProperty("/period", period);
+      this.applyPeriodData();
+    }
+    onHomeYearChanged() {
+      const ui = this.getUiModel();
+      const period = this.currentPeriod();
+      period.year = Number(ui.getProperty("/periodSelector/year")) || period.year;
+      ui.setProperty("/period", period);
+      this.applyPeriodData();
+    }
+    onHomeMonthChanged() {
+      const ui = this.getUiModel();
+      const period = this.currentPeriod();
+      period.month = Number(ui.getProperty("/periodSelector/month")) || period.month;
+      ui.setProperty("/period", period);
       this.applyPeriodData();
     }
 
@@ -241,7 +251,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
 
     /**
      * Opens the category-picker dialog for the transaction whose Identifier is
-     * stored in `ui>/invoiceSelectedIdentifier`.
+     * stored in `ui>/transactionCategory/selectedIdentifier`.
      */
     openTransactionCategoryDialog() {
       void this.openPreparedDialog("TransactionCategory", dialog => dialog.open()).catch(error => this.handleError(error, "invoicesOpenError"));
@@ -249,7 +259,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
 
     /**
      * Opens the batch-exclusion dialog for the transaction whose Identifier is
-     * stored in `ui>/invoiceSelectedIdentifier`.
+     * stored in `ui>/deleteTransactions/selectedIdentifier`.
      */
     openDeleteTransactionsDialog() {
       void this.openPreparedDialog("DeleteTransactions", dialog => dialog.open()).catch(error => this.handleError(error, "invoicesOpenError"));
@@ -289,9 +299,9 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         return;
       }
       const ui = this.getUiModel();
-      ui.setProperty("/invoiceSelectedIdentifier", transaction.Identifier);
-      ui.setProperty("/invoiceCurrentCategoryId", transaction.Category?.ID || "");
-      ui.setProperty("/invoiceCurrentCategoryName", transaction.Category?.Name || "");
+      ui.setProperty("/transactionCategory/selectedIdentifier", transaction.Identifier);
+      ui.setProperty("/transactionCategory/currentCategoryId", transaction.Category?.ID || "");
+      ui.setProperty("/transactionCategory/currentCategoryName", transaction.Category?.Name || "");
       this.openTransactionCategoryDialog();
     }
 
@@ -309,7 +319,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       if (!transaction?.Identifier) {
         return;
       }
-      this.getUiModel().setProperty("/invoiceSelectedIdentifier", transaction.Identifier);
+      this.getUiModel().setProperty("/deleteTransactions/selectedIdentifier", transaction.Identifier);
       this.openDeleteTransactionsDialog();
     }
     onOpenSimulationDialog() {
@@ -330,21 +340,6 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       }
       ui.setProperty("/simulationResult", null);
       void this.openPreparedDialog("Simulation", dialog => dialog.open());
-    }
-    async onExportBackup() {
-      const ui = this.getUiModel();
-      ui.setProperty("/busy", true);
-      try {
-        const guid = await requestExportBackup();
-        const blob = await fetchBackupStream(guid);
-        downloadBlob(blob, `meu-fluxo-backup-${new Date().toISOString().slice(0, 10)}.zip`);
-        await deleteBackupRow(guid);
-        MessageToast.show(this.getText("backupExported"));
-      } catch (error) {
-        this.handleError(error, "errorExportBackup");
-      } finally {
-        ui.setProperty("/busy", false);
-      }
     }
     refresh() {
       const cardsList = this.byId("cardsListItems");
@@ -513,6 +508,8 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       const period = this.currentPeriod();
       ui.setProperty("/period", period);
       ui.setProperty("/monthLabel", this.presentPeriodLabel(period));
+      ui.setProperty("/periodSelector/year", String(period.year));
+      ui.setProperty("/periodSelector/month", String(period.month));
       this.resetTransactionSearch();
       void this.loadDashboard();
     }

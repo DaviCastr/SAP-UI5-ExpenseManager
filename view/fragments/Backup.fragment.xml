@@ -12,22 +12,22 @@
         stretch="{device>/system/phone}"
         beforeOpen="handler.onDialogBeforeOpen"
         busy="{ui>/busy}"
-        core:require="{ handler: 'apps/dflc/expensemanager/controller/fragments/Backup' }"
+        core:require="{
+            handler: 'apps/dflc/expensemanager/controller/fragments/Backup'
+        }"
     >
         <content>
             <VBox class="sapUiSmallMargin">
-                
                 <MessageStrip
                     text="{i18n>backupDialogIntro}"
                     type="Information"
                     showIcon="true"
                     class="sapUiSmallMarginBottom"
                 />
-                
                 <VBox>
-                    <Label 
-                        text="{i18n>backupFileLabel}" 
-                        labelFor="backupFileUploader" 
+                    <Label
+                        text="{i18n>backupFileLabel}"
+                        labelFor="backupFileUploader"
                         class="sapUiTinyMarginBottom"
                     />
                     <u:FileUploader
@@ -39,26 +39,32 @@
                         width="100%"
                     />
                 </VBox>
-
             </VBox>
         </content>
-        
-        <beginButton>
-            <Button 
-                text="{i18n>backupRestoreButton}" 
-                icon="sap-icon://download" 
-                type="Emphasized" 
-                press="handler.onImportarBackup" 
+        <buttons>
+            <!-- <beginButton> -->
+            <Button
+                text="{i18n>backupRestoreButton}"
+                icon="sap-icon://download"
+                type="Emphasized"
+                press="handler.onImportarBackup"
             />
-        </beginButton>
-        
-        <endButton>
-            <Button 
-                text="{i18n>backupCancelButton}" 
-                icon="sap-icon://decline" 
+            <!-- </beginButton> -->
+            <!-- <endButton> -->
+            <Button
+                text="{i18n>actionExportBackup}"
+                icon="sap-icon://download"
+                type="Emphasized"
+                press="handler.onExportBackup"
+                class="secondaryAction"
+            />
+            <Button
+                text="{i18n>backupCancelButton}"
+                icon="sap-icon://decline"
                 type="Transparent"
-                press="handler.onCancelarBackup" 
+                press="handler.onCancelarBackup"
             />
-        </endButton>
+            <!-- </endButton> -->
+        </buttons>
     </Dialog>
 </core:FragmentDefinition>

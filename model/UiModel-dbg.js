@@ -9,6 +9,25 @@ sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
           year: now.getFullYear(),
           month: now.getMonth() + 1
         },
+        periodSelector: {
+          year: String(now.getFullYear()),
+          month: String(now.getMonth() + 1),
+          yearOptions: Array.from({
+            length: 6
+          }, (_, offset) => {
+            const year = now.getFullYear() - 4 + offset;
+            return {
+              key: String(year),
+              text: String(year)
+            };
+          }),
+          monthOptions: Array.from({
+            length: 12
+          }, (_, index) => ({
+            key: String(index + 1),
+            text: ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"][index]
+          }))
+        },
         monthLabel: "",
         selectedPerson: {
           ID: "",
@@ -117,30 +136,35 @@ sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
         },
         simulationMonthOptions: [],
         simulationResult: null,
-        invoiceCards: [],
-        invoiceCardImages: {},
-        invoiceCardsEmpty: false,
-        invoiceYearOptions: [],
-        invoiceMonthOptions: [],
-        invoiceYear: String(now.getFullYear()),
-        invoiceMonth: String(now.getMonth() + 1),
-        invoicePeriodLabel: "",
-        invoiceCardId: "",
-        invoiceId: "",
-        invoiceIsDraft: false,
-        invoiceLoaded: false,
-        invoiceBusy: false,
-        invoiceHeader: {},
-        invoiceTransactionImages: {},
-        invoiceCategoryImages: {},
-        invoiceSelectedCategoryId: "",
-        invoiceSelectedIdentifier: "",
-        invoiceCurrentCategoryId: "",
-        invoiceCurrentCategoryName: "",
-        invoiceCategoryAffectedText: "",
-        deleteTransactionsCount: 0,
-        deleteTransactionsCountText: "",
-        deleteSelectAll: true
+        invoice: {
+          cards: [],
+          cardsEmpty: false,
+          yearOptions: [],
+          monthOptions: [],
+          year: String(now.getFullYear()),
+          month: String(now.getMonth() + 1),
+          periodLabel: "",
+          cardId: "",
+          id: "",
+          isDraft: false,
+          loaded: false,
+          header: {},
+          transactionImages: {}
+        },
+        transactionCategory: {
+          selectedIdentifier: "",
+          currentCategoryId: "",
+          currentCategoryName: "",
+          selectedCategoryId: "",
+          affectedText: "",
+          categoryImages: {}
+        },
+        deleteTransactions: {
+          selectedIdentifier: "",
+          count: 0,
+          countText: "",
+          selectAll: false
+        }
       };
       super(data);
     }

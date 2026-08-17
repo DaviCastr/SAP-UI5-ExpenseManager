@@ -78,6 +78,12 @@ export interface UiSimulation {
 
 export interface IUiState {
     period: UiPeriod;
+    periodSelector: {
+        year: string;
+        month: string;
+        yearOptions: UiOption[];
+        monthOptions: UiOption[];
+    };
     monthLabel: string;
     selectedPerson: UiPerson;
     selectedPersonId: string;
@@ -99,30 +105,35 @@ export interface IUiState {
     simulation: UiSimulation;
     simulationMonthOptions: UiOption[];
     simulationResult: unknown;
-    invoiceCards: unknown[];
-    invoiceCardImages: Record<string, string>;
-    invoiceCardsEmpty: boolean;
-    invoiceYearOptions: unknown[];
-    invoiceMonthOptions: unknown[];
-    invoiceYear: string;
-    invoiceMonth: string;
-    invoicePeriodLabel: string;
-    invoiceCardId: string;
-    invoiceId: string;
-    invoiceIsDraft: boolean;
-    invoiceLoaded: boolean;
-    invoiceBusy: boolean;
-    invoiceHeader: unknown;
-    invoiceTransactionImages: Record<string, string>;
-    invoiceCategoryImages: Record<string, string>;
-    invoiceSelectedCategoryId: string;
-    invoiceSelectedIdentifier: string;
-    invoiceCurrentCategoryId: string;
-    invoiceCurrentCategoryName: string;
-    invoiceCategoryAffectedText: string;
-    deleteTransactionsCount: number;
-    deleteTransactionsCountText: string;
-    deleteSelectAll: boolean;
+    invoice: {
+        cards: unknown[];
+        cardsEmpty: boolean;
+        yearOptions: unknown[];
+        monthOptions: unknown[];
+        year: string;
+        month: string;
+        periodLabel: string;
+        cardId: string;
+        id: string;
+        isDraft: boolean;
+        loaded: boolean;
+        header: unknown;
+        transactionImages: Record<string, string>;
+    };
+    transactionCategory: {
+        selectedIdentifier: string;
+        currentCategoryId: string;
+        currentCategoryName: string;
+        selectedCategoryId: string;
+        affectedText: string;
+        categoryImages: Record<string, string>;
+    };
+    deleteTransactions: {
+        selectedIdentifier: string;
+        count: number;
+        countText: string;
+        selectAll: boolean;
+    };
 }
 
 export default class UiModel extends JSONModel {
@@ -136,6 +147,19 @@ export default class UiModel extends JSONModel {
             period: {
                 year: now.getFullYear(),
                 month: now.getMonth() + 1
+            },
+
+            periodSelector: {
+                year: String(now.getFullYear()),
+                month: String(now.getMonth() + 1),
+                yearOptions: Array.from({ length: 6 }, (_, offset) => {
+                    const year = now.getFullYear() - 4 + offset;
+                    return { key: String(year), text: String(year) };
+                }),
+                monthOptions: Array.from({ length: 12 }, (_, index) => ({
+                    key: String(index + 1),
+                    text: ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"][index]
+                }))
             },
 
             monthLabel: "",
@@ -237,53 +261,37 @@ export default class UiModel extends JSONModel {
 
             simulationResult: null,
 
-            invoiceCards: [],
+            invoice: {
+                cards: [],
+                cardsEmpty: false,
+                yearOptions: [],
+                monthOptions: [],
+                year: String(now.getFullYear()),
+                month: String(now.getMonth() + 1),
+                periodLabel: "",
+                cardId: "",
+                id: "",
+                isDraft: false,
+                loaded: false,
+                header: {},
+                transactionImages: {}
+            },
 
-            invoiceCardImages: {},
+            transactionCategory: {
+                selectedIdentifier: "",
+                currentCategoryId: "",
+                currentCategoryName: "",
+                selectedCategoryId: "",
+                affectedText: "",
+                categoryImages: {}
+            },
 
-            invoiceCardsEmpty: false,
-
-            invoiceYearOptions: [],
-
-            invoiceMonthOptions: [],
-
-            invoiceYear: String(now.getFullYear()),
-
-            invoiceMonth: String(now.getMonth() + 1),
-
-            invoicePeriodLabel: "",
-
-            invoiceCardId: "",
-
-            invoiceId: "",
-
-            invoiceIsDraft: false,
-
-            invoiceLoaded: false,
-
-            invoiceBusy: false,
-
-            invoiceHeader: {},
-
-            invoiceTransactionImages: {},
-
-            invoiceCategoryImages: {},
-
-            invoiceSelectedCategoryId: "",
-
-            invoiceSelectedIdentifier: "",
-
-            invoiceCurrentCategoryId: "",
-
-            invoiceCurrentCategoryName: "",
-
-            invoiceCategoryAffectedText: "",
-
-            deleteTransactionsCount: 0,
-
-            deleteTransactionsCountText: "",
-
-            deleteSelectAll: true
+            deleteTransactions: {
+                selectedIdentifier: "",
+                count: 0,
+                countText: "",
+                selectAll: false
+            }
 
         };
 

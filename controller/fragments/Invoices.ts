@@ -94,22 +94,22 @@ function parseDateFilter(value: string): string | undefined {
  */
 function shiftPeriod(view: XMLView, delta: number): void {
     const ui = uiOf(view);
-    let year = Number(ui.getProperty("/invoiceYear"));
-    let month = Number(ui.getProperty("/invoiceMonth"));
+    let year = Number(ui.getProperty("/invoice/year"));
+    let month = Number(ui.getProperty("/invoice/month"));
     if (!year || !month) {
         return;
     }
     const total = year * 12 + (month - 1) + delta;
     year = Math.floor(total / 12);
     month = (total % 12) + 1;
-    ui.setProperty("/invoiceYear", String(year));
-    ui.setProperty("/invoiceMonth", String(month));
+    ui.setProperty("/invoice/year", String(year));
+    ui.setProperty("/invoice/month", String(month));
     void loadInvoice(view);
 }
 
 /**
- * Loads the person's cards into the ui model (`invoiceCards`) together with
- * their thumbnails and keeps `invoiceCardId` pointing at a valid card.
+ * Loads the person's cards into the ui model (`invoice/cards`) together with
+ * their thumbnails and keeps `invoice/cardId` pointing at a valid card.
  *
  * @param {XMLView} view the Home view
  * @returns {Promise<void>} resolves once the cards are loaded
@@ -120,13 +120,13 @@ async function loadCards(view: XMLView): Promise<void> {
     const odata = new ODataService(view.getModel() as ODataModel);
 
     if (!personId) {
-        ui.setProperty("/invoiceCards", []);
-        ui.setProperty("/invoiceCardsEmpty", false);
-        ui.setProperty("/invoiceCardId", "");
+        ui.setProperty("/invoice/cards", []);
+        ui.setProperty("/invoice/cardsEmpty", false);
+        ui.setProperty("/invoice/cardId", "");
         return;
     }
 
-    ui.setProperty("/invoiceBusy", true);
+    ui.setProperty("/busy", true);
     try {
         const cards = await odata.requestEntitySet<InvoiceCardRow & { IsActiveEntity?: boolean }>("Cards", {
             select: ["ID", "Name", "Limit", "Currency_code"],
@@ -153,17 +153,17 @@ async function loadCards(view: XMLView): Promise<void> {
             ImageBase64: images[card.ID] || ""
         }));
 
-        ui.setProperty("/invoiceCards", rows);
-        ui.setProperty("/invoiceCardsEmpty", rows.length === 0);
+        ui.setProperty("/invoice/cards", rows);
+        ui.setProperty("/invoice/cardsEmpty", rows.length === 0);
 
-        const current = ui.getProperty("/invoiceCardId") as string;
+        const current = ui.getProperty("/invoice/cardId") as string;
         if (!current || !rows.some((card) => card.ID === current)) {
-            ui.setProperty("/invoiceCardId", rows[0]?.ID || "");
+            ui.setProperty("/invoice/cardId", rows[0]?.ID || "");
         }
     } catch (error) {
         handleActionError(view, error, "invoicesCardsLoadError");
     } finally {
-        ui.setProperty("/invoiceBusy", false);
+        ui.setProperty("/busy", false);
     }
 }
 
@@ -225,7 +225,7 @@ function bindTransactionList(view: XMLView, invoiceId: string, isDraft: boolean)
 
 /**
  * Resolves the thumbnail of every distinct category used by the bound invoice
- * transactions and mirrors it into `ui>/invoiceTransactionImages` (keyed by
+ * transactions and mirrors it into `ui>/invoice/transactionImages` (keyed by
  * category ID). When the invoice being shown is a draft, the draft media is
  * tried first, falling back to the active category image. Best effort.
  *
@@ -274,7 +274,7 @@ async function resolveTransactionCategoryImages(view: XMLView): Promise<void> {
             })
         );
 
-        ui.setProperty("/invoiceTransactionImages", images);
+        ui.setProperty("/invoice/transactionImages", images);
     } catch {
         // keep initials; image loading must not break the dialog
     }
@@ -283,7 +283,7 @@ async function resolveTransactionCategoryImages(view: XMLView): Promise<void> {
 
 /**
  * Loads the invoice of the currently selected card/period into the ui model
- * (`invoiceHeader`) and binds the transaction list to the resolved invoice.
+ * (`invoice/header`) and binds the transaction list to the resolved invoice.
  * The transaction ordering (date desc) and the draft/active resolution happen
  * server-side via the OData V4 binding.
  *
@@ -293,30 +293,30 @@ async function resolveTransactionCategoryImages(view: XMLView): Promise<void> {
 export async function loadInvoice(view: XMLView): Promise<void> {
     const ui = uiOf(view);
     const personId = ui.getProperty("/selectedPersonId") as string;
-    const cardId = ui.getProperty("/invoiceCardId") as string;
-    const year = Number(ui.getProperty("/invoiceYear"));
-    const month = Number(ui.getProperty("/invoiceMonth"));
+    const cardId = ui.getProperty("/invoice/cardId") as string;
+    const year = Number(ui.getProperty("/invoice/year"));
+    const month = Number(ui.getProperty("/invoice/month"));
 
     if (!personId || !cardId || !year || !month) {
-        ui.setProperty("/invoiceLoaded", false);
-        ui.setProperty("/invoiceHeader", {});
+        ui.setProperty("/invoice/loaded", false);
+        ui.setProperty("/invoice/header", {});
         return;
     }
 
     const odata = new ODataService(view.getModel() as ODataModel);
     const service = new InvoiceService(odata);
 
-    ui.setProperty("/invoiceBusy", true);
+    ui.setProperty("/busy", true);
     try {
         const invoice = await service.findInvoice(personId, cardId, { year, month });
         const label = formatMonth(year, month)?.trim();
-        ui.setProperty("/invoicePeriodLabel", label ? label.charAt(0).toUpperCase() + label.slice(1) : "");
+        ui.setProperty("/invoice/periodLabel", label ? label.charAt(0).toUpperCase() + label.slice(1) : "");
 
         if (!invoice) {
-            ui.setProperty("/invoiceId", "");
-            ui.setProperty("/invoiceIsDraft", false);
-            ui.setProperty("/invoiceLoaded", false);
-            ui.setProperty("/invoiceHeader", {});
+            ui.setProperty("/invoice/id", "");
+            ui.setProperty("/invoice/isDraft", false);
+            ui.setProperty("/invoice/loaded", false);
+            ui.setProperty("/invoice/header", {});
             unbindTransactionList();
             return;
         }
@@ -324,9 +324,9 @@ export async function loadInvoice(view: XMLView): Promise<void> {
         const isDraft = invoice.IsActiveEntity === false;
         const currency = invoice.Currency?.code || invoice.Currency_code || "BRL";
 
-        ui.setProperty("/invoiceId", invoice.ID);
-        ui.setProperty("/invoiceIsDraft", isDraft);
-        ui.setProperty("/invoiceHeader", {
+        ui.setProperty("/invoice/id", invoice.ID);
+        ui.setProperty("/invoice/isDraft", isDraft);
+        ui.setProperty("/invoice/header", {
             Description: invoice.Description || "",
             TotalAmount: Number(invoice.TotalAmount) || 0,
             CurrencyCode: currency,
@@ -335,12 +335,12 @@ export async function loadInvoice(view: XMLView): Promise<void> {
 
         bindTransactionList(view, invoice.ID, isDraft);
         await resolveTransactionCategoryImages(view);
-        ui.setProperty("/invoiceLoaded", true);
+        ui.setProperty("/invoice/loaded", true);
     } catch (error) {
-        ui.setProperty("/invoiceLoaded", false);
+        ui.setProperty("/invoice/loaded", false);
         handleActionError(view, error, "invoicesLoadError");
     } finally {
-        ui.setProperty("/invoiceBusy", false);
+        ui.setProperty("/busy", false);
     }
 }
 
@@ -352,7 +352,7 @@ export async function loadInvoice(view: XMLView): Promise<void> {
  * @returns {boolean} whether the draft media should be preferred
  */
 function invoiceShowsDraft(view: XMLView): boolean {
-    return uiOf(view).getProperty("/invoiceIsDraft") === true;
+    return uiOf(view).getProperty("/invoice/isDraft") === true;
 }
 
 /**
@@ -364,7 +364,7 @@ function invoiceShowsDraft(view: XMLView): boolean {
  */
 export async function reloadInvoiceData(view: XMLView): Promise<void> {
     await loadCards(view);
-    if (uiOf(view).getProperty("/invoiceCardId")) {
+    if (uiOf(view).getProperty("/invoice/cardId")) {
         await loadInvoice(view);
     }
 }
@@ -380,22 +380,22 @@ const Invoices = {
         const now = new Date();
         const currentYear = now.getFullYear();
 
-        ui.setProperty("/invoiceYearOptions", Array.from({ length: 6 }, (_, offset) => {
+        ui.setProperty("/invoice/yearOptions", Array.from({ length: 6 }, (_, offset) => {
             const year = currentYear - 4 + offset;
             return { key: String(year), text: String(year) };
         }));
-        ui.setProperty("/invoiceMonthOptions", MONTH_NAMES.map((name, index) => ({
+        ui.setProperty("/invoice/monthOptions", MONTH_NAMES.map((name, index) => ({
             key: String(index + 1),
             text: name
         })));
-        ui.setProperty("/invoiceYear", String(currentYear));
-        ui.setProperty("/invoiceMonth", String(now.getMonth() + 1));
-        ui.setProperty("/invoiceCardId", "");
-        ui.setProperty("/invoiceId", "");
-        ui.setProperty("/invoiceIsDraft", false);
-        ui.setProperty("/invoiceLoaded", false);
-        ui.setProperty("/invoiceHeader", {});
-        ui.setProperty("/invoiceTransactionImages", {});
+        ui.setProperty("/invoice/year", String(currentYear));
+        ui.setProperty("/invoice/month", String(now.getMonth() + 1));
+        ui.setProperty("/invoice/cardId", "");
+        ui.setProperty("/invoice/id", "");
+        ui.setProperty("/invoice/isDraft", false);
+        ui.setProperty("/invoice/loaded", false);
+        ui.setProperty("/invoice/header", {});
+        ui.setProperty("/invoice/transactionImages", {});
 
         void reloadInvoiceData(view);
     },
@@ -403,7 +403,7 @@ const Invoices = {
     onDialogAfterOpen: function (this: Dialog): void {
         const list = Fragment.byId("Invoices", "invoiceCardList") as List | undefined;
         const view = this.getParent() as XMLView;
-        const id = uiOf(view).getProperty("/invoiceCardId") as string | undefined;
+        const id = uiOf(view).getProperty("/invoice/cardId") as string | undefined;
 
         if (!list || !id) {
             return;
@@ -425,19 +425,19 @@ const Invoices = {
             return;
         }
         const view = this.getParent() as XMLView;
-        uiOf(view).setProperty("/invoiceCardId", row.ID);
+        uiOf(view).setProperty("/invoice/cardId", row.ID);
         void loadInvoice(view);
     },
 
     onYearChange: function (this: Select): void {
         const view = this.getParent() as XMLView;
-        uiOf(view).setProperty("/invoiceYear", this.getSelectedKey());
+        uiOf(view).setProperty("/invoice/year", this.getSelectedKey());
         void loadInvoice(view);
     },
 
     onMonthChange: function (this: Select): void {
         const view = this.getParent() as XMLView;
-        uiOf(view).setProperty("/invoiceMonth", this.getSelectedKey());
+        uiOf(view).setProperty("/invoice/month", this.getSelectedKey());
         void loadInvoice(view);
     },
 
@@ -491,9 +491,9 @@ const Invoices = {
         }
 
         const ui = uiOf(view);
-        ui.setProperty("/invoiceSelectedIdentifier", transaction.Identifier);
-        ui.setProperty("/invoiceCurrentCategoryId", transaction.Category?.ID || "");
-        ui.setProperty("/invoiceCurrentCategoryName", transaction.Category?.Name || "");
+        ui.setProperty("/transactionCategory/selectedIdentifier", transaction.Identifier);
+        ui.setProperty("/transactionCategory/currentCategoryId", transaction.Category?.ID || "");
+        ui.setProperty("/transactionCategory/currentCategoryName", transaction.Category?.Name || "");
         (view.getController() as Home).openTransactionCategoryDialog();
     },
 
@@ -506,7 +506,7 @@ const Invoices = {
             return;
         }
 
-        uiOf(view).setProperty("/invoiceSelectedIdentifier", transaction.Identifier);
+        uiOf(view).setProperty("/deleteTransactions/selectedIdentifier", transaction.Identifier);
         (view.getController() as Home).openDeleteTransactionsDialog();
     },
 

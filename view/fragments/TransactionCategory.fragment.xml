@@ -15,7 +15,8 @@
         stretch="{device>/system/phone}"
         beforeOpen="handler.onDialogBeforeOpen"
         afterOpen="handler.onDialogAfterOpen"
-        busy="{ui>/invoiceBusy}"
+        afterClose="handler.onDialogAfterClose"
+        busy="{ui>/busy}"
     >
         <content>
             <VBox class="sapUiSmallMargin">
@@ -31,20 +32,20 @@
                     class="sapUiTinyMarginTopBottom"
                 >
                     <Avatar
-                        src="{ parts: [ { path: 'ui>/invoiceCurrentCategoryId' }, { path: 'ui>/invoiceCategoryImages' } ], formatter: 'formatter.cardImageValue' }"
-                        initials="{ parts: [ { path: 'ui>/invoiceCurrentCategoryName' } ], formatter: 'formatter.initials' }"
+                        src="{ parts: [ { path: 'ui>/transactionCategory/currentCategoryId' }, { path: 'ui>/transactionCategory/categoryImages' } ], formatter: 'formatter.cardImageValue' }"
+                        initials="{ parts: [ { path: 'ui>/transactionCategory/currentCategoryName' } ], formatter: 'formatter.initials' }"
                         displayShape="Circle"
                         class="invoiceCategoryAvatar sapUiTinyMarginEnd"
                     />
                     <Text
-                        text="{ parts: [ { path: 'i18n>transactionCategoryCurrent' }, { path: 'ui>/invoiceCurrentCategoryName' } ], formatter: 'formatter.formatTemplate' }"
+                        text="{ parts: [ { path: 'i18n>transactionCategoryCurrent' }, { path: 'ui>/transactionCategory/currentCategoryName' } ], formatter: 'formatter.formatTemplate' }"
                         class="invoiceAffectedText"
                     />
                 </HBox>
 
                 <Text
                     id="categoryAffectedText"
-                    text="{ui>/invoiceCategoryAffectedText}"
+                    text="{ui>/transactionCategory/affectedText}"
                     class="invoiceAffectedCount"
                 />
 
@@ -108,7 +109,7 @@
                             class="sapUiTinyMarginTopBottom"
                         >
                             <Avatar
-                                src="{ parts: [ { path: 'ID' }, { path: 'ui>/invoiceCategoryImages' } ], formatter: 'formatter.cardImageValue' }"
+                                src="{ parts: [ { path: 'ID' }, { path: 'ui>/transactionCategory/categoryImages' } ], formatter: 'formatter.cardImageValue' }"
                                 initials="{ parts: [ { path: 'Name' } ], formatter: 'formatter.initials' }"
                                 displayShape="Circle"
                                 class="invoiceCategoryAvatar sapUiTinyMarginEnd"
