@@ -132,15 +132,13 @@ sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
         invoiceBusy: false,
         invoiceHeader: {},
         invoiceTransactionImages: {},
-        invoiceCategories: [],
         invoiceCategoryImages: {},
         invoiceSelectedCategoryId: "",
         invoiceSelectedIdentifier: "",
         invoiceCurrentCategoryId: "",
         invoiceCurrentCategoryName: "",
-        invoiceCategoryAffected: [],
         invoiceCategoryAffectedText: "",
-        deleteTransactions: [],
+        deleteTransactionsCount: 0,
         deleteTransactionsCountText: "",
         deleteSelectAll: true
       };

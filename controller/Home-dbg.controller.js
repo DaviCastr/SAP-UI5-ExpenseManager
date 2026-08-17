@@ -71,6 +71,33 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       this.getUiModel().setProperty("/period", period);
       this.applyPeriodData();
     }
+
+    /**
+     * Filters the local (JSON) transaction list by date or description. The
+     * search text is matched against `SearchText` (description + formatted
+     * date) assembled by the DashboardRenderer, so a query such as "mercado"
+     * or "15/08" finds the matching rows client-side.
+     *
+     * @returns {void}
+     */
+    onTransactionSearch() {
+      const search = this.byId("transactionsSearch");
+      const list = this.byId("transactionsList");
+      const binding = list?.getBinding("items");
+      const query = search?.getValue()?.trim() || "";
+      if (!binding) {
+        return;
+      }
+      if (!query) {
+        binding.filter([]);
+        return;
+      }
+      binding.filter([new Filter({
+        path: "SearchText",
+        operator: FilterOperator.Contains,
+        value1: query
+      })]);
+    }
     onOpenExpenseDialog() {
       this.prepareExpenseDialogState();
       void this.openPreparedDialog("AddExpense", dialog => {
@@ -245,6 +272,45 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         ui.setProperty("/categoryDetail", result);
         return this.openPreparedDialog("CategoryDetail", dialog => dialog.open());
       }).catch(error => this.handleError(error, "errorLoadCategoryDetail")).finally(() => ui.setProperty("/busy", false));
+    }
+
+    /**
+     * Opens the category picker for the transaction whose action button was
+     * pressed, mirroring the selected Identifier and its current category into
+     * the ui model (same contract used by the invoice dialog).
+     *
+     * @param {Event} oEvent the press event
+     * @returns {void}
+     */
+    onTransactionCategoryPress(oEvent) {
+      const source = oEvent.getSource();
+      const transaction = source?.getBindingContext("ui")?.getObject();
+      if (!transaction?.Identifier) {
+        return;
+      }
+      const ui = this.getUiModel();
+      ui.setProperty("/invoiceSelectedIdentifier", transaction.Identifier);
+      ui.setProperty("/invoiceCurrentCategoryId", transaction.Category?.ID || "");
+      ui.setProperty("/invoiceCurrentCategoryName", transaction.Category?.Name || "");
+      this.openTransactionCategoryDialog();
+    }
+
+    /**
+     * Opens the batch-exclusion dialog for the transaction whose action button
+     * was pressed, mirroring the selected Identifier into the ui model (same
+     * contract used by the invoice dialog).
+     *
+     * @param {Event} oEvent the press event
+     * @returns {void}
+     */
+    onTransactionDeletePress(oEvent) {
+      const source = oEvent.getSource();
+      const transaction = source?.getBindingContext("ui")?.getObject();
+      if (!transaction?.Identifier) {
+        return;
+      }
+      this.getUiModel().setProperty("/invoiceSelectedIdentifier", transaction.Identifier);
+      this.openDeleteTransactionsDialog();
     }
     onOpenSimulationDialog() {
       const ui = this.getUiModel();
@@ -447,7 +513,25 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       const period = this.currentPeriod();
       ui.setProperty("/period", period);
       ui.setProperty("/monthLabel", this.presentPeriodLabel(period));
+      this.resetTransactionSearch();
       void this.loadDashboard();
+    }
+
+    /**
+     * Clears the local transaction search field and removes the filter applied
+     * to the JSON transaction list. Called whenever the period or person
+     * changes, so a stale query does not hide the freshly loaded rows.
+     *
+     * @returns {void}
+     */
+    resetTransactionSearch() {
+      const search = this.byId("transactionsSearch");
+      const list = this.byId("transactionsList");
+      const binding = list?.getBinding("items");
+      if (search) {
+        search.setValue("");
+      }
+      binding?.filter([]);
     }
     navigateMonth(delta) {
       const period = this.currentPeriod();

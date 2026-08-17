@@ -1,50 +1,28 @@
 import Control from "sap/ui/core/Control";
 import Dialog from "sap/m/Dialog";
 import XMLView from "sap/ui/core/mvc/XMLView";
+import Fragment from "sap/ui/core/Fragment";
 import List from "sap/m/List";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
+import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
 import Filter from "sap/ui/model/Filter";
 import FilterOperator from "sap/ui/model/FilterOperator";
-import { ODataService, DRAFT_FILTER, DRAFT_EXPAND } from "../../service/ODataService";
-import { InvoiceService, type IdentifierTransaction } from "../../service/InvoiceService";
+import { ODataService } from "../../service/ODataService";
+import type { IdentifierTransaction } from "../../service/InvoiceService";
 import { applyCategoryToTransactions, type TransactionWriteTarget } from "../../util/invoiceWriter";
-import { formatDate, formatMonth } from "../../util/format";
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import { reloadInvoiceData } from "./Invoices";
 
 interface CategorySelectorRow {
     ID: string;
-    Name: string;
-    ImageBase64: string;
+    Name?: string;
 }
 
-interface AffectedTransactionRow extends IdentifierTransaction {
-    DateText?: string;
-    Subtitle?: string;
-}
+type AffectedTransactionRow = IdentifierTransaction;
 
 const uiOf = (view: XMLView): JSONModel => view.getModel("ui") as JSONModel;
-
-/**
- * Builds the subtitle of an affected transaction row: the installments
- * information when the purchase was paid in more than one parcel, followed by
- * the invoice month of that transaction (e.g. "Parcela 1 de 2 • Março de 2026").
- *
- * @param {IdentifierTransaction} transaction the affected transaction
- * @returns {string} the human readable subtitle
- */
-function buildSubtitle(transaction: IdentifierTransaction): string {
-    const installments = Number(transaction.TotalInstallments) || 0;
-    const parcel = installments > 1
-        ? `Parcela ${Number(transaction.Installment) || 1} de ${installments}`
-        : "";
-    const month = transaction.Invoice?.Year && transaction.Invoice?.Month
-        ? formatMonth(transaction.Invoice.Year, transaction.Invoice.Month)?.trim()
-        : "";
-    return [parcel, month].filter(Boolean).join(" • ");
-}
 
 /**
  * Builds the write targets of every affected transaction. Rows without the
@@ -70,76 +48,108 @@ function buildTargets(rows: AffectedTransactionRow[]): TransactionWriteTarget[] 
 }
 
 /**
- * Loads the person's categories with their thumbnails for the selector dialog.
+ * Filters the person's categories on the category selector list and resolves
+ * their thumbnails into `ui>/invoiceCategoryImages` (keyed by category ID).
+ * The list itself is bound to the OData `/Categories` entity set
+ * declaratively; the person filter is server-side, applied on the binding.
  *
  * @param {XMLView} view the Home view
  * @returns {Promise<void>} resolves once the categories are loaded
  */
-async function loadCategories(view: XMLView): Promise<void> {
+async function filterCategories(view: XMLView): Promise<void> {
     const ui = uiOf(view);
     const personId = ui.getProperty("/selectedPersonId") as string;
-    const odata = new ODataService(view.getModel() as ODataModel);
+    const list = Fragment.byId("TransactionCategory", "transactionCategoryList") as List | undefined;
+    const binding = list?.getBinding("items") as ODataListBinding | undefined;
 
-    if (!personId) {
-        ui.setProperty("/invoiceCategories", []);
+    if (!personId || !binding) {
+        ui.setProperty("/invoiceCategoryImages", {});
         return;
     }
 
-    const categories = await odata.requestEntitySet<{ ID: string; Name: string } & { IsActiveEntity?: boolean }>("Categories", {
-        select: ["ID", "Name"],
-        filters: [new Filter({ path: "Person/ID", operator: FilterOperator.EQ, value1: personId })],
-        filterExpression: DRAFT_FILTER,
-        expand: DRAFT_EXPAND
-    });
+    binding.filter([
+        new Filter({ path: "Person/ID", operator: FilterOperator.EQ, value1: personId })
+    ]);
 
+    const contexts = await binding.requestContexts();
+    const odata = new ODataService(view.getModel() as ODataModel);
     const images: Record<string, string> = {};
+
     await Promise.all(
-        categories.map(async (category) => {
-            const base64 = await odata.getMediaAsBase64(`Categories(ID='${encodeURIComponent(category.ID)}',IsActiveEntity=true)/Image`);
+        contexts.map(async (context) => {
+            const category = context.getObject() as CategorySelectorRow | undefined;
+            if (!category?.ID) {
+                return;
+            }
+            // A freshly created category may only exist as a draft row, so the
+            // draft media (IsActiveEntity=false) has precedence, falling back to
+            // the active image when the category has no draft media (yet).
+            const base64 = await odata.getMediaAsBase64(`Categories(ID='${encodeURIComponent(category.ID)}',IsActiveEntity=false)/Image`)
+                ?? await odata.getMediaAsBase64(`Categories(ID='${encodeURIComponent(category.ID)}',IsActiveEntity=true)/Image`);
             if (base64) {
                 images[category.ID] = base64;
             }
         })
     );
 
-    const rows: CategorySelectorRow[] = categories.map((category) => ({
-        ID: category.ID,
-        Name: category.Name,
-        ImageBase64: images[category.ID] || ""
-    }));
-    ui.setProperty("/invoiceCategories", rows);
+    ui.setProperty("/invoiceCategoryImages", images);
 }
 
 /**
- * Loads every transaction of the person that shares the selected Identifier,
- * so the dialog can report how many rows the category change will affect.
+ * Filters the transactions that share the selected Identifier on the affected
+ * list, reporting how many rows the category change will affect. The list is
+ * bound to the OData `/Transactions` entity set declaratively (sorted by
+ * installment ascending); the person/identifier filters run on the server.
  *
  * @param {XMLView} view the Home view
  * @returns {Promise<void>} resolves once the affected rows are loaded
  */
-async function loadAffected(view: XMLView): Promise<void> {
+async function filterAffected(view: XMLView): Promise<void> {
     const ui = uiOf(view);
     const personId = ui.getProperty("/selectedPersonId") as string;
     const identifier = ui.getProperty("/invoiceSelectedIdentifier") as string;
+    const list = Fragment.byId("TransactionCategory", "transactionCategoryAffectedList") as List | undefined;
+    const binding = list?.getBinding("items") as ODataListBinding | undefined;
 
-    if (!personId || !identifier) {
-        ui.setProperty("/invoiceCategoryAffected", []);
+    if (!personId || !identifier || !binding) {
         ui.setProperty("/invoiceCategoryAffectedText", "");
         return;
     }
 
-    const service = new InvoiceService(new ODataService(view.getModel() as ODataModel));
-    const list = await service.listTransactionsByIdentifier(personId, identifier);
-    const rows: AffectedTransactionRow[] = list
-        .slice()
-        .sort((a, b) => String(b.Date || "").localeCompare(String(a.Date || "")))
-        .map((transaction) => ({
-            ...transaction,
-            DateText: formatDate(transaction.Date),
-            Subtitle: buildSubtitle(transaction)
-        }));
-    ui.setProperty("/invoiceCategoryAffected", rows);
-    ui.setProperty("/invoiceCategoryAffectedText", getText(view, "transactionCategoryAffected", [String(rows.length)]));
+    binding.filter([
+        new Filter({ path: "Invoice/Card/Person/ID", operator: FilterOperator.EQ, value1: personId }),
+        new Filter({ path: "Identifier", operator: FilterOperator.EQ, value1: identifier })
+    ]);
+
+    const contexts = await binding.requestContexts();
+    ui.setProperty("/invoiceCategoryAffectedText", getText(view, "transactionCategoryAffected", [String(contexts.length)]));
+}
+
+/**
+ * Preselects the category currently assigned to the transaction (if present)
+ * on the selector list, mirroring it into `invoiceSelectedCategoryId`.
+ *
+ * @param {XMLView} view the Home view
+ * @returns {void}
+ */
+function preselectCurrentCategory(view: XMLView): void {
+    const ui = uiOf(view);
+    const currentId = ui.getProperty("/invoiceCurrentCategoryId") as string;
+    const list = Fragment.byId("TransactionCategory", "transactionCategoryList") as List | undefined;
+
+    if (!currentId || !list) {
+        return;
+    }
+
+    list.getItems().some((item) => {
+        const row = item.getBindingContext()?.getObject() as CategorySelectorRow | undefined;
+        if (row?.ID === currentId) {
+            list.setSelectedItem(item, true);
+            ui.setProperty("/invoiceSelectedCategoryId", row.ID);
+            return true;
+        }
+        return false;
+    });
 }
 
 const TransactionCategory = {
@@ -148,14 +158,20 @@ const TransactionCategory = {
         const view = this.getParent() as XMLView;
         const ui = uiOf(view);
         ui.setProperty("/invoiceSelectedCategoryId", "");
+        ui.setProperty("/invoiceCategoryAffectedText", "");
         ui.setProperty("/invoiceBusy", true);
-        void Promise.all([loadCategories(view), loadAffected(view)])
+        void Promise.all([filterCategories(view), filterAffected(view)])
             .catch((error) => handleActionError(view, error, "transactionCategorySaveError"))
             .finally(() => ui.setProperty("/invoiceBusy", false));
     },
 
+    onDialogAfterOpen: function (this: Dialog): void {
+        const view = this.getParent() as XMLView;
+        preselectCurrentCategory(view);
+    },
+
     onCategoryChanged: function (this: List): void {
-        const row = this.getSelectedItem()?.getBindingContext("ui")?.getObject() as CategorySelectorRow | undefined;
+        const row = this.getSelectedItem()?.getBindingContext()?.getObject() as CategorySelectorRow | undefined;
         if (row?.ID) {
             uiOf(this.getParent() as XMLView).setProperty("/invoiceSelectedCategoryId", row.ID);
         }
@@ -167,13 +183,21 @@ const TransactionCategory = {
         const ui = uiOf(view);
         const personId = ui.getProperty("/selectedPersonId") as string;
         const categoryId = ui.getProperty("/invoiceSelectedCategoryId") as string;
-        const affected = ui.getProperty("/invoiceCategoryAffected") as AffectedTransactionRow[];
 
         if (!categoryId) {
             showWarning(view, "transactionCategorySelectHint");
             return;
         }
 
+        const list = Fragment.byId("TransactionCategory", "transactionCategoryAffectedList") as List | undefined;
+        const binding = list?.getBinding("items") as ODataListBinding | undefined;
+        if (!binding) {
+            showWarning(view, "transactionCategoryNoTargets");
+            return;
+        }
+
+        const contexts = await binding.requestContexts();
+        const affected = contexts.map((context) => context.getObject() as AffectedTransactionRow);
         const targets = buildTargets(affected || []);
         if (targets.length === 0) {
             showWarning(view, "transactionCategoryNoTargets");

@@ -4,6 +4,7 @@ sap.ui.define(["./PeriodService", "../util/format"], function (___PeriodService,
   const PeriodService = ___PeriodService["PeriodService"];
   const formatCurrency = ___util_format["formatCurrency"];
   const currencyCode = ___util_format["currencyCode"];
+  const formatDate = ___util_format["formatDate"];
   /**
    * Converts the backend invoice (function result) into the view state of the
    * Home dashboard: the metrics, the trend comparison and the category breakdown.
@@ -26,7 +27,8 @@ sap.ui.define(["./PeriodService", "../util/format"], function (___PeriodService,
       const targetPercent = target > 0 ? Math.round(expenses / target * 100) : 0;
       const transactions = (invoice.Transactions || []).slice().sort((a, b) => String(b.Date || "").localeCompare(String(a.Date || ""))).map(transaction => ({
         ...transaction,
-        Currency: currency
+        Currency: currency,
+        SearchText: [transaction.Description, formatDate(transaction.Date)].filter(Boolean).join(" ")
       }));
       this.ui.setProperty("/summary", {
         available: formatCurrency(available, currency),

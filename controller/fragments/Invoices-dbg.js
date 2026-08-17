@@ -28,6 +28,30 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
   const uiOf = view => view.getModel("ui");
 
   /**
+   * Parses a date typed by the user (`dd/mm/yyyy` with `.` or `-` separators)
+   * into the `Edm.Date` notation used by the OData service (`yyyy-mm-dd`).
+   *
+   * @param {string} value the typed filter value
+   * @returns {string | undefined} the ISO date, or `undefined` when not a date
+   */
+  function parseDateFilter(value) {
+    const match = value.trim().match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$/);
+    if (!match) {
+      return undefined;
+    }
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    let year = Number(match[3]);
+    if (year < 100) {
+      year += 2000;
+    }
+    if (month < 1 || month > 12 || day < 1 || day > 31) {
+      return undefined;
+    }
+    return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
+
+  /**
    * Moves the invoice period forward/backward by one month, wrapping years, and
    * reloads the invoice.
    *
@@ -107,6 +131,105 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
   }
 
   /**
+   * Clears the transaction search field and removes the filters applied to the
+   * transaction list. Used whenever the invoice being shown changes, so a stale
+   * query does not leak into the newly bound list.
+   *
+   * @returns {void}
+   */
+  function resetTransactionSearch() {
+    const search = Fragment.byId("Invoices", "invoiceTransactionSearch");
+    const list = Fragment.byId("Invoices", "invoiceTransactionList");
+    const binding = list?.getBinding("items");
+    if (search) {
+      search.setValue("");
+    }
+    binding?.filter([]);
+  }
+
+  /**
+   * Detaches the Invoices dialog from its invoice binding. Used when no invoice
+   * exists for the selected card/period so the transaction list shows its empty
+   * text instead of stale rows.
+   *
+   * @returns {void}
+   */
+  function unbindTransactionList() {
+    const dialog = Fragment.byId("Invoices", "invoicesDialog");
+    resetTransactionSearch();
+    dialog?.unbindObject();
+  }
+
+  /**
+   * Binds the invoice transaction list to the transactions navigation of the
+   * resolved invoice. The path uses the invoice key and its active/draft state,
+   * so the OData V4 model reads exactly the transactions of the entity being
+   * shown. `$orderby` (descending date) runs on the server.
+   *
+   * @param {XMLView} view the Home view
+   * @param {string} invoiceId the resolved invoice ID
+   * @param {boolean} isDraft whether the invoice is being shown as a draft
+   * @returns {void}
+   */
+  function bindTransactionList(view, invoiceId, isDraft) {
+    const dialog = Fragment.byId("Invoices", "invoicesDialog");
+    resetTransactionSearch();
+    if (!dialog) {
+      return;
+    }
+    const path = `/Invoices(ID='${encodeURIComponent(invoiceId)}',IsActiveEntity=${isDraft ? "false" : "true"})`;
+    dialog.unbindObject();
+    dialog.bindObject(path);
+  }
+
+  /**
+   * Resolves the thumbnail of every distinct category used by the bound invoice
+   * transactions and mirrors it into `ui>/invoiceTransactionImages` (keyed by
+   * category ID). When the invoice being shown is a draft, the draft media is
+   * tried first, falling back to the active category image. Best effort.
+   *
+   * @param {XMLView} view the Home view
+   * @returns {Promise<void>} resolves once the images were resolved
+   */
+  async function resolveTransactionCategoryImages(view) {
+    const ui = uiOf(view);
+    const odata = new ODataService(view.getModel());
+    const list = Fragment.byId("Invoices", "invoiceTransactionList");
+    const binding = list?.getBinding("items");
+    if (!binding) {
+      return;
+    }
+    try {
+      const contexts = await binding.requestContexts();
+      const byId = new Set();
+      contexts.forEach(context => {
+        const transaction = context.getObject();
+        const categoryId = transaction?.Category?.ID;
+        if (categoryId) {
+          byId.add(categoryId);
+        }
+      });
+      if (byId.size === 0) {
+        return;
+      }
+      const images = {};
+      await Promise.all(Array.from(byId).map(async categoryId => {
+        const states = invoiceShowsDraft(view) ? [false, true] : [true];
+        for (const isActiveEntity of states) {
+          const base64 = await odata.getMediaAsBase64(`Categories(ID='${encodeURIComponent(categoryId)}',IsActiveEntity=${isActiveEntity})/Image`);
+          if (base64) {
+            images[categoryId] = base64;
+            return;
+          }
+        }
+      }));
+      ui.setProperty("/invoiceTransactionImages", images);
+    } catch {
+      // keep initials; image loading must not break the dialog
+    }
+  }
+
+  /**
    * Loads the invoice of the currently selected card/period into the ui model
    * (`invoiceHeader`) and binds the transaction list to the resolved invoice.
    * The transaction ordering (date desc) and the draft/active resolution happen
@@ -162,86 +285,6 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
       handleActionError(view, error, "invoicesLoadError");
     } finally {
       ui.setProperty("/invoiceBusy", false);
-    }
-  }
-
-  /**
-   * Binds the invoice transaction list to the transactions navigation of the
-   * resolved invoice. The path uses the invoice key and its active/draft state,
-   * so the OData V4 model reads exactly the transactions of the entity being
-   * shown. `$orderby` (descending date) runs on the server.
-   *
-   * @param {XMLView} view the Home view
-   * @param {string} invoiceId the resolved invoice ID
-   * @param {boolean} isDraft whether the invoice is being shown as a draft
-   * @returns {void}
-   */
-  function bindTransactionList(view, invoiceId, isDraft) {
-    const dialog = Fragment.byId("Invoices", "invoicesDialog");
-    if (!dialog) {
-      return;
-    }
-    const path = `/Invoices(ID='${encodeURIComponent(invoiceId)}',IsActiveEntity=${isDraft ? "false" : "true"})`;
-    dialog.unbindObject();
-    dialog.bindObject(path);
-  }
-
-  /**
-   * Detaches the Invoices dialog from its invoice binding. Used when no invoice
-   * exists for the selected card/period so the transaction list shows its empty
-   * text instead of stale rows.
-   *
-   * @returns {void}
-   */
-  function unbindTransactionList() {
-    const dialog = Fragment.byId("Invoices", "invoicesDialog");
-    dialog?.unbindObject();
-  }
-
-  /**
-   * Resolves the thumbnail of every distinct category used by the bound invoice
-   * transactions and mirrors it into `ui>/invoiceTransactionImages` (keyed by
-   * category ID). When the invoice being shown is a draft, the draft media is
-   * tried first, falling back to the active category image. Best effort.
-   *
-   * @param {XMLView} view the Home view
-   * @returns {Promise<void>} resolves once the images were resolved
-   */
-  async function resolveTransactionCategoryImages(view) {
-    const ui = uiOf(view);
-    const odata = new ODataService(view.getModel());
-    const list = Fragment.byId("Invoices", "invoiceTransactionList");
-    const binding = list?.getBinding("items");
-    if (!binding) {
-      return;
-    }
-    try {
-      const contexts = await binding.requestContexts();
-      const byId = new Set();
-      contexts.forEach(context => {
-        const transaction = context.getObject();
-        const categoryId = transaction?.Category?.ID;
-        if (categoryId) {
-          byId.add(categoryId);
-        }
-      });
-      if (byId.size === 0) {
-        return;
-      }
-      const images = {};
-      await Promise.all(Array.from(byId).map(async categoryId => {
-        const states = invoiceShowsDraft(view) ? [false, true] : [true];
-        for (const isActiveEntity of states) {
-          const base64 = await odata.getMediaAsBase64(`Categories(ID='${encodeURIComponent(categoryId)}',IsActiveEntity=${isActiveEntity})/Image`);
-          if (base64) {
-            images[categoryId] = base64;
-            return;
-          }
-        }
-      }));
-      ui.setProperty("/invoiceTransactionImages", images);
-    } catch {
-      // keep initials; image loading must not break the dialog
     }
   }
 
@@ -334,6 +377,36 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/ui/model/Filter", "s
       const view = this.getParent();
       uiOf(view).setProperty("/invoiceMonth", this.getSelectedKey());
       void loadInvoice(view);
+    },
+    onTransactionSearch: function () {
+      const view = Fragment.byId("Invoices", "invoicesDialog")?.getParent();
+      const list = Fragment.byId("Invoices", "invoiceTransactionList");
+      const binding = list?.getBinding("items");
+      if (!view || !binding) {
+        return;
+      }
+      const query = this.getValue()?.trim() || "";
+      const filters = [];
+      const isoDate = parseDateFilter(query);
+      if (query) {
+        filters.push(new Filter({
+          path: "Description",
+          operator: FilterOperator.Contains,
+          value1: query
+        }));
+      }
+      if (isoDate) {
+        filters.push(new Filter({
+          path: "Date",
+          operator: FilterOperator.EQ,
+          value1: isoDate
+        }));
+      }
+      const applied = filters.length > 1 ? [new Filter({
+        filters,
+        and: false
+      })] : filters;
+      binding.filter(applied);
     },
     onPreviousPeriod: function () {
       const dialog = findInvoicesDialog(this);

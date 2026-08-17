@@ -14,6 +14,7 @@
         contentWidth="38rem"
         stretch="{device>/system/phone}"
         beforeOpen="handler.onDialogBeforeOpen"
+        afterOpen="handler.onDialogAfterOpen"
         busy="{ui>/invoiceBusy}"
     >
         <content>
@@ -25,10 +26,21 @@
                     class="sapUiSmallMarginBottom"
                 />
 
-                <Text
-                    text="{ parts: [ { path: 'i18n>transactionCategoryCurrent' }, { path: 'ui>/invoiceCurrentCategoryName' } ], formatter: 'formatter.formatTemplate' }"
-                    class="invoiceAffectedText"
-                />
+                <HBox
+                    alignItems="Center"
+                    class="sapUiTinyMarginTopBottom"
+                >
+                    <Avatar
+                        src="{ parts: [ { path: 'ui>/invoiceCurrentCategoryId' }, { path: 'ui>/invoiceCategoryImages' } ], formatter: 'formatter.cardImageValue' }"
+                        initials="{ parts: [ { path: 'ui>/invoiceCurrentCategoryName' } ], formatter: 'formatter.initials' }"
+                        displayShape="Circle"
+                        class="invoiceCategoryAvatar sapUiTinyMarginEnd"
+                    />
+                    <Text
+                        text="{ parts: [ { path: 'i18n>transactionCategoryCurrent' }, { path: 'ui>/invoiceCurrentCategoryName' } ], formatter: 'formatter.formatTemplate' }"
+                        class="invoiceAffectedText"
+                    />
+                </HBox>
 
                 <Text
                     id="categoryAffectedText"
@@ -38,7 +50,15 @@
 
                 <List
                     id="transactionCategoryAffectedList"
-                    items="{ path: 'ui>/invoiceCategoryAffected' }"
+                    items="{
+                        path: '/Transactions',
+                        sorter: { path: 'Installment', descending: false },
+                        parameters: {
+                            $expand: 'Invoice($select=ID,Card_ID,Year,Month;$expand=Card($select=ID)),Category,Currency',
+                            $select: 'ID,Identifier,Date,Description,Installment,TotalInstallments',
+                            $filter: '(IsActiveEntity eq false or SiblingEntity/IsActiveEntity eq null)'
+                        }
+                    }"
                     showSeparators="None"
                     class="invoiceAffectedList"
                     noDataText="{i18n>invoiceTransactionsNoData}"
@@ -50,10 +70,13 @@
                             justifyContent="SpaceBetween"
                         >
                             <VBox>
-                                <Text text="{ui>Description}" class="transactionTitle" />
-                                <Text text="{ui>Subtitle}" class="invoiceTxCategory" />
+                                <Text text="{Description}" class="transactionTitle" />
+                                <Text
+                                    text="{ parts: [ { path: 'Installment' }, { path: 'TotalInstallments' }, { path: 'Invoice/Year' }, { path: 'Invoice/Month' } ], formatter: 'formatter.installmentSubtitle' }"
+                                    class="invoiceTxCategory"
+                                />
                             </VBox>
-                            <Text text="{ui>DateText}" class="transactionDate" />
+                            <Text text="{ path: 'Date', formatter: 'formatter.formatDate' }" class="transactionDate" />
                         </HBox>
                     </CustomListItem>
                 </List>
@@ -66,7 +89,14 @@
 
                 <List
                     id="transactionCategoryList"
-                    items="{ path: 'ui>/invoiceCategories' }"
+                    items="{
+                        path: '/Categories',
+                        sorter: { path: 'Name', descending: false },
+                        parameters: {
+                            $select: 'ID,Name',
+                            $filter: '(IsActiveEntity eq false or SiblingEntity/IsActiveEntity eq null)'
+                        }
+                    }"
                     mode="SingleSelectMaster"
                     selectionChange="handler.onCategoryChanged"
                     noDataText="{i18n>categoriesNoData}"
@@ -78,12 +108,12 @@
                             class="sapUiTinyMarginTopBottom"
                         >
                             <Avatar
-                                src="{ui>ImageBase64}"
-                                initials="{ parts: [ { path: 'ui>Name' } ], formatter: 'formatter.initials' }"
+                                src="{ parts: [ { path: 'ID' }, { path: 'ui>/invoiceCategoryImages' } ], formatter: 'formatter.cardImageValue' }"
+                                initials="{ parts: [ { path: 'Name' } ], formatter: 'formatter.initials' }"
                                 displayShape="Circle"
                                 class="invoiceCategoryAvatar sapUiTinyMarginEnd"
                             />
-                            <Text text="{ui>Name}" class="transactionTitle" />
+                            <Text text="{Name}" class="transactionTitle" />
                         </HBox>
                     </CustomListItem>
                 </List>

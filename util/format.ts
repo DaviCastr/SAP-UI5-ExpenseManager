@@ -37,7 +37,7 @@ export function formatCurrency(value: number | string, currency?: string): strin
     const amount = toNumber(value);
     const code = currency || "BRL";
     return amount.toLocaleString("pt-BR", { style: "currency", currency: code });
-} 
+}
 
 export function formatCardAmount(limit?: number | string, currency?: unknown): string {
     return formatCurrency(toNumber(limit ?? 0), currencyCode(currency));
@@ -127,6 +127,28 @@ export function transactionSubtitle(date?: string, installment?: number | string
 }
 
 /**
+ * Builds the subtitle of an affected transaction row: the installments
+ * information when the purchase was paid in more than one parcel, followed by
+ * the invoice month of that transaction (e.g. "Parcela 1 de 2 • Março de 2026").
+ *
+ * @param {number|string} [installment] current installment index
+ * @param {number|string} [totalInstallments] total number of installments
+ * @param {number|string} [year] the invoice year
+ * @param {number|string} [month] the invoice month (1-12)
+ * @returns {string} the human readable subtitle
+ */
+export function installmentSubtitle(installment?: number | string, totalInstallments?: number | string, year?: number | string, month?: number | string): string {
+    const total = Number(totalInstallments) || 0;
+    const parcel = total > 1
+        ? `Parcela ${Number(installment) || 1} de ${total}`
+        : "";
+    const monthText = year && month
+        ? formatMonth(Number(year), Number(month))?.trim()
+        : "";
+    return [parcel, monthText].filter(Boolean).join(" • ");
+}
+
+/**
  * Formats the amount of a transaction row. Prefers the transaction's own
  * currency code, falling back to the invoice currency like the previous rows.
  *
@@ -137,7 +159,31 @@ export function transactionSubtitle(date?: string, installment?: number | string
  */
 export function formatTransactionAmount(amount?: number | string, transactionCurrency?: string, invoiceCurrency?: string): string {
     const code = (typeof transactionCurrency === "string" && transactionCurrency) || invoiceCurrency || "BRL";
-    return formatCurrency(Number(amount) || 0, code);
+    return formatCurrency(toNumber(amount as string) || 0, code);
+}
+
+/**
+ * Tells whether a total amount should be shown for a transaction row, i.e.
+ * when the total exists and differs from the per-installment amount.
+ *
+ * @param {number|string} [total] the total amount of the purchase
+ * @param {number|string} [amount] the per-transaction amount
+ * @returns {boolean} whether the total label must be rendered
+ */
+export function hasTotalAmount(total?: number | string): boolean {
+    const parsedTotal = toNumber(total ?? 0);
+    return parsedTotal > 0;
+}
+
+
+export function formatTemplate(template?: string, ...args: Array<string | number>): string {
+    if (!template) {
+        return "";
+    }
+    return args.reduce(
+        (acc: string, arg, index) => acc.replace(new RegExp(`\\{${index}\\}`, "g"), String(arg ?? "")),
+        template
+    );
 }
 
 /**
@@ -152,35 +198,12 @@ export function formatTransactionAmount(amount?: number | string, transactionCur
  * @returns {string} the labeled formatted total, or an empty string when not applicable
  */
 export function formatTotalWithLabel(template?: string, total?: number | string, amount?: number | string, currency?: string): string {
-    if (!hasTotalAmount(total, amount)) {
-        return "";
-    }
+
     const code = (typeof currency === "string" && currency) || "BRL";
-    return formatTemplate(template, formatCurrency(Number(total), code));
-}
-
-/**
- * Tells whether a total amount should be shown for a transaction row, i.e.
- * when the total exists and differs from the per-installment amount.
- *
- * @param {number|string} [total] the total amount of the purchase
- * @param {number|string} [amount] the per-transaction amount
- * @returns {boolean} whether the total label must be rendered
- */
-export function hasTotalAmount(total?: number | string, amount?: number | string): boolean {
-    const parsedTotal = toNumber(total ?? 0);
-    const parsedAmount = toNumber(amount ?? 0);
-    return parsedTotal > 0 && parsedTotal !== parsedAmount;
-}
-
-export function formatTemplate(template?: string, ...args: Array<string | number>): string {
-    if (!template) {
-        return "";
+    if (!hasTotalAmount(total)) {
+        return formatTemplate(template, formatCurrency(toNumber(amount as string), code));
     }
-    return args.reduce(
-        (acc: string, arg, index) => acc.replace(new RegExp(`\\{${index}\\}`, "g"), String(arg ?? "")),
-        template
-    );
+    return formatTemplate(template, formatCurrency(toNumber(total as string), code));
 }
 
 export function initials(name?: string): string {

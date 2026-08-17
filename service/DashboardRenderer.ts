@@ -1,7 +1,7 @@
 import JSONModel from "sap/ui/model/json/JSONModel";
 import { InvoiceService, type CompleteInvoice, type Period } from "./InvoiceService";
 import { PeriodService } from "./PeriodService";
-import { formatCurrency, currencyCode } from "../util/format";
+import { formatCurrency, currencyCode, formatDate } from "../util/format";
 
 export interface TransactionRow {
     ID: string;
@@ -10,6 +10,7 @@ export interface TransactionRow {
     Amount?: number;
     Currency?: string;
     Category?: { ID: string; Name: string; ImagePath?: string; ImageBase64?: string };
+    SearchText?: string;
 }
 
 export interface CategoryBreakdownItem {
@@ -56,7 +57,8 @@ export class DashboardRenderer {
             .sort((a, b) => String(b.Date || "").localeCompare(String(a.Date || "")))
             .map((transaction) => ({
                 ...transaction,
-                Currency: currency
+                Currency: currency,
+                SearchText: [transaction.Description, formatDate(transaction.Date)].filter(Boolean).join(" ")
             }));
 
         this.ui.setProperty("/summary", {

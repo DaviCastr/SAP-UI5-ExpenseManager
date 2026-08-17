@@ -2,6 +2,7 @@ import MessageToast from "sap/m/MessageToast";
 import Dialog from "sap/m/Dialog";
 import Select from "sap/m/Select";
 import List from "sap/m/List";
+import SearchField from "sap/m/SearchField";
 import Control from "sap/ui/core/Control";
 import Event from "sap/ui/base/Event";
 import Context from "sap/ui/model/Context";
@@ -107,6 +108,32 @@ export default class Home extends BaseController {
         const period = this.periodService.current();
         this.getUiModel().setProperty("/period", period);
         this.applyPeriodData();
+    }
+
+    /**
+     * Filters the local (JSON) transaction list by date or description. The
+     * search text is matched against `SearchText` (description + formatted
+     * date) assembled by the DashboardRenderer, so a query such as "mercado"
+     * or "15/08" finds the matching rows client-side.
+     *
+     * @returns {void}
+     */
+    public onTransactionSearch(): void {
+        const search = this.byId("transactionsSearch") as SearchField | undefined;
+        const list = this.byId("transactionsList") as List | undefined;
+        const binding = list?.getBinding("items") as ListBinding | undefined;
+        const query = search?.getValue()?.trim() || "";
+
+        if (!binding) {
+            return;
+        }
+
+        if (!query) {
+            binding.filter([]);
+            return;
+        }
+
+        binding.filter([new Filter({ path: "SearchText", operator: FilterOperator.Contains, value1: query })]);
     }
 
     public onOpenExpenseDialog(): void {
@@ -308,6 +335,53 @@ export default class Home extends BaseController {
             })
             .catch((error) => this.handleError(error, "errorLoadCategoryDetail"))
             .finally(() => ui.setProperty("/busy", false));
+    }
+
+    /**
+     * Opens the category picker for the transaction whose action button was
+     * pressed, mirroring the selected Identifier and its current category into
+     * the ui model (same contract used by the invoice dialog).
+     *
+     * @param {Event} oEvent the press event
+     * @returns {void}
+     */
+    public onTransactionCategoryPress(oEvent: Event): void {
+        const source = oEvent.getSource<Control>();
+        const transaction = source?.getBindingContext("ui")?.getObject() as
+            | { Identifier?: string; Category?: { ID?: string; Name?: string } | null }
+            | undefined;
+
+        if (!transaction?.Identifier) {
+            return;
+        }
+
+        const ui = this.getUiModel();
+        ui.setProperty("/invoiceSelectedIdentifier", transaction.Identifier);
+        ui.setProperty("/invoiceCurrentCategoryId", transaction.Category?.ID || "");
+        ui.setProperty("/invoiceCurrentCategoryName", transaction.Category?.Name || "");
+        this.openTransactionCategoryDialog();
+    }
+
+    /**
+     * Opens the batch-exclusion dialog for the transaction whose action button
+     * was pressed, mirroring the selected Identifier into the ui model (same
+     * contract used by the invoice dialog).
+     *
+     * @param {Event} oEvent the press event
+     * @returns {void}
+     */
+    public onTransactionDeletePress(oEvent: Event): void {
+        const source = oEvent.getSource<Control>();
+        const transaction = source?.getBindingContext("ui")?.getObject() as
+            | { Identifier?: string }
+            | undefined;
+
+        if (!transaction?.Identifier) {
+            return;
+        }
+
+        this.getUiModel().setProperty("/invoiceSelectedIdentifier", transaction.Identifier);
+        this.openDeleteTransactionsDialog();
     }
 
     public onOpenSimulationDialog(): void {
@@ -538,7 +612,25 @@ export default class Home extends BaseController {
         const period = this.currentPeriod();
         ui.setProperty("/period", period);
         ui.setProperty("/monthLabel", this.presentPeriodLabel(period));
+        this.resetTransactionSearch();
         void this.loadDashboard();
+    }
+
+    /**
+     * Clears the local transaction search field and removes the filter applied
+     * to the JSON transaction list. Called whenever the period or person
+     * changes, so a stale query does not hide the freshly loaded rows.
+     *
+     * @returns {void}
+     */
+    private resetTransactionSearch(): void {
+        const search = this.byId("transactionsSearch") as SearchField | undefined;
+        const list = this.byId("transactionsList") as List | undefined;
+        const binding = list?.getBinding("items") as ListBinding | undefined;
+        if (search) {
+            search.setValue("");
+        }
+        binding?.filter([]);
     }
 
     private navigateMonth(delta: number): void {
