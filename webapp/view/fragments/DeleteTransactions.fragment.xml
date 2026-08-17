@@ -14,8 +14,8 @@
         contentWidth="46rem"
         stretch="{device>/system/phone}"
         beforeOpen="handler.onDialogBeforeOpen"
-        afterOpen="handler.onDialogAfterOpen"
-        busy="{ui>/invoiceBusy}"
+        afterClose="handler.onDialogAfterClose"
+        busy="{ui>/busy}"
     >
         <content>
             <VBox class="sapUiSmallMargin">
@@ -32,13 +32,13 @@
                     class="sapUiSmallMarginBottom"
                 >
                     <Text
-                        text="{ui>/deleteTransactionsCountText}"
+                        text="{ui>/deleteTransactions/countText}"
                         class="invoiceAffectedCount"
                     />
                     <CheckBox
                         id="deleteSelectAll"
                         text="{i18n>deleteTransactionsSelectAll}"
-                        selected="{ui>/deleteSelectAll}"
+                        selected="{ui>/deleteTransactions/selectAll}"
                         select="handler.onSelectAll"
                     />
                 </HBox>
@@ -58,6 +58,8 @@
                     showSeparators="None"
                     noDataText="{i18n>deleteTransactionsNoData}"
                     class="invoiceTransactionList"
+                    updateFinished="handler.onListUpdated"
+                    selectionChange="handler.onSelectionChanged"
                 >
                     <CustomListItem>
                         <HBox

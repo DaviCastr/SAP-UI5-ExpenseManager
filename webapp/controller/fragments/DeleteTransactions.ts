@@ -15,10 +15,18 @@ import { deleteTransactionsViaBatch, type TransactionWriteTarget } from "../../u
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import { reloadInvoiceData } from "./Invoices";
+import type Home from "../../controller/Home.controller";
 
 type DeleteTransactionRow = IdentifierTransaction;
 
 const uiOf = (view: XMLView): JSONModel => view.getModel("ui") as JSONModel;
+
+/**
+ * Whether the next list `updateFinished` should select every rendered row.
+ * Set when the dialog opens so the OData binding has time to create the items
+ * (they are not available in `afterOpen` yet).
+ */
+let selectAllPending = false;
 
 /**
  * Builds the write targets of the selected rows. Rows without the
@@ -54,7 +62,18 @@ function buildTargets(rows: DeleteTransactionRow[]): TransactionWriteTarget[] {
  */
 function setAllItemsSelected(list: List, view: XMLView, selected: boolean): void {
     list.getItems().forEach((item) => item.setSelected(selected));
-    uiOf(view).setProperty("/deleteSelectAll", selected);
+    uiOf(view).setProperty("/deleteTransactions/selectAll", selected);
+}
+
+/**
+ * Tells whether every item currently bound to the delete list is selected.
+ *
+ * @param {List} list the delete list
+ * @returns {boolean} whether the selection matches the "select all" state
+ */
+function isAllItemsSelected(list: List): boolean {
+    const items = list.getItems();
+    return items.length > 0 && items.every((item) => item.getSelected());
 }
 
 async function performDelete(
@@ -64,7 +83,7 @@ async function performDelete(
     targets: TransactionWriteTarget[]
 ): Promise<void> {
     const ui = uiOf(view);
-    ui.setProperty("/invoiceBusy", true);
+    ui.setProperty("/busy", true);
     try {
         const published = await deleteTransactionsViaBatch(view.getModel() as ODataModel, personId, targets);
         if (!published) {
@@ -77,7 +96,7 @@ async function performDelete(
     } catch (error) {
         handleActionError(view, error, "deleteTransactionsError");
     } finally {
-        ui.setProperty("/invoiceBusy", false);
+        ui.setProperty("/busy", false);
     }
 }
 
@@ -87,18 +106,21 @@ const DeleteTransactions = {
         const view = this.getParent() as XMLView;
         const ui = uiOf(view);
         const personId = ui.getProperty("/selectedPersonId") as string;
-        const identifier = ui.getProperty("/invoiceSelectedIdentifier") as string;
+        const identifier = ui.getProperty("/deleteTransactions/selectedIdentifier") as string;
         const list = Fragment.byId("DeleteTransactions", "deleteTransactionList") as List | undefined;
         const binding = list?.getBinding("items") as ODataListBinding | undefined;
 
+        selectAllPending = false;
+
         if (!personId || !identifier || !binding) {
-            ui.setProperty("/deleteTransactionsCount", 0);
-            ui.setProperty("/deleteTransactionsCountText", "");
+            ui.setProperty("/deleteTransactions/count", 0);
+            ui.setProperty("/deleteTransactions/countText", "");
             setAllItemsSelected(list as List, view, false);
             return;
         }
 
-        ui.setProperty("/invoiceBusy", true);
+        selectAllPending = true;
+        ui.setProperty("/busy", true);
         void (async () => {
             try {
                 binding.filter([
@@ -107,26 +129,32 @@ const DeleteTransactions = {
                 ]);
 
                 const contexts = await binding.requestContexts();
-                ui.setProperty("/deleteTransactionsCount", contexts.length);
-                ui.setProperty("/deleteTransactionsCountText", getText(view, "deleteTransactionsFound", [String(contexts.length)]));
+                ui.setProperty("/deleteTransactions/count", contexts.length);
+                ui.setProperty("/deleteTransactions/countText", getText(view, "deleteTransactionsFound", [String(contexts.length)]));
                 if (contexts.length === 0) {
+                    selectAllPending = false;
                     setAllItemsSelected(list as List, view, false);
                 }
             } catch (error) {
                 handleActionError(view, error, "deleteTransactionsError");
             } finally {
-                ui.setProperty("/invoiceBusy", false);
+                ui.setProperty("/busy", false);
             }
         })();
     },
 
-    onDialogAfterOpen: function (this: Dialog): void {
-        const view = this.getParent() as XMLView;
-        const ui = uiOf(view);
-        const list = Fragment.byId("DeleteTransactions", "deleteTransactionList") as List | undefined;
-        if (list && ui.getProperty("/deleteTransactionsCount") > 0) {
-            setAllItemsSelected(list, view, true);
+    onListUpdated: function (this: List): void {
+        if (!selectAllPending) {
+            return;
         }
+        selectAllPending = false;
+        const hasItems = this.getItems().length > 0;
+        (this.getModel("ui") as JSONModel).setProperty("/deleteTransactions/selectAll", hasItems);
+        this.getItems().forEach((item) => item.setSelected(hasItems));
+    },
+
+    onSelectionChanged: function (this: List): void {
+        (this.getModel("ui") as JSONModel).setProperty("/deleteTransactions/selectAll", isAllItemsSelected(this));
     },
 
     onSelectAll: function (this: CheckBox): void {
@@ -135,7 +163,7 @@ const DeleteTransactions = {
         if (list) {
             setAllItemsSelected(list, view, this.getSelected());
         } else {
-            uiOf(view).setProperty("/deleteSelectAll", this.getSelected());
+            uiOf(view).setProperty("/deleteTransactions/selectAll", this.getSelected());
         }
     },
 
@@ -180,6 +208,13 @@ const DeleteTransactions = {
 
     onCancelDelete: function (this: Control): void {
         (this.getParent() as Dialog).close();
+    },
+
+    onDialogAfterClose: function (this: Dialog): void {
+        const view = this.getParent() as XMLView | undefined;
+        if (view) {
+            (view.getController() as Home).reload();
+        }
     }
 };
 

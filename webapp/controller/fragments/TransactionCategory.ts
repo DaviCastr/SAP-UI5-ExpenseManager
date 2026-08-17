@@ -14,6 +14,7 @@ import { applyCategoryToTransactions, type TransactionWriteTarget } from "../../
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import { reloadInvoiceData } from "./Invoices";
+import type Home from "../../controller/Home.controller";
 
 interface CategorySelectorRow {
     ID: string;
@@ -49,7 +50,7 @@ function buildTargets(rows: AffectedTransactionRow[]): TransactionWriteTarget[] 
 
 /**
  * Filters the person's categories on the category selector list and resolves
- * their thumbnails into `ui>/invoiceCategoryImages` (keyed by category ID).
+ * their thumbnails into `ui>/transactionCategory/categoryImages` (keyed by category ID).
  * The list itself is bound to the OData `/Categories` entity set
  * declaratively; the person filter is server-side, applied on the binding.
  *
@@ -63,7 +64,7 @@ async function filterCategories(view: XMLView): Promise<void> {
     const binding = list?.getBinding("items") as ODataListBinding | undefined;
 
     if (!personId || !binding) {
-        ui.setProperty("/invoiceCategoryImages", {});
+        ui.setProperty("/transactionCategory/categoryImages", {});
         return;
     }
 
@@ -92,7 +93,7 @@ async function filterCategories(view: XMLView): Promise<void> {
         })
     );
 
-    ui.setProperty("/invoiceCategoryImages", images);
+    ui.setProperty("/transactionCategory/categoryImages", images);
 }
 
 /**
@@ -107,12 +108,12 @@ async function filterCategories(view: XMLView): Promise<void> {
 async function filterAffected(view: XMLView): Promise<void> {
     const ui = uiOf(view);
     const personId = ui.getProperty("/selectedPersonId") as string;
-    const identifier = ui.getProperty("/invoiceSelectedIdentifier") as string;
+    const identifier = ui.getProperty("/transactionCategory/selectedIdentifier") as string;
     const list = Fragment.byId("TransactionCategory", "transactionCategoryAffectedList") as List | undefined;
     const binding = list?.getBinding("items") as ODataListBinding | undefined;
 
     if (!personId || !identifier || !binding) {
-        ui.setProperty("/invoiceCategoryAffectedText", "");
+        ui.setProperty("/transactionCategory/affectedText", "");
         return;
     }
 
@@ -122,19 +123,19 @@ async function filterAffected(view: XMLView): Promise<void> {
     ]);
 
     const contexts = await binding.requestContexts();
-    ui.setProperty("/invoiceCategoryAffectedText", getText(view, "transactionCategoryAffected", [String(contexts.length)]));
+    ui.setProperty("/transactionCategory/affectedText", getText(view, "transactionCategoryAffected", [String(contexts.length)]));
 }
 
 /**
  * Preselects the category currently assigned to the transaction (if present)
- * on the selector list, mirroring it into `invoiceSelectedCategoryId`.
+ * on the selector list, mirroring it into `transactionCategory/selectedCategoryId`.
  *
  * @param {XMLView} view the Home view
  * @returns {void}
  */
 function preselectCurrentCategory(view: XMLView): void {
     const ui = uiOf(view);
-    const currentId = ui.getProperty("/invoiceCurrentCategoryId") as string;
+    const currentId = ui.getProperty("/transactionCategory/currentCategoryId") as string;
     const list = Fragment.byId("TransactionCategory", "transactionCategoryList") as List | undefined;
 
     if (!currentId || !list) {
@@ -145,7 +146,7 @@ function preselectCurrentCategory(view: XMLView): void {
         const row = item.getBindingContext()?.getObject() as CategorySelectorRow | undefined;
         if (row?.ID === currentId) {
             list.setSelectedItem(item, true);
-            ui.setProperty("/invoiceSelectedCategoryId", row.ID);
+            ui.setProperty("/transactionCategory/selectedCategoryId", row.ID);
             return true;
         }
         return false;
@@ -157,12 +158,12 @@ const TransactionCategory = {
     onDialogBeforeOpen: function (this: Dialog): void {
         const view = this.getParent() as XMLView;
         const ui = uiOf(view);
-        ui.setProperty("/invoiceSelectedCategoryId", "");
-        ui.setProperty("/invoiceCategoryAffectedText", "");
-        ui.setProperty("/invoiceBusy", true);
+        ui.setProperty("/transactionCategory/selectedCategoryId", "");
+        ui.setProperty("/transactionCategory/affectedText", "");
+        ui.setProperty("/busy", true);
         void Promise.all([filterCategories(view), filterAffected(view)])
             .catch((error) => handleActionError(view, error, "transactionCategorySaveError"))
-            .finally(() => ui.setProperty("/invoiceBusy", false));
+            .finally(() => ui.setProperty("/busy", false));
     },
 
     onDialogAfterOpen: function (this: Dialog): void {
@@ -173,7 +174,7 @@ const TransactionCategory = {
     onCategoryChanged: function (this: List): void {
         const row = this.getSelectedItem()?.getBindingContext()?.getObject() as CategorySelectorRow | undefined;
         if (row?.ID) {
-            uiOf(this.getParent() as XMLView).setProperty("/invoiceSelectedCategoryId", row.ID);
+            uiOf(this.getParent() as XMLView).setProperty("/transactionCategory/selectedCategoryId", row.ID);
         }
     },
 
@@ -182,7 +183,7 @@ const TransactionCategory = {
         const view = dialog.getParent() as XMLView;
         const ui = uiOf(view);
         const personId = ui.getProperty("/selectedPersonId") as string;
-        const categoryId = ui.getProperty("/invoiceSelectedCategoryId") as string;
+        const categoryId = ui.getProperty("/transactionCategory/selectedCategoryId") as string;
 
         if (!categoryId) {
             showWarning(view, "transactionCategorySelectHint");
@@ -204,7 +205,7 @@ const TransactionCategory = {
             return;
         }
 
-        ui.setProperty("/invoiceBusy", true);
+        ui.setProperty("/busy", true);
         try {
             const published = await applyCategoryToTransactions(view.getModel() as ODataModel, personId, targets, categoryId);
             if (!published) {
@@ -217,12 +218,19 @@ const TransactionCategory = {
         } catch (error) {
             handleActionError(view, error, "transactionCategorySaveError");
         } finally {
-            ui.setProperty("/invoiceBusy", false);
+            ui.setProperty("/busy", false);
         }
     },
 
     onCancelCategory: function (this: Control): void {
         (this.getParent() as Dialog).close();
+    },
+
+    onDialogAfterClose: function (this: Dialog): void {
+        const view = this.getParent() as XMLView | undefined;
+        if (view) {
+            (view.getController() as Home).reload();
+        }
     }
 };
 

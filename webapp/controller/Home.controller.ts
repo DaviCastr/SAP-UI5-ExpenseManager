@@ -25,12 +25,6 @@ import {
     type CategoryTransactionsProperties,
     type CategoryBreakdownItem
 } from "../util/expenseApi";
-import {
-    requestExportBackup,
-    fetchBackupStream,
-    deleteBackupRow,
-    downloadBlob
-} from "../util/backupApi";
 import { isSessionExpiredError, isBackendUnavailableError } from "../util/http";
 import { getBackendErrorMessage } from "../util/feedback";
 import type { UiPerson } from "../model/UiModel";
@@ -107,6 +101,22 @@ export default class Home extends BaseController {
     public onThisMonth(): void {
         const period = this.periodService.current();
         this.getUiModel().setProperty("/period", period);
+        this.applyPeriodData();
+    }
+
+    public onHomeYearChanged(): void {
+        const ui = this.getUiModel();
+        const period = this.currentPeriod();
+        period.year = Number(ui.getProperty("/periodSelector/year")) || period.year;
+        ui.setProperty("/period", period);
+        this.applyPeriodData();
+    }
+
+    public onHomeMonthChanged(): void {
+        const ui = this.getUiModel();
+        const period = this.currentPeriod();
+        period.month = Number(ui.getProperty("/periodSelector/month")) || period.month;
+        ui.setProperty("/period", period);
         this.applyPeriodData();
     }
 
@@ -293,7 +303,7 @@ export default class Home extends BaseController {
 
     /**
      * Opens the category-picker dialog for the transaction whose Identifier is
-     * stored in `ui>/invoiceSelectedIdentifier`.
+     * stored in `ui>/transactionCategory/selectedIdentifier`.
      */
     public openTransactionCategoryDialog(): void {
         void this.openPreparedDialog("TransactionCategory", (dialog) => dialog.open())
@@ -302,7 +312,7 @@ export default class Home extends BaseController {
 
     /**
      * Opens the batch-exclusion dialog for the transaction whose Identifier is
-     * stored in `ui>/invoiceSelectedIdentifier`.
+     * stored in `ui>/deleteTransactions/selectedIdentifier`.
      */
     public openDeleteTransactionsDialog(): void {
         void this.openPreparedDialog("DeleteTransactions", (dialog) => dialog.open())
@@ -356,9 +366,9 @@ export default class Home extends BaseController {
         }
 
         const ui = this.getUiModel();
-        ui.setProperty("/invoiceSelectedIdentifier", transaction.Identifier);
-        ui.setProperty("/invoiceCurrentCategoryId", transaction.Category?.ID || "");
-        ui.setProperty("/invoiceCurrentCategoryName", transaction.Category?.Name || "");
+        ui.setProperty("/transactionCategory/selectedIdentifier", transaction.Identifier);
+        ui.setProperty("/transactionCategory/currentCategoryId", transaction.Category?.ID || "");
+        ui.setProperty("/transactionCategory/currentCategoryName", transaction.Category?.Name || "");
         this.openTransactionCategoryDialog();
     }
 
@@ -380,7 +390,7 @@ export default class Home extends BaseController {
             return;
         }
 
-        this.getUiModel().setProperty("/invoiceSelectedIdentifier", transaction.Identifier);
+        this.getUiModel().setProperty("/deleteTransactions/selectedIdentifier", transaction.Identifier);
         this.openDeleteTransactionsDialog();
     }
 
@@ -398,23 +408,6 @@ export default class Home extends BaseController {
         ui.setProperty("/simulationResult", null);
 
         void this.openPreparedDialog("Simulation", (dialog) => dialog.open());
-    }
-
-    public async onExportBackup(): Promise<void> {
-        const ui = this.getUiModel();
-        ui.setProperty("/busy", true);
-
-        try {
-            const guid = await requestExportBackup();
-            const blob = await fetchBackupStream(guid);
-            downloadBlob(blob, `meu-fluxo-backup-${new Date().toISOString().slice(0, 10)}.zip`);
-            await deleteBackupRow(guid);
-            MessageToast.show(this.getText("backupExported"));
-        } catch (error) {
-            this.handleError(error, "errorExportBackup");
-        } finally {
-            ui.setProperty("/busy", false);
-        }
     }
 
     public refresh(): void {
@@ -612,6 +605,8 @@ export default class Home extends BaseController {
         const period = this.currentPeriod();
         ui.setProperty("/period", period);
         ui.setProperty("/monthLabel", this.presentPeriodLabel(period));
+        ui.setProperty("/periodSelector/year", String(period.year));
+        ui.setProperty("/periodSelector/month", String(period.month));
         this.resetTransactionSearch();
         void this.loadDashboard();
     }

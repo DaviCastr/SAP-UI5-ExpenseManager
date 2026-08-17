@@ -16,7 +16,7 @@
         beforeOpen="handler.onDialogBeforeOpen"
         afterOpen="handler.onDialogAfterOpen"
         afterClose="handler.onDialogAfterClose"
-        busy="{ui>/invoiceBusy}"
+        busy="{ui>/busy}"
     >
         <content>
             <VBox class="sapUiSmallMargin">
@@ -34,12 +34,12 @@
 
                 <List
                     id="invoiceCardList"
-                    items="{ path: 'ui>/invoiceCards' }"
+                    items="{ path: 'ui>/invoice/cards' }"
                     mode="SingleSelectMaster"
                     selectionChange="handler.onCardChanged"
                     noDataText="{i18n>cardsNoData}"
                     class="invoiceCardList"
-                    visible="{= !${ui>/invoiceCardsEmpty} }"
+                    visible="{= !${ui>/invoice/cardsEmpty} }"
                 >
                     <CustomListItem type="Active">
                         <HBox
@@ -72,7 +72,7 @@
                     type="Warning"
                     showIcon="true"
                     class="sapUiSmallMarginTop"
-                    visible="{ui>/invoiceCardsEmpty}"
+                    visible="{ui>/invoice/cardsEmpty}"
                 />
 
                 <HBox
@@ -81,7 +81,7 @@
                     justifyContent="SpaceBetween"
                     alignItems="Center"
                     class="invoicePeriodBar sapUiMediumMarginTop"
-                    visible="{= !${ui>/invoiceCardsEmpty} }"
+                    visible="{= !${ui>/invoice/cardsEmpty} }"
                 >
                     <HBox wrap="Wrap" alignItems="End">
                         <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
@@ -91,10 +91,10 @@
                             />
                             <Select
                                 id="invoiceYearSelect"
-                                selectedKey="{ui>/invoiceYear}"
+                                selectedKey="{ui>/invoice/year}"
                                 change="handler.onYearChange"
                                 width="7rem"
-                                items="{ path: 'ui>/invoiceYearOptions' }"
+                                items="{ path: 'ui>/invoice/yearOptions' }"
                             >
                                 <core:Item key="{ui>key}" text="{ui>text}" />
                             </Select>
@@ -106,10 +106,10 @@
                             />
                             <Select
                                 id="invoiceMonthSelect"
-                                selectedKey="{ui>/invoiceMonth}"
+                                selectedKey="{ui>/invoice/month}"
                                 change="handler.onMonthChange"
                                 width="11rem"
-                                items="{ path: 'ui>/invoiceMonthOptions' }"
+                                items="{ path: 'ui>/invoice/monthOptions' }"
                             >
                                 <core:Item key="{ui>key}" text="{ui>text}" />
                             </Select>
@@ -126,7 +126,7 @@
                             press="handler.onPreviousPeriod"
                         />
                         <Text
-                            text="{ui>/invoicePeriodLabel}"
+                            text="{ui>/invoice/periodLabel}"
                             class="invoicePeriodLabel"
                         />
                         <Button
@@ -143,7 +143,7 @@
                     alignItems="Center"
                     justifyContent="Center"
                     class="invoiceEmpty"
-                    visible="{= !${ui>/invoiceCardsEmpty} &amp;&amp; !${ui>/invoiceLoaded} }"
+                    visible="{= !${ui>/invoice/cardsEmpty} &amp;&amp; !${ui>/invoice/loaded} }"
                 >
                     <core:Icon src="sap-icon://document" class="invoiceEmptyIcon" />
                     <Text text="{i18n>invoiceNoData}" class="sectionHint" />
@@ -152,7 +152,7 @@
                 <VBox
                     id="invoiceSummary"
                     class="surfaceCard invoiceSummary sapUiMediumMarginTop"
-                    visible="{ui>/invoiceLoaded}"
+                    visible="{ui>/invoice/loaded}"
                 >
                     <HBox
                         wrap="Wrap"
@@ -161,17 +161,17 @@
                     >
                         <VBox class="sapUiTinyMarginBottom">
                             <Text text="{i18n>invoiceSummaryLabel}" class="eyebrow" />
-                            <Title text="{ui>/invoicePeriodLabel}" level="H4" />
+                            <Title text="{ui>/invoice/periodLabel}" level="H4" />
                             <Text
-                                text="{ui>/invoiceHeader/Description}"
+                                text="{ui>/invoice/header/Description}"
                                 class="sectionHint"
-                                visible="{= ${ui>/invoiceHeader/Description} !== '' }"
+                                visible="{= ${ui>/invoice/header/Description} !== '' }"
                             />
                             <HBox alignItems="Center" class="sapUiTinyMarginTop">
-                                <core:Icon src="sap-icon://message-success" class="invoiceSentIcon" visible="{ui>/invoiceHeader/InvoiceSent}" />
-                                <core:Icon src="sap-icon://message-warning" class="invoiceNotSentIcon" visible="{= !${ui>/invoiceHeader/InvoiceSent} }" />
-                                <Text text="{i18n>invoiceSentLabel}" class="sectionHint sapUiTinyMarginBegin" visible="{ui>/invoiceHeader/InvoiceSent}" />
-                                <Text text="{i18n>invoiceNotSentLabel}" class="sectionHint sapUiTinyMarginBegin" visible="{= !${ui>/invoiceHeader/InvoiceSent} }" />
+                                <core:Icon src="sap-icon://message-success" class="invoiceSentIcon" visible="{ui>/invoice/header/InvoiceSent}" />
+                                <core:Icon src="sap-icon://message-warning" class="invoiceNotSentIcon" visible="{= !${ui>/invoice/header/InvoiceSent} }" />
+                                <Text text="{i18n>invoiceSentLabel}" class="sectionHint sapUiTinyMarginBegin" visible="{ui>/invoice/header/InvoiceSent}" />
+                                <Text text="{i18n>invoiceNotSentLabel}" class="sectionHint sapUiTinyMarginBegin" visible="{= !${ui>/invoice/header/InvoiceSent} }" />
                             </HBox>
                         </VBox>
                         <VBox alignItems="End" class="sapUiTinyMarginBottom">
@@ -179,8 +179,8 @@
                             <ObjectNumber
                                 number="{
                                     parts: [
-                                        { path: 'ui>/invoiceHeader/TotalAmount' },
-                                        { path: 'ui>/invoiceHeader/CurrencyCode' }
+                                        { path: 'ui>/invoice/header/TotalAmount' },
+                                        { path: 'ui>/invoice/header/CurrencyCode' }
                                     ],
                                     formatter: 'formatter.formatCurrency'
                                 }"
@@ -192,7 +192,7 @@
 
                 <VBox
                     class="sapUiMediumMarginTop"
-                    visible="{ui>/invoiceLoaded}"
+                    visible="{ui>/invoice/loaded}"
                 >
                     <HBox
                         justifyContent="SpaceBetween"
@@ -229,7 +229,7 @@
                             >
                                 <HBox alignItems="Center">
                                     <Avatar
-                                        src="{ parts: [ { path: 'Category/ID' }, { path: 'ui>/invoiceTransactionImages' } ], formatter: 'formatter.cardImageValue' }"
+                                        src="{ parts: [ { path: 'Category/ID' }, { path: 'ui>/invoice/transactionImages' } ], formatter: 'formatter.cardImageValue' }"
                                         initials="{ path: 'Category/Name', formatter: 'formatter.initials' }"
                                         displayShape="Circle"
                                         tooltip="{ path: 'Category/Name' }"
@@ -249,7 +249,7 @@
                                     class="sapUiTinyMarginEnd"
                                 >
                                     <ObjectNumber
-                                        number="{ parts: [ { path: 'Amount' }, { path: 'Currency/code' }, { path: 'ui>/invoiceHeader/CurrencyCode' } ], formatter: 'formatter.formatTransactionAmount' }"
+                                        number="{ parts: [ { path: 'Amount' }, { path: 'Currency/code' }, { path: 'ui>/invoice/header/CurrencyCode' } ], formatter: 'formatter.formatTransactionAmount' }"
                                         class="transactionAmount invoiceTxAmount"
                                     />
                                     <Text

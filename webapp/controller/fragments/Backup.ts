@@ -5,7 +5,14 @@ import Fragment from "sap/ui/core/Fragment";
 import FileUploader from "sap/ui/unified/FileUploader";
 import Event from "sap/ui/base/Event";
 import JSONModel from "sap/ui/model/json/JSONModel";
-import { createBackupRow, uploadBackupStream } from "../../util/backupApi";
+import {
+    createBackupRow,
+    uploadBackupStream,
+    requestExportBackup,
+    fetchBackupStream,
+    deleteBackupRow,
+    downloadBlob
+} from "../../util/backupApi";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import type Home from "../../controller/Home.controller";
 
@@ -48,6 +55,26 @@ const Backup = {
             void (view.getController() as Home).reload();
         } catch (error) {
             handleActionError(view, error, "errorImportBackup");
+        } finally {
+            uiModel.setProperty("/busy", false);
+        }
+    },
+
+    onExportBackup: async function (this: Control): Promise<void> {
+        const dialog = this.getParent() as Dialog;
+        const view = dialog.getParent() as XMLView;
+        const uiModel = view.getModel("ui") as JSONModel;
+
+        uiModel.setProperty("/busy", true);
+
+        try {
+            const guid = await requestExportBackup();
+            const blob = await fetchBackupStream(guid);
+            downloadBlob(blob, `meu-fluxo-backup-${new Date().toISOString().slice(0, 10)}.zip`);
+            await deleteBackupRow(guid);
+            showToast(view, "backupExported");
+        } catch (error) {
+            handleActionError(view, error, "errorExportBackup");
         } finally {
             uiModel.setProperty("/busy", false);
         }
