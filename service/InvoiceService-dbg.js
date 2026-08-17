@@ -18,6 +18,20 @@ sap.ui.define(["./ODataService", "sap/ui/model/Filter", "sap/ui/model/FilterOper
     }
 
     /**
+     * Sends the full invoice of the given year/month through the unbound
+     * SendInvoices CAP action.
+     *
+     * @param {Period} period the year/month whose invoices are sent
+     * @returns {Promise<SendInvoicesResult>} the action result (success flag and any message)
+     */
+    async sendInvoices(period) {
+      return this.odata.requestFunction("/SendInvoices", {
+        Year: period.year,
+        Month: period.month
+      });
+    }
+
+    /**
      * Finds the invoice of a single card for the given year/month. The Invoice
      * entity set is draft-aware, so the query includes active rows together
      * with drafts that have no active sibling.

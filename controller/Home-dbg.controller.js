@@ -81,6 +81,29 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       ui.setProperty("/period", period);
       this.applyPeriodData();
     }
+    async onSendInvoices() {
+      const period = this.currentPeriod();
+      if (!this._invoiceService) {
+        return;
+      }
+      const ui = this.getUiModel();
+      ui.setProperty("/busy", true);
+      try {
+        const result = await this._invoiceService.sendInvoices(period);
+        if (result.success) {
+          MessageToast.show(result.data || this.getText("sendInvoicesSuccess"));
+        } else {
+          MessageBox.error(result.data || this.getText("sendInvoicesNoData"));
+        }
+      } catch (error) {
+        if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
+          const detail = getBackendErrorMessage(error);
+          MessageBox.error(detail ? `${this.getText("sendInvoicesError")}\n\n${detail}` : this.getText("sendInvoicesError"));
+        }
+      } finally {
+        ui.setProperty("/busy", false);
+      }
+    }
 
     /**
      * Filters the local (JSON) transaction list by date or description. The
@@ -216,6 +239,51 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       } catch (error) {
         if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
           this.showErrorMessage("errorDiscardPersonDraft");
+        }
+      } finally {
+        ui.setProperty("/busy", false);
+      }
+    }
+
+    /**
+     * Permanently deletes the currently selected person after a confirmation.
+     * Any open draft is discarded automatically (the active row cannot be
+     * deleted while a draft exists), then the selection is cleared and the
+     * dashboard reloaded.
+     */
+    onDeletePerson() {
+      const personId = this.getSelectedPersonId();
+      if (!personId) {
+        return;
+      }
+      MessageBox.confirm(this.getText("personDeleteConfirm"), {
+        title: this.getText("personDeleteTitle"),
+        onClose: action => {
+          if (action !== MessageBox.Action.OK || !this._odata) {
+            return;
+          }
+          void this.deleteSelectedPerson();
+        }
+      });
+    }
+    async deleteSelectedPerson() {
+      const ui = this.getUiModel();
+      const personId = this.getSelectedPersonId();
+      if (!personId || !this._odata) {
+        return;
+      }
+      ui.setProperty("/busy", true);
+      try {
+        this.releasePersonDetailDraftBinding();
+        await this._odata.submitPending();
+        await this._odata.deleteEntity("Persons", personId);
+        ui.setProperty("/selectedPersonId", "");
+        ui.setProperty("/selectedPersonDraft", false);
+        MessageToast.show(this.getText("personDeleted"));
+        this.reload();
+      } catch (error) {
+        if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
+          this.showErrorMessage("errorDeletePerson");
         }
       } finally {
         ui.setProperty("/busy", false);

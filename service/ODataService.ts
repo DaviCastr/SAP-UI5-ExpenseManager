@@ -319,6 +319,67 @@ export class ODataService {
     }
 
     /**
+     * Tells whether the given error means "the active entity does not exist"
+     * (HTTP 404). Used when deleting a person that only exists as an open draft
+     * (no active sibling): after the draft is discarded there is no active row
+     * to delete, which is a successful deletion rather than an error.
+     *
+     * @param {unknown} error the error raised by the OData model
+     * @returns {boolean} whether the active entity is missing
+     */
+    private isActiveEntityMissingError(error: unknown): boolean {
+        const cause = error as { status?: number; message?: string; cause?: { status?: number; message?: string } };
+        const status = cause.status ?? cause.cause?.status;
+
+        return status === 404;
+    }
+
+    /**
+     * Deletes the active entity and, with it, any open draft of the same entity.
+     * The active row cannot be deleted while a draft exists ("Entity cannot be
+     * deleted because a draft exists"), so any open draft is discarded first
+     * (best effort). When the person only exists as a draft, discarding it is
+     * the whole deletion: the subsequent active read answers 404, which is
+     * treated as success here. Used to permanently remove a person including
+     * all related composition data.
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @param {string} id the entity key
+     * @returns {Promise<void>} resolves once the entity was deleted
+     */
+    public async deleteEntity(entitySet: string, id: string): Promise<void> {
+        try {
+            await this.discardDraft(entitySet, id);
+        } catch {
+            // no open draft; the active delete can proceed directly
+        }
+
+        const binding = this.model.bindContext(this.entityPath(`/${entitySet}`, id, true));
+
+        try {
+            try {
+                await binding.requestObject();
+            } catch (error) {
+                // A draft-only person has no active row after the draft was
+                // discarded above; there is nothing left to delete.
+                if (this.isActiveEntityMissingError(error)) {
+                    return;
+                }
+                throw error;
+            }
+
+            const activeContext = binding.getBoundContext() as Context | undefined;
+            if (!activeContext) {
+                throw new Error(`Entidade ${entitySet} (${id}) não pôde ser carregada.`);
+            }
+
+            await activeContext.delete();
+        } finally {
+            binding.destroy();
+        }
+    }
+
+    /**
      * Flushes any pending changes of the default (`$auto`) update group. The
      * two-way bound fields of the edit dialog collect their PATCHes there, so
      * this has to be awaited before the draft is activated to ensure every

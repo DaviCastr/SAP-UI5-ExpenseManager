@@ -120,7 +120,7 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
       const current = Number(installment) || 1;
       return `${formatted} • Parcela ${current} de ${total}`;
     }
-    return formatted;
+    return `${formatted} • Parcela única`;
   }
 
   /**

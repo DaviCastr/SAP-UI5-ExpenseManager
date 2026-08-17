@@ -43,7 +43,7 @@
 .creditCardItem { padding: .6rem 0; }
 .creditCardName { font-weight: 700; color: var(--ink); }
 .creditCardLabel { color: var(--muted); font-size: .75rem; }
-.creditCardValue .sapMObjectNumberText { font-size: 1.4rem; font-weight: 700; color: var(--ink); }
+.creditCardValue .sapMObjectNumberText { font-size: 1.2rem; font-weight: 700; color: var(--ink); }
 .creditCardFoot { color: var(--muted); font-size: .78rem; }
 
 .categoryDetailHeader { gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #eef3f3; }
@@ -75,6 +75,28 @@
 .shareEntityToolbar { background: var(--teal-050); }
 .shareEntitiesLabel { font-weight: 700; color: var(--teal-700); }
 .shareList .sapMInput .sapMInputBaseInner { height: 2rem; }
+
+/* Gerenciador de categorias */
+.categoryManagerAddRow { gap: .35rem; padding-bottom: .8rem; border-bottom: 1px solid #eef3f3; }
+.categoryManagerAddTitle { font-weight: 700; letter-spacing: .06em; font-size: .78rem; color: var(--teal-700); margin-top: .25rem; }
+.categoryManagerList { background: transparent; max-height: 24rem; overflow-y: auto; }
+.categoryManagerCard { border-radius: .8rem; border: 1px solid var(--line); background: var(--white); box-shadow: 0 2px 8px rgba(19, 48, 48, .05); padding: .4rem .6rem; }
+.categoryManagerRow { gap: .55rem; }
+.categoryManagerCard .sapMInput .sapMInputBaseInner { height: 2rem; }
+.categoryManagerAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.categoryManagerPhoto .sapUiUnifiedFileUploader { width: auto; }
+
+/* Gerenciador de cartões */
+.cardManagerAddRow { gap: .35rem; padding-bottom: .8rem; border-bottom: 1px solid #eef3f3; }
+.cardManagerAddTitle { font-weight: 700; letter-spacing: .06em; font-size: .78rem; color: var(--teal-700); margin-top: .25rem; }
+.cardManagerList { background: transparent; max-height: 24rem; overflow-y: auto; }
+.cardManagerCard { border-radius: .8rem; border: 1px solid var(--line); background: var(--white); box-shadow: 0 2px 8px rgba(19, 48, 48, .05); padding: .4rem .6rem; }
+.cardManagerRow { gap: .55rem; }
+.cardManagerBody { gap: .1rem; }
+.cardManagerFields { gap: .1rem; }
+.cardManagerCard .sapMInput .sapMInputBaseInner { height: 2rem; }
+.cardManagerAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.cardManagerPhoto .sapUiUnifiedFileUploader { width: auto; }
 
 .responsiveTopActions {
     justify-content: flex-end;

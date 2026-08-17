@@ -1,8 +1,9 @@
-sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../util/feedback"], function (Fragment, ____util_entityApi, ____util_feedback) {
+sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../service/ODataService", "../../util/feedback"], function (Fragment, ____util_entityApi, ____service_ODataService, ____util_feedback) {
   "use strict";
 
   const createEntity = ____util_entityApi["createEntity"];
-  const uploadImage = ____util_entityApi["uploadImage"];
+  const uploadPersonImage = ____util_entityApi["uploadPersonImage"];
+  const ODataService = ____service_ODataService["ODataService"];
   const handleActionError = ____util_feedback["handleActionError"];
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
@@ -10,8 +11,8 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../util/feedb
   const AdicionarPessoa = {
     onDialogBeforeOpen: function () {
       personPhoto = null;
-      Fragment.byId("AdicionarPessoa", "personFileUploader")?.setValue("");
-      Fragment.byId("AdicionarPessoa", "personAvatar")?.setSrc("");
+      Fragment.byId("AddPerson", "personFileUploader")?.setValue("");
+      Fragment.byId("AddPerson", "personAvatar")?.setSrc("");
     },
     onModificaArquivo: function (event) {
       const parameters = event.getParameters();
@@ -20,7 +21,7 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../util/feedb
       if (personPhoto) {
         const reader = new FileReader();
         reader.onload = () => {
-          Fragment.byId("AdicionarPessoa", "personAvatar")?.setSrc(reader.result);
+          Fragment.byId("AddPerson", "personAvatar")?.setSrc(reader.result);
         };
         reader.readAsDataURL(personPhoto);
       }
@@ -39,6 +40,9 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../util/feedb
       }
       uiModel.setProperty("/busy", true);
       try {
+        // POST on a draft-enabled entity set creates the person as a draft,
+        // so the photo must go to the draft row (IsActiveEntity=false)
+        // before the draft is published to the active entity.
         const created = await createEntity("Persons", {
           Name: person.name,
           Email: person.email,
@@ -50,8 +54,11 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../util/feedb
           ImageType: personPhoto?.type || ""
         });
         if (personPhoto) {
-          await uploadImage("Persons", created.ID, personPhoto);
+          await uploadPersonImage(created.ID, false, personPhoto);
         }
+        const odata = new ODataService(view.getModel());
+        await odata.prepareDraft("Persons", created.ID);
+        await odata.activateDraft("Persons", created.ID);
         dialog.close();
         showToast(view, "personCreated");
         void view.getController().reload();

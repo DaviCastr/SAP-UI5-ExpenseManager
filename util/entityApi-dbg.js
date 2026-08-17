@@ -15,18 +15,6 @@ sap.ui.define(["./http"], function (___http) {
     }
     return await response.json();
   }
-  async function uploadImage(entitySet, id, file) {
-    const response = await request(`${entitySet}(ID=${id},IsActiveEntity=true)/Image`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": file.type || "application/octet-stream"
-      },
-      body: file
-    });
-    if (!response.ok) {
-      throw new Error(`Erro ao enviar imagem (${response.status})`);
-    }
-  }
   async function uploadPersonImage(id, isActiveEntity, file) {
     const response = await request(`Persons(ID='${encodeURIComponent(id)}',IsActiveEntity=${isActiveEntity})/Image`, {
       method: "PUT",
@@ -67,7 +55,6 @@ sap.ui.define(["./http"], function (___http) {
     __esModule: true
   };
   __exports.createEntity = createEntity;
-  __exports.uploadImage = uploadImage;
   __exports.uploadPersonImage = uploadPersonImage;
   __exports.uploadEntityImage = uploadEntityImage;
   return __exports;

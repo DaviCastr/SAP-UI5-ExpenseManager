@@ -2,6 +2,7 @@
     xmlns:core="sap.ui.core"
     xmlns="sap.m"
     xmlns:u="sap.ui.unified"
+    xmlns:layout="sap.ui.layout"
     id="Cards"
     core:require="{
         formatter: 'apps/dflc/expensemanager/util/format',
@@ -20,7 +21,7 @@
         busy="{ui>/busy}"
     >
         <content>
-            <VBox class="sapUiSmallMargin">
+            <VBox class="sapUiSmallMargin dialogContent">
                 <MessageStrip
                     text="{i18n>cardsDialogIntro}"
                     type="Information"
@@ -28,22 +29,25 @@
                     class="sapUiSmallMarginBottom"
                 />
 
-                <HBox
-                    wrap="Wrap"
-                    alignItems="End"
-                    class="sapUiSmallMarginBottom"
-                    justifyContent="SpaceBetween"
-                >
-                    <Title text="{i18n>cardsAddLabel}" level="H5" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
-                    <HBox wrap="Wrap" alignItems="End">
+                <VBox class="cardManagerAddRow sapUiSmallMarginBottom">
+                    <Label
+                        text="{i18n>cardsAddLabel}"
+                        labelFor="newCardName"
+                        class="cardManagerAddTitle"
+                    />
+                    <HBox wrap="Wrap" alignItems="End" class="sapUiTinyMarginTop">
                         <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
                             <Label text="{i18n>cardNameLabel}" labelFor="newCardName" />
                             <Input
                                 id="newCardName"
                                 value="{ui>/newCard/name}"
                                 placeholder="{i18n>cardNamePlaceholder}"
-                                width="13rem"
-                            />
+                                width="100%"
+                            >
+                                <layoutData>
+                                    <FlexItemData minWidth="12rem" maxWidth="15rem" growFactor="1" />
+                                </layoutData>
+                            </Input>
                         </VBox>
                         <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
                             <Label text="{i18n>cardLimitLabel}" labelFor="newCardLimit" />
@@ -52,16 +56,23 @@
                                 value="{ui>/newCard/limit}"
                                 type="Number"
                                 placeholder="{i18n>cardLimitPlaceholder}"
-                                width="6rem"
-                            />
+                                width="100%"
+                            >
+                                <layoutData>
+                                    <FlexItemData minWidth="6rem" maxWidth="7.5rem" />
+                                </layoutData>
+                            </Input>
                         </VBox>
                         <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
                             <Label text="{i18n>cardCurrencyLabel}" labelFor="newCardCurrency" />
                             <Select
                                 id="newCardCurrency"
                                 selectedKey="{ui>/newCard/currency}"
-                                width="12rem"
+                                width="100%"
                             >
+                                <layoutData>
+                                    <FlexItemData minWidth="10rem" maxWidth="12rem" />
+                                </layoutData>
                                 <core:Item key="BRL" text="Real brasileiro (BRL)" />
                                 <core:Item key="USD" text="Dólar americano (USD)" />
                             </Select>
@@ -73,8 +84,12 @@
                                 value="{ui>/newCard/closingDay}"
                                 type="Number"
                                 placeholder="{i18n>cardsDayPlaceholder}"
-                                width="4rem"
-                            />
+                                width="100%"
+                            >
+                                <layoutData>
+                                    <FlexItemData minWidth="4.5rem" maxWidth="5.5rem" />
+                                </layoutData>
+                            </Input>
                         </VBox>
                         <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
                             <Label text="{i18n>cardsDueLabel}" labelFor="newCardDue" />
@@ -83,46 +98,66 @@
                                 value="{ui>/newCard/dueDay}"
                                 type="Number"
                                 placeholder="{i18n>cardsDayPlaceholder}"
-                                width="4rem"
-                            />
+                                width="100%"
+                            >
+                                <layoutData>
+                                    <FlexItemData minWidth="4.5rem" maxWidth="5.5rem" />
+                                </layoutData>
+                            </Input>
                         </VBox>
                         <Button
                             text="{i18n>cardsAddLabel}"
                             icon="sap-icon://add"
                             type="Emphasized"
                             press="handler.onAddCard"
+                            class="sapUiTinyMarginBottom"
                         />
                     </HBox>
-                </HBox>
+                </VBox>
 
                 <List
                     id="cardsList"
                     items="{Cards}"
                     mode="None"
+                    growing="true"
                     noDataText="{i18n>cardsNoData}"
-                    class="shareList"
+                    class="shareList cardManagerList"
                 >
-                    <CustomListItem class="sapUiTinyMarginBottom">
-                        <VBox class="sapUiTinyMarginTopBottom">
+                    <CustomListItem class="cardManagerCard sapUiTinyMarginBottom">
+                        <VBox class="cardManagerBody">
                             <HBox
                                 alignItems="Center"
-                                justifyContent="SpaceBetween"
-                                class="sapUiSmallMarginBottom"
+                                class="cardManagerRow"
                             >
                                 <Avatar
                                     src="{ parts: [ { path: 'ID' }, { path: 'ui>/dialogCardImages' } ], formatter: 'formatter.cardImageValue' }"
                                     displaySize="Custom"
-                                    customDisplaySize="3rem"
+                                    customDisplaySize="2.75rem"
                                     displayShape="Circle"
                                     initials="{ parts: [ { path: 'Name' } ], formatter: 'formatter.initials' }"
-                                    class="sapUiTinyMarginEnd"
+                                    class="cardManagerAvatar"
                                 />
                                 <Input
                                     value="{Name}"
                                     placeholder="{i18n>cardNamePlaceholder}"
-                                    width="50%"
+                                    class="cardManagerInput"
+                                >
+                                    <layoutData>
+                                        <FlexItemData growFactor="1" minWidth="8rem" />
+                                    </layoutData>
+                                </Input>
+                                <u:FileUploader
+                                    buttonOnly="true"
+                                    iconOnly="true"
+                                    icon="sap-icon://camera"
+                                    buttonType="Transparent"
+                                    tooltip="{i18n>cardsPhotoButton}"
+                                    fileType="png,jpg,jpeg"
+                                    uploadOnChange="false"
+                                    multiple="false"
+                                    change="handler.onCardPhotoChanged"
+                                    class="cardManagerPhoto"
                                 />
-                                <ToolbarSpacer />
                                 <Button
                                     icon="sap-icon://delete"
                                     type="Transparent"
@@ -132,50 +167,59 @@
                             </HBox>
                             <HBox
                                 wrap="Wrap"
-                                alignItems="Center"
-                                class="sapUiSmallMarginBottom"
+                                alignItems="End"
+                                class="cardManagerFields"
                             >
-                                <Label text="{i18n>cardLimitLabel}" class="sapUiTinyMarginEnd" />
-                                <Input
-                                    value="{Limit}"
-                                    type="Number"
-                                    width="6rem"
-                                    class="sapUiTinyMarginEnd"
-                                />
-                                <Label text="{i18n>cardCurrencyLabel}" class="sapUiTinyMarginEnd" />
-                                <Select
-                                    selectedKey="{Currency_code}"
-                                    forceSelection="false"
-                                    width="11rem"
-                                    class="sapUiTinyMarginEnd"
-                                >
-                                    <core:Item key="BRL" text="Real brasileiro (BRL)" />
-                                    <core:Item key="USD" text="Dólar americano (USD)" />
-                                </Select>
-                                <Label text="{i18n>cardsClosingLabel}" class="sapUiTinyMarginEnd" />
-                                <Input
-                                    value="{ClosingDay}"
-                                    type="Number"
-                                    width="4rem"
-                                    class="sapUiTinyMarginEnd"
-                                />
-                                <Label text="{i18n>cardsDueLabel}" class="sapUiTinyMarginEnd" />
-                                <Input
-                                    value="{DueDay}"
-                                    type="Number"
-                                    width="4rem"
-                                />
-                            </HBox>
-                            <HBox alignItems="Center">
-                                <u:FileUploader
-                                    buttonText="{i18n>cardsPhotoButton}"
-                                    placeholder="{i18n>cardsPhotoPlaceholder}"
-                                    fileType="png,jpg,jpeg"
-                                    uploadOnChange="false"
-                                    multiple="false"
-                                    change="handler.onCardPhotoChanged"
-                                    width="100%"
-                                />
+                                <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                                    <Label text="{i18n>cardLimitLabel}" />
+                                    <Input
+                                        value="{Limit}"
+                                        type="Number"
+                                        width="100%"
+                                    >
+                                        <layoutData>
+                                            <FlexItemData minWidth="6rem" maxWidth="7.5rem" />
+                                        </layoutData>
+                                    </Input>
+                                </VBox>
+                                <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                                    <Label text="{i18n>cardCurrencyLabel}" />
+                                    <Select
+                                        selectedKey="{Currency_code}"
+                                        forceSelection="false"
+                                        width="100%"
+                                    >
+                                        <layoutData>
+                                            <FlexItemData minWidth="10rem" maxWidth="12rem" />
+                                        </layoutData>
+                                        <core:Item key="BRL" text="Real brasileiro (BRL)" />
+                                        <core:Item key="USD" text="Dólar americano (USD)" />
+                                    </Select>
+                                </VBox>
+                                <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                                    <Label text="{i18n>cardsClosingLabel}" />
+                                    <Input
+                                        value="{ClosingDay}"
+                                        type="Number"
+                                        width="100%"
+                                    >
+                                        <layoutData>
+                                            <FlexItemData minWidth="4.5rem" maxWidth="5.5rem" />
+                                        </layoutData>
+                                    </Input>
+                                </VBox>
+                                <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                                    <Label text="{i18n>cardsDueLabel}" />
+                                    <Input
+                                        value="{DueDay}"
+                                        type="Number"
+                                        width="100%"
+                                    >
+                                        <layoutData>
+                                            <FlexItemData minWidth="4.5rem" maxWidth="5.5rem" />
+                                        </layoutData>
+                                    </Input>
+                                </VBox>
                             </HBox>
                         </VBox>
                     </CustomListItem>
