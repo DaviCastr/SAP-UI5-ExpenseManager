@@ -2,7 +2,7 @@
     xmlns:core="sap.ui.core"
     xmlns="sap.m"
     xmlns:u="sap.ui.unified"
-    id="AdicionarPessoa"
+    id="AddPerson"
 >
     <Dialog
         id="personDialog"

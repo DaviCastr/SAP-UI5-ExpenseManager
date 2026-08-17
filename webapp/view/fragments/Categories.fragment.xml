@@ -2,6 +2,7 @@
     xmlns:core="sap.ui.core"
     xmlns="sap.m"
     xmlns:u="sap.ui.unified"
+    xmlns:layout="sap.ui.layout"
     id="Categories"
     core:require="{
         formatter: 'apps/dflc/expensemanager/util/format',
@@ -20,7 +21,7 @@
         busy="{ui>/busy}"
     >
         <content>
-            <VBox class="sapUiSmallMargin">
+            <VBox class="sapUiSmallMargin dialogContent">
                 <MessageStrip
                     text="{i18n>categoriesDialogIntro}"
                     type="Information"
@@ -28,81 +29,85 @@
                     class="sapUiSmallMarginBottom"
                 />
 
-                <HBox
-                    wrap="Wrap"
-                    alignItems="End"
-                    class="sapUiSmallMarginBottom"
-                    justifyContent="SpaceBetween"
-                >
-                    <Title text="{i18n>categoriesAddLabel}" level="H5" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
-                    <HBox wrap="Wrap" alignItems="End">
-                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
-                            <Label text="{i18n>categoryNameLabel}" labelFor="newCategoryName" />
-                            <Input
-                                id="newCategoryName"
-                                value="{ui>/newCategory/name}"
-                                placeholder="{i18n>categoryNamePlaceholder}"
-                                maxLength="20"
-                                width="16rem"
-                            />
-                        </VBox>
+                <VBox class="categoryManagerAddRow sapUiSmallMarginBottom">
+                    <Label
+                        text="{i18n>categoriesAddLabel}"
+                        labelFor="newCategoryName"
+                        class="categoryManagerAddTitle"
+                    />
+                    <HBox wrap="Wrap" alignItems="Center">
+                        <Input
+                            id="newCategoryName"
+                            value="{ui>/newCategory/name}"
+                            placeholder="{i18n>categoryNamePlaceholder}"
+                            maxLength="20"
+                            class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                            width="100%"
+                        >
+                            <layoutData>
+                                <FlexItemData minWidth="15rem" maxWidth="24rem" growFactor="1" />
+                            </layoutData>
+                        </Input>
                         <Button
                             text="{i18n>categoriesAddLabel}"
                             icon="sap-icon://add"
                             type="Emphasized"
                             press="handler.onAddCategory"
+                            class="sapUiTinyMarginBottom"
                         />
                     </HBox>
-                </HBox>
+                </VBox>
 
                 <List
                     id="categoriesList"
                     items="{Categories}"
                     mode="None"
+                    growing="true"
                     noDataText="{i18n>categoriesNoData}"
-                    class="shareList"
+                    class="shareList categoryManagerList"
                 >
-                    <CustomListItem class="sapUiTinyMarginBottom">
-                        <VBox class="sapUiTinyMarginTopBottom">
-                            <HBox
-                                alignItems="Center"
-                                justifyContent="SpaceBetween"
-                                class="sapUiSmallMarginBottom"
+                    <CustomListItem class="categoryManagerCard sapUiTinyMarginBottom">
+                        <HBox
+                            alignItems="Center"
+                            class="categoryManagerRow"
+                        >
+                            <Avatar
+                                src="{ parts: [ { path: 'ID' }, { path: 'ui>/dialogCategoryImages' } ], formatter: 'formatter.cardImageValue' }"
+                                displaySize="Custom"
+                                customDisplaySize="2.75rem"
+                                displayShape="Circle"
+                                initials="{ parts: [ { path: 'Name' } ], formatter: 'formatter.initials' }"
+                                class="categoryManagerAvatar"
+                            />
+                            <Input
+                                value="{Name}"
+                                placeholder="{i18n>categoryNamePlaceholder}"
+                                maxLength="20"
+                                class="categoryManagerInput"
                             >
-                                <Avatar
-                                    src="{ parts: [ { path: 'ID' }, { path: 'ui>/dialogCategoryImages' } ], formatter: 'formatter.cardImageValue' }"
-                                    displaySize="Custom"
-                                    customDisplaySize="3rem"
-                                    displayShape="Circle"
-                                    initials="{ parts: [ { path: 'Name' } ], formatter: 'formatter.initials' }"
-                                    class="sapUiTinyMarginEnd"
-                                />
-                                <Input
-                                    value="{Name}"
-                                    placeholder="{i18n>categoryNamePlaceholder}"
-                                    maxLength="20"
-                                    width="60%"
-                                />
-                                <ToolbarSpacer />
-                                <Button
-                                    icon="sap-icon://delete"
-                                    type="Transparent"
-                                    tooltip="{i18n>categoriesRemoveTooltip}"
-                                    press="handler.onRemoveCategory"
-                                />
-                            </HBox>
-                            <HBox alignItems="Center">
-                                <u:FileUploader
-                                    buttonText="{i18n>categoriesPhotoButton}"
-                                    placeholder="{i18n>categoriesPhotoPlaceholder}"
-                                    fileType="png,jpg,jpeg"
-                                    uploadOnChange="false"
-                                    multiple="false"
-                                    change="handler.onCategoryPhotoChanged"
-                                    width="100%"
-                                />
-                            </HBox>
-                        </VBox>
+                                <layoutData>
+                                    <FlexItemData growFactor="1" minWidth="8rem" />
+                                </layoutData>
+                            </Input>
+                            <u:FileUploader
+                                buttonOnly="true"
+                                iconOnly="true"
+                                icon="sap-icon://camera"
+                                buttonType="Transparent"
+                                tooltip="{i18n>categoriesPhotoButton}"
+                                fileType="png,jpg,jpeg"
+                                uploadOnChange="false"
+                                multiple="false"
+                                change="handler.onCategoryPhotoChanged"
+                                class="categoryManagerPhoto"
+                            />
+                            <Button
+                                icon="sap-icon://delete"
+                                type="Transparent"
+                                tooltip="{i18n>categoriesRemoveTooltip}"
+                                press="handler.onRemoveCategory"
+                            />
+                        </HBox>
                     </CustomListItem>
                 </List>
             </VBox>

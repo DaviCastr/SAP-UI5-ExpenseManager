@@ -6,7 +6,9 @@ import Event from "sap/ui/base/Event";
 import FileUploader from "sap/ui/unified/FileUploader";
 import Avatar from "sap/m/Avatar";
 import JSONModel from "sap/ui/model/json/JSONModel";
-import { createEntity, uploadImage } from "../../util/entityApi";
+import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
+import { createEntity, uploadPersonImage } from "../../util/entityApi";
+import { ODataService } from "../../service/ODataService";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import type Home from "../../controller/Home.controller";
 import type { NewPerson } from "../../model/UiModel";
@@ -16,8 +18,8 @@ let personPhoto: File | null = null;
 const AdicionarPessoa = {
     onDialogBeforeOpen: function (): void {
         personPhoto = null;
-        (Fragment.byId("AdicionarPessoa", "personFileUploader") as FileUploader)?.setValue("");
-        (Fragment.byId("AdicionarPessoa", "personAvatar") as Avatar)?.setSrc("");
+        (Fragment.byId("AddPerson", "personFileUploader") as FileUploader)?.setValue("");
+        (Fragment.byId("AddPerson", "personAvatar") as Avatar)?.setSrc("");
     },
 
     onModificaArquivo: function (event: Event): void {
@@ -28,7 +30,7 @@ const AdicionarPessoa = {
         if (personPhoto) {
             const reader = new FileReader();
             reader.onload = () => {
-                (Fragment.byId("AdicionarPessoa", "personAvatar") as Avatar)?.setSrc(reader.result as string);
+                (Fragment.byId("AddPerson", "personAvatar") as Avatar)?.setSrc(reader.result as string);
             };
             reader.readAsDataURL(personPhoto);
         }
@@ -53,6 +55,9 @@ const AdicionarPessoa = {
         uiModel.setProperty("/busy", true);
 
         try {
+            // POST on a draft-enabled entity set creates the person as a draft,
+            // so the photo must go to the draft row (IsActiveEntity=false)
+            // before the draft is published to the active entity.
             const created = await createEntity("Persons", {
                 Name: person.name,
                 Email: person.email,
@@ -65,8 +70,12 @@ const AdicionarPessoa = {
             });
 
             if (personPhoto) {
-                await uploadImage("Persons", created.ID, personPhoto);
+                await uploadPersonImage(created.ID, false, personPhoto);
             }
+
+            const odata = new ODataService(view.getModel() as ODataModel);
+            await odata.prepareDraft("Persons", created.ID);
+            await odata.activateDraft("Persons", created.ID);
 
             dialog.close();
             showToast(view, "personCreated");

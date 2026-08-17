@@ -74,6 +74,11 @@ export interface InvoiceQueryResult {
     Transactions?: InvoiceQueryTransaction[];
 }
 
+export interface SendInvoicesResult {
+    success: boolean;
+    data?: string;
+}
+
 export interface IdentifierTransaction {
     ID: string;
     Identifier: string;
@@ -107,6 +112,20 @@ export class InvoiceService {
     public async getCompleteInvoice(personId: string, period: Period): Promise<CompleteInvoice> {
         return this.odata.requestFunction<CompleteInvoice>("/RetrieveCompleteInvoice", {
             PersonId: personId,
+            Year: period.year,
+            Month: period.month
+        });
+    }
+
+    /**
+     * Sends the full invoice of the given year/month through the unbound
+     * SendInvoices CAP action.
+     *
+     * @param {Period} period the year/month whose invoices are sent
+     * @returns {Promise<SendInvoicesResult>} the action result (success flag and any message)
+     */
+    public async sendInvoices(period: Period): Promise<SendInvoicesResult> {
+        return this.odata.requestFunction<SendInvoicesResult>("/SendInvoices", {
             Year: period.year,
             Month: period.month
         });

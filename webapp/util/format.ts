@@ -123,7 +123,7 @@ export function transactionSubtitle(date?: string, installment?: number | string
         const current = Number(installment) || 1;
         return `${formatted} • Parcela ${current} de ${total}`;
     }
-    return formatted;
+    return `${formatted} • Parcela única`;
 }
 
 /**
