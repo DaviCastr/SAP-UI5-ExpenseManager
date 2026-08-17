@@ -564,6 +564,15 @@
                                 tooltip="{i18n>expenseAddButton}"
                             />
                         </HBox>
+
+                        <SearchField
+                            id="transactionsSearch"
+                            placeholder="{i18n>invoiceSearchTransactions}"
+                            width="100%"
+                            class="sapUiTinyMarginTop sapUiTinyMarginBottom"
+                            search=".onTransactionSearch"
+                        />
+
                         <List
                             id="transactionsList"
                             items="{ path: 'ui>/transactions' }"
@@ -580,9 +589,6 @@
                                 >
                                     <HBox alignItems="Center">
                                         <VBox class="transactionIcon">
-                                            <!-- <core:Icon
-                                                src="sap-icon://receipt"
-                                            /> -->
                                             <Avatar
                                                 src="{ui>Category/ImageBase64}"
                                                 initials="{ path: 'ui>Category/Name', formatter: 'formatter.initials' }"
@@ -596,21 +602,49 @@
                                                 class="transactionTitle"
                                             />
                                             <Text
-                                                text="{ parts: [ { path: 'ui>Category/Name' }, { path: 'Date' } ], formatter: 'formatter.transactionSubtle' }"
+                                                text="{ui>Category/Name}"
+                                                class="transactionDate"
+                                            />
+                                            <Text
+                                                text="{ parts: [ { path: 'ui>Date' }, { path: 'ui>Installment' }, { path: 'ui>TotalInstallments' } ], formatter: 'formatter.transactionSubtitle' }"
                                                 class="transactionDate"
                                             />
                                         </VBox>
                                     </HBox>
-                                    <ObjectNumber
-                                        number="{
-                                            parts: [
-                                                { path: 'ui>Amount' },
-                                                { path: 'ui>Currency' }
-                                            ],
-                                            formatter: 'formatter.formatCurrency'
-                                        }"
-                                        class="transactionAmount"
-                                    />
+                                    <VBox
+                                        alignItems="End"
+                                        class="sapUiTinyMarginEnd"
+                                    >
+                                        <ObjectNumber
+                                            number="{
+                                                parts: [
+                                                    { path: 'ui>Amount' },
+                                                    { path: 'ui>Currency' }
+                                                ],
+                                                formatter: 'formatter.formatCurrency'
+                                            }"
+                                            class="transactionAmount"
+                                        />
+                                        <Text
+                                            text="{ parts: [ { path: 'i18n>transactionTotalLabel' }, { path: 'ui>TotalAmount' }, { path: 'ui>Amount' }, { path: 'ui>Currency' } ], formatter: 'formatter.formatTotalWithLabel' }"
+                                            class="invoiceTxCategory"
+                                            visible="{ parts: [ { path: 'ui>TotalAmount' }, { path: 'ui>Amount' } ], formatter: 'formatter.hasTotalAmount' }"
+                                        />
+                                        <HBox class="sapUiTinyMarginTop">
+                                            <Button
+                                                icon="sap-icon://puzzle"
+                                                type="Transparent"
+                                                tooltip="{i18n>invoiceEditCategoryTooltip}"
+                                                press=".onTransactionCategoryPress"
+                                            />
+                                            <Button
+                                                icon="sap-icon://delete"
+                                                type="Transparent"
+                                                tooltip="{i18n>invoiceDeleteTooltip}"
+                                                press=".onTransactionDeletePress"
+                                            />
+                                        </HBox>
+                                    </VBox>
                                 </HBox>
                             </CustomListItem>
                         </List>

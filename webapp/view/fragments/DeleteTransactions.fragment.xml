@@ -14,6 +14,7 @@
         contentWidth="46rem"
         stretch="{device>/system/phone}"
         beforeOpen="handler.onDialogBeforeOpen"
+        afterOpen="handler.onDialogAfterOpen"
         busy="{ui>/invoiceBusy}"
     >
         <content>
@@ -44,7 +45,16 @@
 
                 <List
                     id="deleteTransactionList"
-                    items="{ path: 'ui>/deleteTransactions' }"
+                    mode="MultiSelect"
+                    items="{
+                        path: '/Transactions',
+                        sorter: { path: 'Installment', descending: false },
+                        parameters: {
+                            $expand: 'Invoice($select=ID,Card_ID,Year,Month;$expand=Card($select=ID)),Currency',
+                            $select: 'ID,Identifier,Date,Description,Amount,Installment,TotalInstallments',
+                            $filter: '(IsActiveEntity eq false or SiblingEntity/IsActiveEntity eq null)'
+                        }
+                    }"
                     showSeparators="None"
                     noDataText="{i18n>deleteTransactionsNoData}"
                     class="invoiceTransactionList"
@@ -56,17 +66,19 @@
                             justifyContent="SpaceBetween"
                             class="sapUiTinyMarginTopBottom deleteTxItem"
                         >
-                            <CheckBox selected="{ui>selected}" />
                             <VBox class="sapUiTinyMarginBegin">
-                                <Text text="{ui>Description}" class="transactionTitle" />
-                                <Text text="{ui>Subtitle}" class="transactionDate" />
+                                <Text text="{Description}" class="transactionTitle" />
+                                <Text
+                                    text="{ parts: [ { path: 'Installment' }, { path: 'TotalInstallments' }, { path: 'Invoice/Year' }, { path: 'Invoice/Month' } ], formatter: 'formatter.installmentSubtitle' }"
+                                    class="transactionDate"
+                                />
                             </VBox>
-                            <Text text="{ui>DateText}" class="transactionDate" />
+                            <Text text="{ path: 'Date', formatter: 'formatter.formatDate' }" class="transactionDate" />
                             <ObjectNumber
                                 number="{
                                     parts: [
-                                        { path: 'ui>Amount' },
-                                        { path: 'ui>CurrencyCode' }
+                                        { path: 'Amount' },
+                                        { path: 'Currency/code' }
                                     ],
                                     formatter: 'formatter.formatCurrency'
                                 }"

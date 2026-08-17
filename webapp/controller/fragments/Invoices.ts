@@ -4,6 +4,7 @@ import XMLView from "sap/ui/core/mvc/XMLView";
 import Fragment from "sap/ui/core/Fragment";
 import List from "sap/m/List";
 import Select from "sap/m/Select";
+import SearchField from "sap/m/SearchField";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
@@ -58,6 +59,30 @@ function findInvoicesDialog(control: Control): Dialog | undefined {
 }
 
 const uiOf = (view: XMLView): JSONModel => view.getModel("ui") as JSONModel;
+
+/**
+ * Parses a date typed by the user (`dd/mm/yyyy` with `.` or `-` separators)
+ * into the `Edm.Date` notation used by the OData service (`yyyy-mm-dd`).
+ *
+ * @param {string} value the typed filter value
+ * @returns {string | undefined} the ISO date, or `undefined` when not a date
+ */
+function parseDateFilter(value: string): string | undefined {
+    const match = value.trim().match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$/);
+    if (!match) {
+        return undefined;
+    }
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    let year = Number(match[3]);
+    if (year < 100) {
+        year += 2000;
+    }
+    if (month < 1 || month > 12 || day < 1 || day > 31) {
+        return undefined;
+    }
+    return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
 
 /**
  * Moves the invoice period forward/backward by one month, wrapping years, and
@@ -144,6 +169,23 @@ async function loadCards(view: XMLView): Promise<void> {
 
 
 /**
+ * Clears the transaction search field and removes the filters applied to the
+ * transaction list. Used whenever the invoice being shown changes, so a stale
+ * query does not leak into the newly bound list.
+ *
+ * @returns {void}
+ */
+function resetTransactionSearch(): void {
+    const search = Fragment.byId("Invoices", "invoiceTransactionSearch") as SearchField | undefined;
+    const list = Fragment.byId("Invoices", "invoiceTransactionList") as List | undefined;
+    const binding = list?.getBinding("items") as ODataListBinding | undefined;
+    if (search) {
+        search.setValue("");
+    }
+    binding?.filter([]);
+}
+
+/**
  * Detaches the Invoices dialog from its invoice binding. Used when no invoice
  * exists for the selected card/period so the transaction list shows its empty
  * text instead of stale rows.
@@ -152,6 +194,7 @@ async function loadCards(view: XMLView): Promise<void> {
  */
 function unbindTransactionList(): void {
     const dialog = Fragment.byId("Invoices", "invoicesDialog") as Dialog | undefined;
+    resetTransactionSearch();
     dialog?.unbindObject();
 }
 
@@ -169,6 +212,7 @@ function unbindTransactionList(): void {
  */
 function bindTransactionList(view: XMLView, invoiceId: string, isDraft: boolean): void {
     const dialog = Fragment.byId("Invoices", "invoicesDialog") as Dialog | undefined;
+    resetTransactionSearch();
     if (!dialog) {
         return;
     }
@@ -395,6 +439,30 @@ const Invoices = {
         const view = this.getParent() as XMLView;
         uiOf(view).setProperty("/invoiceMonth", this.getSelectedKey());
         void loadInvoice(view);
+    },
+
+    onTransactionSearch: function (this: SearchField): void {
+        const view = Fragment.byId("Invoices", "invoicesDialog")?.getParent() as XMLView | undefined;
+        const list = Fragment.byId("Invoices", "invoiceTransactionList") as List | undefined;
+        const binding = list?.getBinding("items") as ODataListBinding | undefined;
+        if (!view || !binding) {
+            return;
+        }
+
+        const query = this.getValue()?.trim() || "";
+        const filters: Filter[] = [];
+        const isoDate = parseDateFilter(query);
+        if (query) {
+            filters.push(new Filter({ path: "Description", operator: FilterOperator.Contains, value1: query }));
+        }
+        if (isoDate) {
+            filters.push(new Filter({ path: "Date", operator: FilterOperator.EQ, value1: isoDate }));
+        }
+
+        const applied = filters.length > 1
+            ? [new Filter({ filters, and: false })]
+            : filters;
+        binding.filter(applied);
     },
 
     onPreviousPeriod: function (this: Control): void {

@@ -120,7 +120,7 @@ export interface IUiState {
     invoiceCurrentCategoryId: string;
     invoiceCurrentCategoryName: string;
     invoiceCategoryAffectedText: string;
-    deleteTransactions: unknown[];
+    deleteTransactionsCount: number;
     deleteTransactionsCountText: string;
     deleteSelectAll: boolean;
 }
@@ -279,7 +279,7 @@ export default class UiModel extends JSONModel {
 
             invoiceCategoryAffectedText: "",
 
-            deleteTransactions: [],
+            deleteTransactionsCount: 0,
 
             deleteTransactionsCountText: "",
 

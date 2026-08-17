@@ -204,6 +204,15 @@
                             <Text text="{i18n>invoiceTransactionsHint}" class="sectionHint" />
                         </VBox>
                     </HBox>
+
+                    <SearchField
+                        id="invoiceTransactionSearch"
+                        placeholder="{i18n>invoiceSearchTransactions}"
+                        width="100%"
+                        class="sapUiTinyMarginTop sapUiTinyMarginBottom"
+                        search="handler.onTransactionSearch"
+                    />
+
                     <List
                         id="invoiceTransactionList"
                         items="{ path: 'Transactions', sorter: { path: 'Date', descending: true }, parameters: { $expand: 'Category,Currency', $select: 'Identifier,Currency_code' } }"

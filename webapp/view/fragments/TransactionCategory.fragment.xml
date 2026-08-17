@@ -26,10 +26,21 @@
                     class="sapUiSmallMarginBottom"
                 />
 
-                <Text
-                    text="{ parts: [ { path: 'i18n>transactionCategoryCurrent' }, { path: 'ui>/invoiceCurrentCategoryName' } ], formatter: 'formatter.formatTemplate' }"
-                    class="invoiceAffectedText"
-                />
+                <HBox
+                    alignItems="Center"
+                    class="sapUiTinyMarginTopBottom"
+                >
+                    <Avatar
+                        src="{ parts: [ { path: 'ui>/invoiceCurrentCategoryId' }, { path: 'ui>/invoiceCategoryImages' } ], formatter: 'formatter.cardImageValue' }"
+                        initials="{ parts: [ { path: 'ui>/invoiceCurrentCategoryName' } ], formatter: 'formatter.initials' }"
+                        displayShape="Circle"
+                        class="invoiceCategoryAvatar sapUiTinyMarginEnd"
+                    />
+                    <Text
+                        text="{ parts: [ { path: 'i18n>transactionCategoryCurrent' }, { path: 'ui>/invoiceCurrentCategoryName' } ], formatter: 'formatter.formatTemplate' }"
+                        class="invoiceAffectedText"
+                    />
+                </HBox>
 
                 <Text
                     id="categoryAffectedText"
