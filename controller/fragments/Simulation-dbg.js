@@ -5,10 +5,10 @@ sap.ui.define(["../../util/expenseApi", "../../util/feedback"], function (____ut
   const handleActionError = ____util_feedback["handleActionError"];
   const showWarning = ____util_feedback["showWarning"];
   const Simulation = {
-    onCancelarSimulacao: function () {
+    onCancelSimulation: function () {
       this.getParent().close();
     },
-    onSimularGastos: async function () {
+    onRunSimulation: async function () {
       const dialog = this.getParent();
       const view = dialog.getParent();
       const uiModel = view.getModel("ui");

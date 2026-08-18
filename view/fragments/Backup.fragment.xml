@@ -35,7 +35,7 @@
                         buttonText="{i18n>backupFileButton}"
                         placeholder="{i18n>backupFilePlaceholder}"
                         fileType="zip"
-                        change="handler.onModificaArquivo"
+                        change="handler.onBackupFileChanged"
                         width="100%"
                     />
                 </VBox>
@@ -47,7 +47,7 @@
                 text="{i18n>backupRestoreButton}"
                 icon="sap-icon://download"
                 type="Emphasized"
-                press="handler.onImportarBackup"
+                press="handler.onImportBackup"
             />
             <!-- </beginButton> -->
             <!-- <endButton> -->
@@ -62,7 +62,7 @@
                 text="{i18n>backupCancelButton}"
                 icon="sap-icon://decline"
                 type="Transparent"
-                press="handler.onCancelarBackup"
+                press="handler.onCancelBackup"
             />
             <!-- </endButton> -->
         </buttons>

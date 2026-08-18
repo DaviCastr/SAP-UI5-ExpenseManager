@@ -25,17 +25,17 @@ const Backup = {
         uploader?.setValue("");
     },
 
-    onModificaArquivo: function (event: Event): void {
+    onBackupFileChanged: function (event: Event): void {
         const parameters = event.getParameters() as { files?: File[] };
         const files = parameters.files;
         backupFile = files && files.length > 0 ? files[0] : null;
     },
 
-    onCancelarBackup: function (this: Control): void {
+    onCancelBackup: function (this: Control): void {
         (this.getParent() as Dialog).close();
     },
 
-    onImportarBackup: async function (this: Control): Promise<void> {
+    onImportBackup: async function (this: Control): Promise<void> {
         const dialog = this.getParent() as Dialog;
         const view = dialog.getParent() as XMLView;
         const uiModel = view.getModel("ui") as JSONModel;

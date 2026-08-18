@@ -1,8 +1,8 @@
-sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "../../service/ODataService", "../../util/entityApi", "../../util/http", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, Avatar, MessageBox, CustomListItem, ____service_ODataService, ____util_entityApi, ____util_http, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
+sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "../../service/ODataService", "../../util/fileUpload", "../../util/http", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, Avatar, MessageBox, CustomListItem, ____service_ODataService, ____util_fileUpload, ____util_http, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
   "use strict";
 
   const ODataService = ____service_ODataService["ODataService"];
-  const uploadEntityImage = ____util_entityApi["uploadEntityImage"];
+  const uploadNow = ____util_fileUpload["uploadNow"];
   const request = ____util_http["request"];
   const getText = ____util_i18n["getText"];
   const handleActionError = ____util_feedback["handleActionError"];
@@ -164,8 +164,9 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
   // instead of being silently dropped or re-sent by the next submit.
   const rejectedGuard = createRejectedChangeGuard();
 
-  // Photos chosen for rows. They key off the row's OData context and are uploaded
-  // into the card's DRAFT row (`IsActiveEntity = false`) as soon as the row has a
+  // Photos chosen for rows. They key off the row's OData context and hold the row
+  // FileUploader (which keeps the chosen file). The photo is uploaded into the
+  // card's DRAFT row (`IsActiveEntity = false`) as soon as the row has a
   // resolvable ID: immediately when an existing row's photo is picked, or on Save
   // for rows created in this dialog. Keeping the media inside the draft gives it
   // the same semantics as the rest of the tree (a discard reverts the photo too),
@@ -180,16 +181,18 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
   /**
    * Uploads one chosen photo into the card's DRAFT row. The draft row is
    * materialized upfront with an idempotent touch (a containment PATCH mimicking
-   * the model's draft edits). Rows without a server-side ID yet (created in this
-   * dialog) defer the upload to Save.
+   * the model's draft edits). The image bytes are then sent by the row's
+   * FileUploader itself (raw PUT with the session's Authorization header). Rows
+   * without a server-side ID yet (created in this dialog) defer the upload to
+   * Save.
    *
    * @param {string} personId the ID of the person whose draft owns the cards
    * @param {Context} context the card's OData context
-   * @param {File} file the chosen image file
+   * @param {FileUploader} uploader the row's file uploader holding the chosen file
    * @param {string} entitySet the entity set holding the card, defaults to "Cards"
    * @returns {Promise<boolean>} whether the photo was uploaded now
    */
-  async function uploadRowPhoto(personId, context, file, entitySet = "Cards") {
+  async function uploadRowPhoto(personId, context, uploader, entitySet = "Cards") {
     let id;
     let name;
     try {
@@ -212,9 +215,12 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
           Name: name
         })
       });
-      await uploadEntityImage(entitySet, id, false, file);
-      pendingPhotos.delete(context);
-      return true;
+      const odata = new ODataService(context.getModel());
+      const uploaded = await uploadNow(uploader, odata.getMediaUrl(`${entitySet}(ID='${encodeURIComponent(id)}',IsActiveEntity=false)/Image`));
+      if (uploaded) {
+        pendingPhotos.delete(context);
+      }
+      return uploaded;
     } catch {
       return false;
     }
@@ -231,8 +237,8 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
    */
   async function uploadPendingPhotos(personId) {
     let failed = false;
-    for (const [context, file] of Array.from(pendingPhotos.entries())) {
-      const uploaded = await uploadRowPhoto(personId, context, file);
+    for (const [context, uploader] of Array.from(pendingPhotos.entries())) {
+      const uploaded = await uploadRowPhoto(personId, context, uploader);
       if (!uploaded) {
         failed = true;
       }
@@ -337,6 +343,8 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
       if (!dialog || !view || !context) {
         return;
       }
+      pendingPhotos.delete(context);
+      inflightPhotos.delete(context);
       confirmAction(view, "cardsRemoveConfirm", "cardsRemoveTitle", () => {
         try {
           void context.delete().catch(error => handleActionError(view, error, "cardsRemoveError"));
@@ -367,11 +375,11 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
       if (!item || !context) {
         return;
       }
-      pendingPhotos.set(context, file);
+      pendingPhotos.set(context, this);
       const dialog = findCardsDialog(this);
       const person = dialog?.getBindingContext()?.getObject();
       if (person?.ID) {
-        const upload = uploadRowPhoto(person.ID, context, file);
+        const upload = uploadRowPhoto(person.ID, context, this);
         inflightPhotos.set(context, upload);
         void upload.catch(() => undefined).finally(() => {
           if (inflightPhotos.get(context) === upload) {

@@ -155,6 +155,9 @@
                                     fileType="png,jpg,jpeg"
                                     uploadOnChange="false"
                                     multiple="false"
+                                    sendXHR="true"
+                                    httpRequestMethod="PUT"
+                                    useMultipart="false"
                                     change="handler.onCardPhotoChanged"
                                     class="cardManagerPhoto"
                                 />

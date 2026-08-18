@@ -5,8 +5,8 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/expenseApi", "../../util/feed
   const handleActionError = ____util_feedback["handleActionError"];
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
-  const AdicionarGasto = {
-    onCancelarGasto: function () {
+  const AddExpense = {
+    onCancelExpense: function () {
       this.getParent().close();
     },
     onAddExpense: async function () {
@@ -50,6 +50,6 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/expenseApi", "../../util/feed
       }
     }
   };
-  return AdicionarGasto;
+  return AddExpense;
 });
 //# sourceMappingURL=AddExpense-dbg.js.map

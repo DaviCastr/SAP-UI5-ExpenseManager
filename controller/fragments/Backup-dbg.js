@@ -17,15 +17,15 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/backupApi", "../../util/feedb
       const uploader = Fragment.byId("Backup", "backupFileUploader");
       uploader?.setValue("");
     },
-    onModificaArquivo: function (event) {
+    onBackupFileChanged: function (event) {
       const parameters = event.getParameters();
       const files = parameters.files;
       backupFile = files && files.length > 0 ? files[0] : null;
     },
-    onCancelarBackup: function () {
+    onCancelBackup: function () {
       this.getParent().close();
     },
-    onImportarBackup: async function () {
+    onImportBackup: async function () {
       const dialog = this.getParent();
       const view = dialog.getParent();
       const uiModel = view.getModel("ui");

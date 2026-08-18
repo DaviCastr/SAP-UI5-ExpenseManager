@@ -31,7 +31,10 @@
                         fileType="png,jpg,jpeg"
                         uploadOnChange="false"
                         multiple="false"
-                        change="handler.onModificaArquivo"
+                        sendXHR="true"
+                        httpRequestMethod="PUT"
+                        useMultipart="false"
+                        change="handler.onPhotoChanged"
                         width="100%"
                     />
                     <Label text="{i18n>personNameLabel}" labelFor="personName" />
@@ -52,7 +55,7 @@
                 </VBox>
             </ScrollContainer>
         </content>
-        <beginButton><Button text="{i18n>personSaveButton}" icon="sap-icon://accept" type="Emphasized" press="handler.onAdicionarPessoa" /></beginButton>
-        <endButton><Button text="{i18n>personCancelButton}" icon="sap-icon://decline" press="handler.onCancelarPessoa" /></endButton>
+        <beginButton><Button text="{i18n>personSaveButton}" icon="sap-icon://accept" type="Emphasized" press="handler.onAddPerson" /></beginButton>
+        <endButton><Button text="{i18n>personCancelButton}" icon="sap-icon://decline" press="handler.onCancelPerson" /></endButton>
     </Dialog>
 </core:FragmentDefinition>

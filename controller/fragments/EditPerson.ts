@@ -10,13 +10,17 @@ import Context from "sap/ui/model/Context";
 import MessageBox from "sap/m/MessageBox";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import { ODataService } from "../../service/ODataService";
-import { uploadPersonImage } from "../../util/entityApi";
+import { uploadNow } from "../../util/fileUpload";
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import { createRejectedChangeGuard } from "../../util/rejectedChanges";
 import type Home from "../../controller/Home.controller";
 
 let personPhoto: File | null = null;
+
+// The FileUploader upload started on photo selection. The save flow awaits it
+// so activating the draft can never race a media PUT that is still in flight.
+let inflightUpload: Promise<boolean> | null = null;
 
 // Watches the service model's `messageChange` event while the dialog is open so
 // rejected backend changes (e.g. field validation) are shown and reverted
@@ -116,10 +120,11 @@ async function discardDraftAndClose(view: XMLView, dialog: Dialog, id: string): 
 const PersonDetail = {
     onDialogBeforeOpen: function (): void {
         personPhoto = null;
+        inflightUpload = null;
         (Fragment.byId("PersonDetail", "editPersonFileUploader") as FileUploader)?.setValue("");
     },
 
-    onModificaArquivo: function (event: Event): void {
+    onPhotoChanged: function (event: Event): void {
         const parameters = event.getParameters() as { files?: File[] };
         const files = parameters.files;
         personPhoto = files && files.length > 0 ? files[0] : null;
@@ -133,10 +138,19 @@ const PersonDetail = {
                     const dialog = findPersonDialog(event.getSource<Control>());
                     const context = dialog?.getBindingContext() as Context | undefined;
                     const personId = (context?.getObject() as { ID?: string } | undefined)?.ID ?? "";
+                    const odata = new ODataService(context?.getModel() as ODataModel);
 
                     if (personId) {
-                        void uploadPersonImage(personId, false, personPhoto).catch(() => {
-                            // keep the local preview; the photo is re-uploaded on save
+
+                        // The FileUploader sends the photo itself (raw PUT with the
+                        // session's Authorization header) into the person's draft row.
+                        const uploader = Fragment.byId("PersonDetail", "editPersonFileUploader") as FileUploader;
+                        const upload = uploadNow(uploader,  odata.getMediaUrl(`Persons(ID='${encodeURIComponent(personId)}',IsActiveEntity=false)/Image`));
+                        inflightUpload = upload;
+                        void upload.finally(() => {
+                            if (inflightUpload === upload) {
+                                inflightUpload = null;
+                            }
                         });
                     }
                 }
@@ -227,12 +241,17 @@ const PersonDetail = {
 
             // The dialog is bound to the draft entity, so every edited field is
             // already PATCHed to the draft by the two-way binding. Flush any
-            // still pending change, upload a new photo, then publish the draft.
+            // still pending change, finish a new photo upload (retrying it once
+            // if the immediate attempt failed), then publish the draft.
             await odata.submitPending();
 
-            // if (personPhoto) {
-            //     await uploadPersonImage(person.ID, false, personPhoto);
-            // }
+            const photoUploaded = inflightUpload
+                ? await inflightUpload
+                : true;
+            if (!photoUploaded && personPhoto) {
+                const uploader = Fragment.byId("PersonDetail", "editPersonFileUploader") as FileUploader;
+                await uploadNow(uploader, odata.getMediaUrl(`Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=false)/Image`));
+            }
 
             await odata.prepareDraft("Persons", person.ID);
             await odata.activateDraft("Persons", person.ID);

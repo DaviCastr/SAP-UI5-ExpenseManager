@@ -1,20 +1,20 @@
-sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../service/ODataService", "../../util/feedback"], function (Fragment, ____util_entityApi, ____service_ODataService, ____util_feedback) {
+sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../service/ODataService", "../../util/fileUpload", "../../util/feedback"], function (Fragment, ____util_entityApi, ____service_ODataService, ____util_fileUpload, ____util_feedback) {
   "use strict";
 
   const createEntity = ____util_entityApi["createEntity"];
-  const uploadPersonImage = ____util_entityApi["uploadPersonImage"];
   const ODataService = ____service_ODataService["ODataService"];
+  const uploadNow = ____util_fileUpload["uploadNow"];
   const handleActionError = ____util_feedback["handleActionError"];
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
   let personPhoto = null;
-  const AdicionarPessoa = {
+  const AddPerson = {
     onDialogBeforeOpen: function () {
       personPhoto = null;
       Fragment.byId("AddPerson", "personFileUploader")?.setValue("");
       Fragment.byId("AddPerson", "personAvatar")?.setSrc("");
     },
-    onModificaArquivo: function (event) {
+    onPhotoChanged: function (event) {
       const parameters = event.getParameters();
       const files = parameters.files;
       personPhoto = files && files.length > 0 ? files[0] : null;
@@ -26,10 +26,10 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../service/OD
         reader.readAsDataURL(personPhoto);
       }
     },
-    onCancelarPessoa: function () {
+    onCancelPerson: function () {
       this.getParent().close();
     },
-    onAdicionarPessoa: async function () {
+    onAddPerson: async function () {
       const dialog = this.getParent();
       const view = dialog.getParent();
       const uiModel = view.getModel("ui");
@@ -53,10 +53,17 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../service/OD
           ExpenseTarget: Number(person.target.replace(",", ".")),
           ImageType: personPhoto?.type || ""
         });
-        if (personPhoto) {
-          await uploadPersonImage(created.ID, false, personPhoto);
-        }
         const odata = new ODataService(view.getModel());
+        if (personPhoto) {
+          // The photo is sent by the FileUploader itself (raw PUT with the
+          // session's Authorization header) into the draft row that the
+          // create above materialized server-side.
+          const uploader = Fragment.byId("AddPerson", "personFileUploader");
+          const uploaded = await uploadNow(uploader, odata.getMediaUrl(`Persons(ID='${created.ID}',IsActiveEntity=false)/Image`));
+          if (!uploaded) {
+            throw new Error("Erro ao enviar imagem");
+          }
+        }
         await odata.prepareDraft("Persons", created.ID);
         await odata.activateDraft("Persons", created.ID);
         dialog.close();
@@ -69,6 +76,6 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../service/OD
       }
     }
   };
-  return AdicionarPessoa;
+  return AddPerson;
 });
 //# sourceMappingURL=AddPerson-dbg.js.map

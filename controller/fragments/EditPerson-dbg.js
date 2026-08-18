@@ -1,14 +1,18 @@
-sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../../service/ODataService", "../../util/entityApi", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, MessageBox, ____service_ODataService, ____util_entityApi, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
+sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../../service/ODataService", "../../util/fileUpload", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, MessageBox, ____service_ODataService, ____util_fileUpload, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
   "use strict";
 
   const ODataService = ____service_ODataService["ODataService"];
-  const uploadPersonImage = ____util_entityApi["uploadPersonImage"];
+  const uploadNow = ____util_fileUpload["uploadNow"];
   const getText = ____util_i18n["getText"];
   const handleActionError = ____util_feedback["handleActionError"];
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
   const createRejectedChangeGuard = ____util_rejectedChanges["createRejectedChangeGuard"];
   let personPhoto = null;
+
+  // The FileUploader upload started on photo selection. The save flow awaits it
+  // so activating the draft can never race a media PUT that is still in flight.
+  let inflightUpload = null;
 
   // Watches the service model's `messageChange` event while the dialog is open so
   // rejected backend changes (e.g. field validation) are shown and reverted
@@ -105,9 +109,10 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
   const PersonDetail = {
     onDialogBeforeOpen: function () {
       personPhoto = null;
+      inflightUpload = null;
       Fragment.byId("PersonDetail", "editPersonFileUploader")?.setValue("");
     },
-    onModificaArquivo: function (event) {
+    onPhotoChanged: function (event) {
       const parameters = event.getParameters();
       const files = parameters.files;
       personPhoto = files && files.length > 0 ? files[0] : null;
@@ -119,9 +124,17 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
             const dialog = findPersonDialog(event.getSource());
             const context = dialog?.getBindingContext();
             const personId = context?.getObject()?.ID ?? "";
+            const odata = new ODataService(context?.getModel());
             if (personId) {
-              void uploadPersonImage(personId, false, personPhoto).catch(() => {
-                // keep the local preview; the photo is re-uploaded on save
+              // The FileUploader sends the photo itself (raw PUT with the
+              // session's Authorization header) into the person's draft row.
+              const uploader = Fragment.byId("PersonDetail", "editPersonFileUploader");
+              const upload = uploadNow(uploader, odata.getMediaUrl(`Persons(ID='${encodeURIComponent(personId)}',IsActiveEntity=false)/Image`));
+              inflightUpload = upload;
+              void upload.finally(() => {
+                if (inflightUpload === upload) {
+                  inflightUpload = null;
+                }
               });
             }
           }
@@ -195,13 +208,14 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
 
         // The dialog is bound to the draft entity, so every edited field is
         // already PATCHed to the draft by the two-way binding. Flush any
-        // still pending change, upload a new photo, then publish the draft.
+        // still pending change, finish a new photo upload (retrying it once
+        // if the immediate attempt failed), then publish the draft.
         await odata.submitPending();
-
-        // if (personPhoto) {
-        //     await uploadPersonImage(person.ID, false, personPhoto);
-        // }
-
+        const photoUploaded = inflightUpload ? await inflightUpload : true;
+        if (!photoUploaded && personPhoto) {
+          const uploader = Fragment.byId("PersonDetail", "editPersonFileUploader");
+          await uploadNow(uploader, odata.getMediaUrl(`Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=false)/Image`));
+        }
         await odata.prepareDraft("Persons", person.ID);
         await odata.activateDraft("Persons", person.ID);
         releaseDraftBinding(dialog);

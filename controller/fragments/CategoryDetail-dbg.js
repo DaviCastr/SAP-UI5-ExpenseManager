@@ -2,7 +2,7 @@ sap.ui.define([], function () {
   "use strict";
 
   const CategoryDetail = {
-    onFecharCategoria: function () {
+    onCloseCategory: function () {
       this.getParent().close();
     }
   };
