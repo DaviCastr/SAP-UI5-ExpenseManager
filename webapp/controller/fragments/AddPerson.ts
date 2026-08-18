@@ -7,22 +7,23 @@ import FileUploader from "sap/ui/unified/FileUploader";
 import Avatar from "sap/m/Avatar";
 import JSONModel from "sap/ui/model/json/JSONModel";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
-import { createEntity, uploadPersonImage } from "../../util/entityApi";
+import { createEntity } from "../../util/entityApi";
 import { ODataService } from "../../service/ODataService";
+import { uploadNow } from "../../util/fileUpload";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import type Home from "../../controller/Home.controller";
 import type { NewPerson } from "../../model/UiModel";
 
 let personPhoto: File | null = null;
 
-const AdicionarPessoa = {
+const AddPerson = {
     onDialogBeforeOpen: function (): void {
         personPhoto = null;
         (Fragment.byId("AddPerson", "personFileUploader") as FileUploader)?.setValue("");
         (Fragment.byId("AddPerson", "personAvatar") as Avatar)?.setSrc("");
     },
 
-    onModificaArquivo: function (event: Event): void {
+    onPhotoChanged: function (event: Event): void {
         const parameters = event.getParameters() as { files?: File[] };
         const files = parameters.files;
         personPhoto = files && files.length > 0 ? files[0] : null;
@@ -36,11 +37,11 @@ const AdicionarPessoa = {
         }
     },
 
-    onCancelarPessoa: function (this: Control): void {
+    onCancelPerson: function (this: Control): void {
         (this.getParent() as Dialog).close();
     },
 
-    onAdicionarPessoa: async function (this: Control): Promise<void> {
+    onAddPerson: async function (this: Control): Promise<void> {
         const dialog = this.getParent() as Dialog;
         const view = dialog.getParent() as XMLView;
         const uiModel = view.getModel("ui") as JSONModel;
@@ -69,11 +70,19 @@ const AdicionarPessoa = {
                 ImageType: personPhoto?.type || ""
             });
 
+            const odata = new ODataService(view.getModel() as ODataModel);
+
             if (personPhoto) {
-                await uploadPersonImage(created.ID, false, personPhoto);
+                // The photo is sent by the FileUploader itself (raw PUT with the
+                // session's Authorization header) into the draft row that the
+                // create above materialized server-side.
+                const uploader = Fragment.byId("AddPerson", "personFileUploader") as FileUploader;
+                const uploaded = await uploadNow(uploader, odata.getMediaUrl(`Persons(ID='${created.ID}',IsActiveEntity=false)/Image`));
+                if (!uploaded) {
+                    throw new Error("Erro ao enviar imagem");
+                }
             }
 
-            const odata = new ODataService(view.getModel() as ODataModel);
             await odata.prepareDraft("Persons", created.ID);
             await odata.activateDraft("Persons", created.ID);
 
@@ -88,4 +97,4 @@ const AdicionarPessoa = {
     }
 };
 
-export default AdicionarPessoa;
+export default AddPerson;

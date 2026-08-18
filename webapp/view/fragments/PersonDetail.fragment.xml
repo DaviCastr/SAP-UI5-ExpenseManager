@@ -58,7 +58,10 @@
                         fileType="png,jpg,jpeg"
                         uploadOnChange="false"
                         multiple="false"
-                        change="handler.onModificaArquivo"
+                        sendXHR="true"
+                        httpRequestMethod="PUT"
+                        useMultipart="false"
+                        change="handler.onPhotoChanged"
                         width="100%"
                     />
                 </VBox>

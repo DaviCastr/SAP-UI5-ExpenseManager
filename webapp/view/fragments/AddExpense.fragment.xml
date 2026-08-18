@@ -119,7 +119,7 @@
                 text="{i18n>expenseCancelButton}"
                 icon="sap-icon://decline"
                 type="Transparent"
-                press="handler.onCancelarGasto"
+                press="handler.onCancelExpense"
             />
         </endButton>
     </Dialog>

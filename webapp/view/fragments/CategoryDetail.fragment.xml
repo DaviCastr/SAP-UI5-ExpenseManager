@@ -94,6 +94,6 @@
                 </VBox>
             </VBox>
         </content>
-        <beginButton><Button text="Fechar" icon="sap-icon://decline" press="handler.onFecharCategoria" /></beginButton>
+        <beginButton><Button text="Fechar" icon="sap-icon://decline" press="handler.onCloseCategory" /></beginButton>
     </Dialog>
 </core:FragmentDefinition>

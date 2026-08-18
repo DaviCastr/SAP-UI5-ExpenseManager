@@ -8,11 +8,12 @@ import MessageBox from "sap/m/MessageBox";
 import CustomListItem from "sap/m/CustomListItem";
 import Event from "sap/ui/base/Event";
 import JSONModel from "sap/ui/model/json/JSONModel";
+import type FileUploader from "sap/ui/unified/FileUploader";
 import type Context from "sap/ui/model/odata/v4/Context";
 import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import { ODataService } from "../../service/ODataService";
-import { uploadEntityImage } from "../../util/entityApi";
+import { uploadNow } from "../../util/fileUpload";
 import { request } from "../../util/http";
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
@@ -173,14 +174,15 @@ function trackCreate(
 // instead of being silently dropped or re-sent by the next submit.
 const rejectedGuard = createRejectedChangeGuard();
 
-// Photos chosen for rows. They key off the row's OData context and are uploaded
-// into the card's DRAFT row (`IsActiveEntity = false`) as soon as the row has a
+// Photos chosen for rows. They key off the row's OData context and hold the row
+// FileUploader (which keeps the chosen file). The photo is uploaded into the
+// card's DRAFT row (`IsActiveEntity = false`) as soon as the row has a
 // resolvable ID: immediately when an existing row's photo is picked, or on Save
 // for rows created in this dialog. Keeping the media inside the draft gives it
 // the same semantics as the rest of the tree (a discard reverts the photo too),
 // and CAP moves the `cds.LargeBinary` draft data to the active row during
 // `draftActivate` (`cds.fiori.move_media_data_in_db`).
-const pendingPhotos = new Map<Context, File>();
+const pendingPhotos = new Map<Context, FileUploader>();
 
 // Immediate uploads started on photo selection. The Save flow waits for them so
 // activating the draft can never race a media PUT that is still in flight.
@@ -189,16 +191,18 @@ const inflightPhotos = new Map<Context, Promise<boolean>>();
 /**
  * Uploads one chosen photo into the card's DRAFT row. The draft row is
  * materialized upfront with an idempotent touch (a containment PATCH mimicking
- * the model's draft edits). Rows without a server-side ID yet (created in this
- * dialog) defer the upload to Save.
+ * the model's draft edits). The image bytes are then sent by the row's
+ * FileUploader itself (raw PUT with the session's Authorization header). Rows
+ * without a server-side ID yet (created in this dialog) defer the upload to
+ * Save.
  *
  * @param {string} personId the ID of the person whose draft owns the cards
  * @param {Context} context the card's OData context
- * @param {File} file the chosen image file
+ * @param {FileUploader} uploader the row's file uploader holding the chosen file
  * @param {string} entitySet the entity set holding the card, defaults to "Cards"
  * @returns {Promise<boolean>} whether the photo was uploaded now
  */
-async function uploadRowPhoto(personId: string, context: Context, file: File, entitySet = "Cards"): Promise<boolean> {
+async function uploadRowPhoto(personId: string, context: Context, uploader: FileUploader, entitySet = "Cards"): Promise<boolean> {
     let id: string | undefined;
     let name: string | undefined;
     try {
@@ -219,9 +223,12 @@ async function uploadRowPhoto(personId: string, context: Context, file: File, en
             body: JSON.stringify({ Name: name })
         });
 
-        await uploadEntityImage(entitySet, id, false, file);
-        pendingPhotos.delete(context);
-        return true;
+        const odata = new ODataService(context.getModel() as ODataModel);
+        const uploaded = await uploadNow(uploader, odata.getMediaUrl(`${entitySet}(ID='${encodeURIComponent(id)}',IsActiveEntity=false)/Image`));
+        if (uploaded) {
+            pendingPhotos.delete(context);
+        }
+        return uploaded;
     } catch {
         return false;
     }
@@ -238,8 +245,8 @@ async function uploadRowPhoto(personId: string, context: Context, file: File, en
  */
 async function uploadPendingPhotos(personId: string): Promise<boolean> {
     let failed = false;
-    for (const [context, file] of Array.from(pendingPhotos.entries())) {
-        const uploaded = await uploadRowPhoto(personId, context, file);
+    for (const [context, uploader] of Array.from(pendingPhotos.entries())) {
+        const uploaded = await uploadRowPhoto(personId, context, uploader);
         if (!uploaded) {
             failed = true;
         }
@@ -369,6 +376,9 @@ const Cards = {
             return;
         }
 
+        pendingPhotos.delete(context);
+        inflightPhotos.delete(context);
+
         confirmAction(view, "cardsRemoveConfirm", "cardsRemoveTitle", () => {
             try {
                 void context.delete().catch((error) => handleActionError(view, error, "cardsRemoveError"));
@@ -402,12 +412,12 @@ const Cards = {
             return;
         }
 
-        pendingPhotos.set(context, file);
+        pendingPhotos.set(context, this as FileUploader);
 
         const dialog = findCardsDialog(this);
         const person = dialog?.getBindingContext()?.getObject() as { ID?: string } | undefined;
         if (person?.ID) {
-            const upload = uploadRowPhoto(person.ID, context, file);
+            const upload = uploadRowPhoto(person.ID, context, this as FileUploader);
             inflightPhotos.set(context, upload);
             void upload
                 .catch(() => undefined)

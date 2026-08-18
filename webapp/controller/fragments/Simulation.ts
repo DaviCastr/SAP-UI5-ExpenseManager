@@ -8,11 +8,11 @@ import { handleActionError, showWarning } from "../../util/feedback";
 import type { UiSimulation } from "../../model/UiModel";
 
 const Simulation = {
-    onCancelarSimulacao: function (this: Control): void {
+    onCancelSimulation: function (this: Control): void {
         (this.getParent() as Dialog).close();
     },
 
-    onSimularGastos: async function (this: Control): Promise<void> {
+    onRunSimulation: async function (this: Control): Promise<void> {
         const dialog = this.getParent() as Dialog;
         const view = dialog.getParent() as XMLView;
         const uiModel = view.getModel("ui") as JSONModel;

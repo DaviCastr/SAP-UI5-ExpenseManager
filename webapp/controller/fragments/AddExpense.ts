@@ -10,8 +10,8 @@ import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import type Home from "../../controller/Home.controller";
 import type { NewExpense } from "../../model/UiModel";
 
-const AdicionarGasto = {
-    onCancelarGasto: function (this: Control): void {
+const AddExpense = {
+    onCancelExpense: function (this: Control): void {
         (this.getParent() as Dialog).close();
     },
 
@@ -69,4 +69,4 @@ const AdicionarGasto = {
     }
 };
 
-export default AdicionarGasto;
+export default AddExpense;
