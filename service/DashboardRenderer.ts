@@ -10,6 +10,7 @@ export interface TransactionRow {
     Amount?: number;
     Currency?: string;
     Category?: { ID: string; Name: string; ImagePath?: string; ImageBase64?: string };
+    Card?: { ID: string; Name: string; ImagePath?: string };
     SearchText?: string;
 }
 

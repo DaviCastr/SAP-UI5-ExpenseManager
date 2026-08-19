@@ -137,7 +137,7 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   function installmentSubtitle(installment, totalInstallments, year, month) {
     const total = Number(totalInstallments) || 0;
     const parcel = total > 1 ? `Parcela ${Number(installment) || 1} de ${total}` : "";
-    const monthText = year && month ? formatMonth(Number(year), Number(month))?.trim() : "";
+    const monthText = year && month ? formatMonth(Number(String(year).replace(".", "")), Number(month))?.trim() : "";
     return [parcel, monthText].filter(Boolean).join(" • ");
   }
 

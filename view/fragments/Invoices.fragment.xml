@@ -162,11 +162,11 @@
                         <VBox class="sapUiTinyMarginBottom">
                             <Text text="{i18n>invoiceSummaryLabel}" class="eyebrow" />
                             <Title text="{ui>/invoice/periodLabel}" level="H4" />
-                            <Text
+                            <!-- <Text
                                 text="{ui>/invoice/header/Description}"
                                 class="sectionHint"
                                 visible="{= ${ui>/invoice/header/Description} !== '' }"
-                            />
+                            /> -->
                             <HBox alignItems="Center" class="sapUiTinyMarginTop">
                                 <core:Icon src="sap-icon://message-success" class="invoiceSentIcon" visible="{ui>/invoice/header/InvoiceSent}" />
                                 <core:Icon src="sap-icon://message-warning" class="invoiceNotSentIcon" visible="{= !${ui>/invoice/header/InvoiceSent} }" />

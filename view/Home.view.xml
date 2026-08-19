@@ -684,6 +684,19 @@
                                                 text="{ui>Category/Name}"
                                                 class="transactionDate"
                                             />
+                                            <HBox
+                                                alignItems="Center"
+                                                visible="{= ${ui>Card/Name} !== '' }"
+                                            >
+                                                <core:Icon
+                                                    src="sap-icon://credit-card"
+                                                    class="transactionCardIcon"
+                                                />
+                                                <Text
+                                                    text="{ui>Card/Name}"
+                                                    class="transactionDate sapUiTinyMarginBegin"
+                                                />
+                                            </HBox>
                                             <Text
                                                 text="{
                                                     parts: [{
