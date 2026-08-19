@@ -143,7 +143,7 @@ export function installmentSubtitle(installment?: number | string, totalInstallm
         ? `Parcela ${Number(installment) || 1} de ${total}`
         : "";
     const monthText = year && month
-        ? formatMonth(Number(year), Number(month))?.trim()
+        ? formatMonth(Number(String(year).replace(".","")), Number(month))?.trim()
         : "";
     return [parcel, monthText].filter(Boolean).join(" • ");
 }
