@@ -95,6 +95,17 @@ sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
           externalReference: ""
         },
         liabilityEditId: "",
+        newLiabilityTransaction: {
+          type: "PAYMENT",
+          description: "",
+          movementDate: new Date().toISOString().slice(0, 10),
+          installment: "1",
+          totalInstallments: "1",
+          amount: "",
+          currency: "BRL",
+          externalReference: ""
+        },
+        liabilityTransactionEditId: "",
         liabilityTypeOptions: [{
           key: "GENERAL",
           text: "Genérica"

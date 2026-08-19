@@ -86,6 +86,17 @@ export interface NewLiability {
     externalReference: string;
 }
 
+export interface NewLiabilityTransaction {
+    type: string;
+    description: string;
+    movementDate: string;
+    installment: string;
+    totalInstallments: string;
+    amount: string;
+    currency: string;
+    externalReference: string;
+}
+
 export interface UiSimulation {
     month: string;
     year: string;
@@ -117,6 +128,8 @@ export interface IUiState {
     newShare: UiNewShare;
     newLiability: NewLiability;
     liabilityEditId: string;
+    newLiabilityTransaction: NewLiabilityTransaction;
+    liabilityTransactionEditId: string;
     liabilityTypeOptions: UiEntityOption[];
     liabilityStatusOptions: UiEntityOption[];
     liabilityInterestModeOptions: UiEntityOption[];
@@ -267,6 +280,19 @@ export default class UiModel extends JSONModel {
             },
 
             liabilityEditId: "",
+
+            newLiabilityTransaction: {
+                type: "PAYMENT",
+                description: "",
+                movementDate: new Date().toISOString().slice(0, 10),
+                installment: "1",
+                totalInstallments: "1",
+                amount: "",
+                currency: "BRL",
+                externalReference: ""
+            },
+
+            liabilityTransactionEditId: "",
 
             liabilityTypeOptions: [
                 { key: "GENERAL", text: "Genérica" },

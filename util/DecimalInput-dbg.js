@@ -12,7 +12,7 @@ sap.ui.define(["sap/ui/model/SimpleType", "sap/ui/model/ParseException", "sap/ui
     return Number(cleaned);
   }
   class DecimalInput extends SimpleType {
-    formatValue(vValue, _sTargetType) {
+    formatValue(vValue) {
       if (typeof vValue === "number") {
         return Number.isFinite(vValue) ? String(vValue).replace(".", ",") : "";
       }
@@ -27,10 +27,10 @@ sap.ui.define(["sap/ui/model/SimpleType", "sap/ui/model/ParseException", "sap/ui
         }
         return text;
       }
-      return vValue == null ? "" : String(vValue);
+      return vValue === null || vValue === undefined ? "" : String(vValue);
     }
-    parseValue(vValue, _sSourceType) {
-      const text = vValue == null ? "" : String(vValue).trim();
+    parseValue(vValue) {
+      const text = vValue === null || vValue === undefined ? "" : String(vValue).trim();
       if (!text) {
         return null;
       }
@@ -41,7 +41,7 @@ sap.ui.define(["sap/ui/model/SimpleType", "sap/ui/model/ParseException", "sap/ui
       return parsed;
     }
     validateValue(vValue) {
-      if (vValue == null) {
+      if (vValue === null || vValue === undefined) {
         return;
       }
       if (typeof vValue !== "number" || !Number.isFinite(vValue)) {

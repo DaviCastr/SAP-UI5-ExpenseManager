@@ -14,7 +14,7 @@ function parseNumeric(text: string): number {
 }
 
 export default class DecimalInput extends SimpleType {
-    formatValue(vValue: unknown, _sTargetType?: string): string {
+    formatValue(vValue: unknown): string {
         if (typeof vValue === "number") {
             return Number.isFinite(vValue) ? String(vValue).replace(".", ",") : "";
         }
@@ -29,11 +29,11 @@ export default class DecimalInput extends SimpleType {
             }
             return text;
         }
-        return vValue == null ? "" : String(vValue);
+        return vValue === null || vValue === undefined ? "" : String(vValue);
     }
 
-    parseValue(vValue: unknown, _sSourceType?: string): number | null {
-        const text = vValue == null ? "" : String(vValue).trim();
+    parseValue(vValue: unknown): number | null {
+        const text = vValue === null || vValue === undefined ? "" : String(vValue).trim();
         if (!text) {
             return null;
         }
@@ -45,7 +45,7 @@ export default class DecimalInput extends SimpleType {
     }
 
     validateValue(vValue: unknown): void {
-        if (vValue == null) {
+        if (vValue === null || vValue === undefined) {
             return;
         }
         if (typeof vValue !== "number" || !Number.isFinite(vValue)) {

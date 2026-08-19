@@ -1,6 +1,7 @@
 <core:FragmentDefinition
     xmlns:core="sap.ui.core"
     xmlns="sap.m"
+    xmlns:f="sap.f"
     id="LiabilityTransactions"
     core:require="{
         formatter: 'apps/dflc/expensemanager/util/format',
@@ -11,8 +12,9 @@
         id="liabilityTransactionsDialog"
         title="{i18n>liabilityTransactionsDialogTitle}"
         class="financeDialog"
-        contentWidth="54rem"
+        contentWidth="60rem"
         stretch="{device>/system/phone}"
+        beforeOpen="handler.onDialogBeforeOpen"
         afterOpen="handler.onDialogAfterOpen"
         afterClose="handler.onDialogAfterClose"
         busy="{ui>/busy}"
@@ -26,83 +28,576 @@
                     class="sapUiSmallMarginBottom"
                 />
 
-                <Table
-                    id="liabilityTransactionsTable"
+                <VBox class="cardManagerAddRow sapUiSmallMarginBottom">
+                    <Label
+                        text="{i18n>liabilityTransactionsAddLabel}"
+                        labelFor="newLiabilityTransactionType"
+                        class="cardManagerAddTitle"
+                    />
+                    <HBox
+                        wrap="Wrap"
+                        alignItems="End"
+                        class="sapUiTinyMarginTop"
+                    >
+                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                            <Label
+                                text="{i18n>liabilityTransactionsTypeLabel}"
+                                labelFor="newLiabilityTransactionType"
+                            />
+                            <Select
+                                id="newLiabilityTransactionType"
+                                selectedKey="{ui>/newLiabilityTransaction/type}"
+                                items="{ui>/liabilityTxTypeOptions}"
+                                width="100%"
+                            >
+                                <layoutData>
+                                    <FlexItemData
+                                        minWidth="9rem"
+                                        maxWidth="11rem"
+                                    />
+                                </layoutData>
+                                <core:Item
+                                    key="{ui>key}"
+                                    text="{ui>text}"
+                                />
+                            </Select>
+                        </VBox>
+                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                            <Label
+                                text="{i18n>liabilityTransactionsDescriptionLabel}"
+                                labelFor="newLiabilityTransactionDescription"
+                            />
+                            <Input
+                                id="newLiabilityTransactionDescription"
+                                value="{ui>/newLiabilityTransaction/description}"
+                                placeholder="{i18n>liabilityTransactionsDescriptionPlaceholder}"
+                                width="100%"
+                            >
+                                <layoutData>
+                                    <FlexItemData
+                                        minWidth="12rem"
+                                        maxWidth="16rem"
+                                        growFactor="1"
+                                    />
+                                </layoutData>
+                            </Input>
+                        </VBox>
+                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                            <Label
+                                text="{i18n>liabilityTransactionsDateLabel}"
+                                labelFor="newLiabilityTransactionDate"
+                            />
+                            <DatePicker
+                                id="newLiabilityTransactionDate"
+                                value="{ui>/newLiabilityTransaction/movementDate}"
+                                width="100%"
+                            >
+                                <layoutData>
+                                    <FlexItemData
+                                        minWidth="8rem"
+                                        maxWidth="10rem"
+                                    />
+                                </layoutData>
+                            </DatePicker>
+                        </VBox>
+                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                            <Label
+                                text="{i18n>liabilityTransactionsInstallmentLabel}"
+                                labelFor="newLiabilityTransactionInstallment"
+                            />
+                            <Input
+                                id="newLiabilityTransactionInstallment"
+                                value="{ path: 'ui>/newLiabilityTransaction/installment', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
+                                width="100%"
+                            >
+                                <layoutData>
+                                    <FlexItemData
+                                        minWidth="4.5rem"
+                                        maxWidth="5.5rem"
+                                    />
+                                </layoutData>
+                            </Input>
+                        </VBox>
+                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                            <Label
+                                text="{i18n>liabilityTransactionsTotalInstallmentsLabel}"
+                                labelFor="newLiabilityTransactionTotalInstallments"
+                            />
+                            <Input
+                                id="newLiabilityTransactionTotalInstallments"
+                                value="{ path: 'ui>/newLiabilityTransaction/totalInstallments', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
+                                width="100%"
+                            >
+                                <layoutData>
+                                    <FlexItemData
+                                        minWidth="4.5rem"
+                                        maxWidth="5.5rem"
+                                    />
+                                </layoutData>
+                            </Input>
+                        </VBox>
+                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                            <Label
+                                text="{i18n>liabilityTransactionsAmountLabel}"
+                                labelFor="newLiabilityTransactionAmount"
+                            />
+                            <Input
+                                id="newLiabilityTransactionAmount"
+                                value="{ path: 'ui>/newLiabilityTransaction/amount', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
+                                width="100%"
+                            >
+                                <layoutData>
+                                    <FlexItemData
+                                        minWidth="6.5rem"
+                                        maxWidth="8rem"
+                                    />
+                                </layoutData>
+                            </Input>
+                        </VBox>
+                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                            <Label
+                                text="{i18n>liabilityTransactionsCurrencyLabel}"
+                                labelFor="newLiabilityTransactionCurrency"
+                            />
+                            <Select
+                                id="newLiabilityTransactionCurrency"
+                                selectedKey="{ui>/newLiabilityTransaction/currency}"
+                                width="100%"
+                            >
+                                <layoutData>
+                                    <FlexItemData
+                                        minWidth="8rem"
+                                        maxWidth="10rem"
+                                    />
+                                </layoutData>
+                                <core:Item
+                                    key="BRL"
+                                    text="BRL"
+                                />
+                                <core:Item
+                                    key="USD"
+                                    text="USD"
+                                />
+                            </Select>
+                        </VBox>
+                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                            <Label
+                                text="{i18n>liabilityTransactionsReferenceLabel}"
+                                labelFor="newLiabilityTransactionReference"
+                            />
+                            <Input
+                                id="newLiabilityTransactionReference"
+                                value="{ui>/newLiabilityTransaction/externalReference}"
+                                width="100%"
+                            >
+                                <layoutData>
+                                    <FlexItemData
+                                        minWidth="8rem"
+                                        maxWidth="12rem"
+                                    />
+                                </layoutData>
+                            </Input>
+                        </VBox>
+                        <Button
+                            text="{i18n>liabilityTransactionsAddLabel}"
+                            icon="sap-icon://add"
+                            type="Emphasized"
+                            press="handler.onAddTransaction"
+                            class="sapUiTinyMarginBottom"
+                        />
+                    </HBox>
+                </VBox>
+
+                <List
+                    id="liabilityTransactionsList"
                     items="{LiabilityTransactions}"
-                    class="shareList"
+                    mode="None"
                     growing="true"
-                    noData="{i18n>liabilityTransactionsNoData}"
+                    noDataText="{i18n>liabilityTransactionsNoData}"
+                    class="shareList cardManagerList"
                 >
-                    <columns>
-                        <Column width="9rem">
-                            <Text text="{i18n>liabilityTransactionsTypeColumn}" />
-                        </Column>
-                        <Column>
-                            <Text text="{i18n>liabilityTransactionsDescriptionColumn}" />
-                        </Column>
-                        <Column width="7rem">
-                            <Text text="{i18n>liabilityTransactionsDateColumn}" />
-                        </Column>
-                        <Column width="7rem" hAlign="Center">
-                            <Text text="{i18n>liabilityTransactionsInstallmentColumn}" />
-                        </Column>
-                        <Column width="8rem" hAlign="End">
-                            <Text text="{i18n>liabilityTransactionsAmountColumn}" />
-                        </Column>
-                        <Column width="8rem" hAlign="End">
-                            <Text text="{i18n>liabilityTransactionsBalanceColumn}" />
-                        </Column>
-                        <Column width="6rem" hAlign="Center">
-                            <Text text="{i18n>liabilityTransactionsAutomaticColumn}" />
-                        </Column>
-                        <Column>
-                            <Text text="{i18n>liabilityTransactionsReferenceColumn}" />
-                        </Column>
-                    </columns>
-                    <items>
-                        <ColumnListItem>
-                            <cells>
-                                <Text text="{ path: 'Type', formatter: 'formatter.liabilityTxTypeText' }" />
-                                <Text text="{Description}" wrapping="false" />
-                                <Text text="{ path: 'MovementDate', formatter: 'formatter.formatDate' }" />
-                                <Text
-                                    text="{
-                                        parts: [ { path: 'Installment' }, { path: 'TotalInstallments' } ],
-                                        formatter: 'formatter.liabilityInstallmentText'
+                    <CustomListItem
+                        class="cardManagerCard sapUiTinyMarginBottom"
+                    >
+                        <Panel
+                            accessibleRole="Region"
+                            class="sapUiNoContentPadding"
+                        >
+                            <headerToolbar>
+                                <Toolbar
+                                    height="auto"
+                                    class="sapUiTinyMarginTopBottom"
+                                >
+                                    <f:Avatar
+                                        src="sap-icon://payment-approval"
+                                        displaySize="XS"
+                                        class="sapUiTinyMarginEnd"
+                                    />
+
+                                    <Title
+                                        text="{ path: 'Type', formatter: 'formatter.liabilityTxTypeText' }"
+                                        level="H5"
+                                        class="sapUiTinyMarginEnd"
+                                    />
+
+                                    <Text
+                                        text="{ path: 'MovementDate', formatter: 'formatter.formatDate' }"
+                                        class="sapUiTinyMarginEnd"
+                                    />
+
+                                    <ToolbarSpacer />
+
+                                    <!-- Edit button -->
+                                    <Button
+                                        icon="sap-icon://edit"
+                                        type="Transparent"
+                                        tooltip="{i18n>liabilityTransactionsEditTooltip}"
+                                        visible="{
+                                            parts: [
+                                                {
+                                                    path: 'ui>/liabilityTransactionEditId',
+                                                    targetType: 'any'
+                                                },
+                                                {
+                                                    path: 'ID',
+                                                    targetType: 'any'
+                                                }
+                                            ],
+                                            formatter: 'formatter.isLiabilityNotBeingEdited'
+                                        }"
+                                        press="handler.onToggleEdit"
+                                    />
+
+                                    <!-- Finish edit button -->
+                                    <Button
+                                        icon="sap-icon://accept"
+                                        type="Transparent"
+                                        tooltip="{i18n>liabilityTransactionsFinishEditTooltip}"
+                                        visible="{
+                                            parts: [
+                                                {
+                                                    path: 'ui>/liabilityTransactionEditId',
+                                                    targetType: 'any'
+                                                },
+                                                {
+                                                    path: 'ID',
+                                                    targetType: 'any'
+                                                }
+                                            ],
+                                            formatter: 'formatter.isLiabilityBeingEdited'
+                                        }"
+                                        press="handler.onToggleEdit"
+                                    />
+
+                                    <Button
+                                        icon="sap-icon://delete"
+                                        type="Transparent"
+                                        tooltip="{i18n>liabilityTransactionsRemoveTooltip}"
+                                        press="handler.onRemoveTransaction"
+                                    />
+                                </Toolbar>
+                            </headerToolbar>
+
+                            <content>
+                                <!-- ==================== -->
+                                <!-- VIEW MODE             -->
+                                <!-- ==================== -->
+                                <VBox
+                                    class="liabilityView"
+                                    visible="{
+                                        parts: [
+                                            {
+                                                path: 'ui>/liabilityTransactionEditId',
+                                                targetType: 'any'
+                                            },
+                                            {
+                                                path: 'ID',
+                                                targetType: 'any'
+                                            }
+                                        ],
+                                        formatter: 'formatter.isLiabilityNotBeingEdited'
                                     }"
-                                    textAlign="Center"
-                                />
-                                <ObjectNumber
-                                    number="{
-                                        parts: [ { path: 'Amount' }, { path: 'Currency_code' } ],
-                                        formatter: 'formatter.formatCardAmount'
+                                >
+                                    <HBox
+                                        wrap="Wrap"
+                                        alignItems="Center"
+                                        class="liabilityRow"
+                                    >
+                                        <Text
+                                            text="{Description}"
+                                            class="liabilityCreditor"
+                                        />
+
+                                        <ObjectNumber
+                                            number="{
+                                                parts: [ { path: 'Amount' }, { path: 'Currency_code' } ],
+                                                formatter: 'formatter.formatCardAmount'
+                                            }"
+                                            emphasized="false"
+                                            class="liabilityAmount sapUiTinyMarginBegin"
+                                        />
+                                    </HBox>
+
+                                    <HBox
+                                        wrap="Wrap"
+                                        alignItems="Center"
+                                        class="liabilityRow"
+                                    >
+                                        <Text
+                                            text="{
+                                                parts: [ { path: 'Installment' }, { path: 'TotalInstallments' } ],
+                                                formatter: 'formatter.liabilityInstallmentText'
+                                            }"
+                                            class="liabilityMuted sapUiTinyMarginEnd"
+                                        />
+
+                                        <Text
+                                            text="{ path: 'IsAutomatic', formatter: 'formatter.liabilityYesNoText' }"
+                                            class="liabilityMuted sapUiTinyMarginEnd"
+                                        />
+
+                                        <Text
+                                            text="{ExternalReference}"
+                                            class="liabilityMuted"
+                                        />
+                                    </HBox>
+                                </VBox>
+
+                                <!-- ==================== -->
+                                <!-- EDIT MODE             -->
+                                <!-- ==================== -->
+                                <VBox
+                                    class="liabilityEdit"
+                                    visible="{
+                                        parts: [
+                                            {
+                                                path: 'ui>/liabilityTransactionEditId',
+                                                targetType: 'any'
+                                            },
+                                            {
+                                                path: 'ID',
+                                                targetType: 'any'
+                                            }
+                                        ],
+                                        formatter: 'formatter.isLiabilityBeingEdited'
                                     }"
-                                    emphasized="false"
-                                />
-                                <ObjectNumber
-                                    number="{
-                                        parts: [ { path: 'BalanceAfter' }, { path: 'Currency_code' } ],
-                                        formatter: 'formatter.formatCardAmount'
-                                    }"
-                                    emphasized="false"
-                                />
-                                <Text
-                                    text="{ path: 'IsAutomatic', formatter: 'formatter.liabilityYesNoText' }"
-                                    textAlign="Center"
-                                />
-                                <Text text="{ExternalReference}" wrapping="false" />
-                            </cells>
-                        </ColumnListItem>
-                    </items>
-                </Table>
+                                >
+                                    <HBox
+                                        wrap="Wrap"
+                                        alignItems="End"
+                                        class="liabilityRow"
+                                    >
+                                        <VBox
+                                            class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                                        >
+                                            <Label
+                                                text="{i18n>liabilityTransactionsTypeLabel}"
+                                            />
+
+                                            <Select
+                                                selectedKey="{Type}"
+                                                items="{ui>/liabilityTxTypeOptions}"
+                                                width="100%"
+                                                forceSelection="false"
+                                            >
+                                                <layoutData>
+                                                    <FlexItemData
+                                                        minWidth="9rem"
+                                                        maxWidth="11rem"
+                                                    />
+                                                </layoutData>
+                                                <core:Item
+                                                    key="{ui>key}"
+                                                    text="{ui>text}"
+                                                />
+                                            </Select>
+                                        </VBox>
+
+                                        <VBox
+                                            class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                                        >
+                                            <Label
+                                                text="{i18n>liabilityTransactionsDescriptionLabel}"
+                                            />
+
+                                            <Input
+                                                value="{Description}"
+                                                width="100%"
+                                            >
+                                                <layoutData>
+                                                    <FlexItemData
+                                                        minWidth="10rem"
+                                                        maxWidth="16rem"
+                                                        growFactor="1"
+                                                    />
+                                                </layoutData>
+                                            </Input>
+                                        </VBox>
+
+                                        <VBox
+                                            class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                                        >
+                                            <Label
+                                                text="{i18n>liabilityTransactionsDateLabel}"
+                                            />
+
+                                            <DatePicker
+                                                value="{MovementDate}"
+                                                width="100%"
+                                            >
+                                                <layoutData>
+                                                    <FlexItemData
+                                                        minWidth="8rem"
+                                                        maxWidth="10rem"
+                                                    />
+                                                </layoutData>
+                                            </DatePicker>
+                                        </VBox>
+
+                                        <VBox
+                                            class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                                        >
+                                            <Label
+                                                text="{i18n>liabilityTransactionsInstallmentLabel}"
+                                            />
+
+                                            <Input
+                                                value="{ path: 'Installment', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
+                                                width="100%"
+                                            >
+                                                <layoutData>
+                                                    <FlexItemData
+                                                        minWidth="4.5rem"
+                                                        maxWidth="5.5rem"
+                                                    />
+                                                </layoutData>
+                                            </Input>
+                                        </VBox>
+
+                                        <VBox
+                                            class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                                        >
+                                            <Label
+                                                text="{i18n>liabilityTransactionsTotalInstallmentsLabel}"
+                                            />
+
+                                            <Input
+                                                value="{ path: 'TotalInstallments', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
+                                                width="100%"
+                                            >
+                                                <layoutData>
+                                                    <FlexItemData
+                                                        minWidth="4.5rem"
+                                                        maxWidth="5.5rem"
+                                                    />
+                                                </layoutData>
+                                            </Input>
+                                        </VBox>
+
+                                        <VBox
+                                            class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                                        >
+                                            <Label
+                                                text="{i18n>liabilityTransactionsAmountLabel}"
+                                            />
+
+                                            <Input
+                                                value="{ path: 'Amount', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
+                                                width="100%"
+                                            >
+                                                <layoutData>
+                                                    <FlexItemData
+                                                        minWidth="6.5rem"
+                                                        maxWidth="8rem"
+                                                    />
+                                                </layoutData>
+                                            </Input>
+                                        </VBox>
+
+                                        <VBox
+                                            class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                                        >
+                                            <Label
+                                                text="{i18n>liabilityTransactionsCurrencyLabel}"
+                                            />
+
+                                            <Select
+                                                selectedKey="{Currency_code}"
+                                                width="100%"
+                                                forceSelection="false"
+                                            >
+                                                <layoutData>
+                                                    <FlexItemData
+                                                        minWidth="8rem"
+                                                        maxWidth="10rem"
+                                                    />
+                                                </layoutData>
+                                                <core:Item
+                                                    key="BRL"
+                                                    text="BRL"
+                                                />
+                                                <core:Item
+                                                    key="USD"
+                                                    text="USD"
+                                                />
+                                            </Select>
+                                        </VBox>
+
+                                        <VBox
+                                            class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                                        >
+                                            <Label
+                                                text="{i18n>liabilityTransactionsReferenceLabel}"
+                                            />
+
+                                            <Input
+                                                value="{ExternalReference}"
+                                                width="100%"
+                                            >
+                                                <layoutData>
+                                                    <FlexItemData
+                                                        minWidth="8rem"
+                                                        maxWidth="12rem"
+                                                    />
+                                                </layoutData>
+                                            </Input>
+                                        </VBox>
+
+                                        <VBox
+                                            class="sapUiTinyMarginEnd sapUiTinyMarginBottom"
+                                        >
+                                            <Label
+                                                text="{i18n>liabilityTransactionsAutomaticLabel}"
+                                            />
+
+                                            <CheckBox
+                                                selected="{IsAutomatic}"
+                                            />
+                                        </VBox>
+                                    </HBox>
+                                </VBox>
+                            </content>
+                        </Panel>
+                    </CustomListItem>
+                </List>
             </VBox>
         </content>
         <buttons>
             <Button
-                text="{i18n>liabilityTransactionsCloseButton}"
-                icon="sap-icon://decline"
+                text="{i18n>liabilityTransactionsSaveButton}"
+                icon="sap-icon://save"
                 type="Emphasized"
-                press="handler.onClose"
+                press="handler.onSaveTransactions"
+            />
+            <Button
+                text="{i18n>liabilityTransactionsCancelButton}"
+                icon="sap-icon://cancel"
+                press="handler.onCancelTransactions"
+            />
+            <Button
+                text="{i18n>liabilityTransactionsDiscardButton}"
+                type="Transparent"
+                press="handler.onDiscardTransactions"
             />
         </buttons>
     </Dialog>
