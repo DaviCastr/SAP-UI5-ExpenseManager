@@ -13,7 +13,8 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   }
   function toFinite(value) {
     const parsed = Number.parseFloat(value);
-    return Number.isFinite(parsed) ? parsed : 0;
+    const result = Number.isFinite(parsed) ? parsed : 0;
+    return result;
   }
   function toNumber(value) {
     if (typeof value === "number") {
@@ -433,6 +434,12 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
     }
     return `${label}: ${liabilityYesNoText(isOverdue)}`;
   }
+  function isLiabilityBeingEdited(liabilityEditId, liabilityId) {
+    return liabilityEditId === liabilityId;
+  }
+  function isLiabilityNotBeingEdited(liabilityEditId, liabilityId) {
+    return !liabilityEditId || liabilityEditId !== liabilityId;
+  }
   var __exports = {
     __esModule: true
   };
@@ -467,6 +474,8 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   __exports.liabilityDatesText = liabilityDatesText;
   __exports.liabilityInterestText = liabilityInterestText;
   __exports.liabilityOverdueText = liabilityOverdueText;
+  __exports.isLiabilityBeingEdited = isLiabilityBeingEdited;
+  __exports.isLiabilityNotBeingEdited = isLiabilityNotBeingEdited;
   return __exports;
 });
 //# sourceMappingURL=format-dbg.js.map

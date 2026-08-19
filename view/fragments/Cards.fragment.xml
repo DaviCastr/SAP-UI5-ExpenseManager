@@ -53,8 +53,7 @@
                             <Label text="{i18n>cardLimitLabel}" labelFor="newCardLimit" />
                             <Input
                                 id="newCardLimit"
-                                value="{ui>/newCard/limit}"
-                                type="Number"
+                                value="{ path: 'ui>/newCard/limit', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
                                 placeholder="{i18n>cardLimitPlaceholder}"
                                 width="100%"
                             >
@@ -81,8 +80,7 @@
                             <Label text="{i18n>cardsClosingLabel}" labelFor="newCardClosing" />
                             <Input
                                 id="newCardClosing"
-                                value="{ui>/newCard/closingDay}"
-                                type="Number"
+                                value="{ path: 'ui>/newCard/closingDay', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
                                 placeholder="{i18n>cardsDayPlaceholder}"
                                 width="100%"
                             >
@@ -95,8 +93,7 @@
                             <Label text="{i18n>cardsDueLabel}" labelFor="newCardDue" />
                             <Input
                                 id="newCardDue"
-                                value="{ui>/newCard/dueDay}"
-                                type="Number"
+                                value="{ path: 'ui>/newCard/dueDay', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
                                 placeholder="{i18n>cardsDayPlaceholder}"
                                 width="100%"
                             >
@@ -176,8 +173,7 @@
                                 <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
                                     <Label text="{i18n>cardLimitLabel}" />
                                     <Input
-                                        value="{Limit}"
-                                        type="Number"
+                                        value="{ path: 'Limit', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
                                         width="100%"
                                     >
                                         <layoutData>
@@ -202,8 +198,7 @@
                                 <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
                                     <Label text="{i18n>cardsClosingLabel}" />
                                     <Input
-                                        value="{ClosingDay}"
-                                        type="Number"
+                                        value="{ path: 'ClosingDay', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
                                         width="100%"
                                     >
                                         <layoutData>
@@ -214,8 +209,7 @@
                                 <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
                                     <Label text="{i18n>cardsDueLabel}" />
                                     <Input
-                                        value="{DueDay}"
-                                        type="Number"
+                                        value="{ path: 'DueDay', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
                                         width="100%"
                                     >
                                         <layoutData>
