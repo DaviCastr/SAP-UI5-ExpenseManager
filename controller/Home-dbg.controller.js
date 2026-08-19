@@ -300,6 +300,81 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     }
 
     /**
+     * Opens the Liabilities management dialog for the selected person. Because
+     * Liabilities/LiabilityTransactions are compositions of the selected person, the
+     * dialog is bound to the person's (draft) OData context, so every change
+     * made there is contained in the same person draft as the rest of the
+     * entity tree. Saving activates that draft; discarding drops it.
+     */
+    onOpenLiabilitiesDialog() {
+      this.getUiModel().setProperty("/liabilityEditId", "");
+      void this.openDraftManagerDialog("Liabilities", "liabilitiesOpenError");
+    }
+
+    /**
+     * Opens the Liabilities management dialog with the clicked debt already
+     * switched into edit mode, so the user goes straight to editing it.
+     *
+     * @param {Event} oEvent the press event of the row's edit button
+     */
+    onOpenLiabilityEdit(oEvent) {
+      const source = oEvent.getSource();
+      const liability = source?.getBindingContext()?.getObject();
+      if (!liability?.ID) {
+        return;
+      }
+      void this.openDraftManagerDialog("Liabilities", "liabilitiesOpenError", () => {
+        this.getUiModel().setProperty("/liabilityEditId", liability.ID);
+      });
+    }
+
+    /**
+     * Opens the movements dialog of the debt whose action button was pressed.
+     *
+     * @param {Event} oEvent the press event of the row's movements button
+     */
+    onOpenLiabilityTransactions(oEvent) {
+      const source = oEvent.getSource();
+      const liability = source?.getBindingContext()?.getObject();
+      if (!liability?.ID) {
+        return;
+      }
+      void this.openLiabilityTransactions(liability.ID).catch(error => this.handleError(error, "liabilityTransactionsOpenError"));
+    }
+
+    /**
+     * Opens the read-only movements dialog of the given liability. The dialog
+     * is bound to the liability inside the person's current context (draft when
+     * a draft is open, active otherwise) so both persisted and newly created
+     * (unactivated) debts can be inspected without side effects.
+     *
+     * @param {string} liabilityId the ID of the liability whose movements are shown
+     * @returns {Promise<void>} resolves once the dialog is open
+     */
+    async openLiabilityTransactions(liabilityId) {
+      const personId = this.getSelectedPersonId();
+      if (!personId) {
+        this.showErrorMessage("errorMissingPerson");
+        return;
+      }
+      const ui = this.getUiModel();
+      ui.setProperty("/busy", true);
+      try {
+        const path = `${this.personPathFor(personId)}/Liabilities(ID='${encodeURIComponent(liabilityId)}')`;
+        await this.openPreparedDialog("LiabilityTransactions", dialog => {
+          dialog.setModel(this.getServiceModel());
+          dialog.unbindObject();
+          dialog.bindObject(path);
+          dialog.open();
+        });
+      } catch (error) {
+        this.handleError(error, "liabilityTransactionsOpenError");
+      } finally {
+        ui.setProperty("/busy", false);
+      }
+    }
+
+    /**
      * Opens the invoice management dialog. The dialog is read-only for the
      * invoice data itself; the per-transaction actions (recategorization and
      * batch exclusion) are opened on top of it through the manager methods below.
@@ -554,6 +629,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       this.byId("personDetails")?.bindObject(path);
       this.byId("cardsList")?.bindObject(path);
       this.byId("metricsGrid")?.bindObject(path);
+      this.byId("liabilitiesList")?.bindObject(path);
     }
     personPathFor(id) {
       if (!id) {
@@ -773,17 +849,19 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     }
 
     /**
-     * Opens the Cards or Categories management dialog for the selected person.
-     * Because Cards/Categories are compositions of the selected person, the
-     * dialog is bound to the person's (draft) OData context, so every change
-     * made there is contained in the same person draft as the rest of the entity
-     * tree. Saving activates that draft; discarding drops it.
+     * Opens the Cards, Categories or Liabilities management dialog for the
+     * selected person. Because those entities are compositions of the selected
+     * person, the dialog is bound to the person's (draft) OData context, so
+     * every change made there is contained in the same person draft as the rest
+     * of the entity tree. Saving activates that draft; discarding drops it.
      *
      * @param {string} fragmentName the dialog fragment to open
      * @param {string} errorKey i18n key shown when the dialog cannot be opened
+     * @param {Function} [onOpened] callback invoked after the dialog is bound
+     * and opened (e.g. to expand a specific row into edit mode)
      * @returns {Promise<void>} resolves once the dialog is open
      */
-    async openDraftManagerDialog(fragmentName, errorKey) {
+    async openDraftManagerDialog(fragmentName, errorKey, onOpened) {
       const personId = this.getSelectedPersonId();
       if (!personId) {
         this.showErrorMessage("errorMissingPerson");
@@ -803,6 +881,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
           dialog.unbindObject();
           dialog.bindObject(path);
           dialog.open();
+          onOpened?.(dialog);
         });
       } catch (error) {
         this.handleError(error, errorKey);

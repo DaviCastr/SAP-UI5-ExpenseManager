@@ -951,6 +951,118 @@
                         </VBox>
                     </VBox>
                 </HBox>
+                <VBox
+                    id="liabilitiesList"
+                    class="surfaceCard liabilitiesPanel"
+                    visible="{= !${ui>/personsEmpty} }"
+                >
+                    <HBox
+                        justifyContent="SpaceBetween"
+                        alignItems="Center"
+                        class="sectionHeader"
+                    >
+                        <VBox>
+                            <Title
+                                text="{i18n>liabilitiesTitle}"
+                                level="H3"
+                            />
+                            <Text
+                                text="{i18n>liabilitiesHint}"
+                                class="sectionHint"
+                            />
+                        </VBox>
+                        <Button
+                            text="{i18n>liabilitiesCreateButton}"
+                            icon="sap-icon://add"
+                            type="Emphasized"
+                            press=".onOpenLiabilitiesDialog"
+                            class="sapUiTinyMarginBottom"
+                        />
+                    </HBox>
+                    <List
+                        items="{Liabilities}"
+                        showSeparators="None"
+                        class="liabilityList"
+                        noDataText="{i18n>liabilitiesNoData}"
+                    >
+                        <CustomListItem>
+                            <HBox
+                                width="100%"
+                                alignItems="Center"
+                                justifyContent="SpaceBetween"
+                                class="liabilityItem"
+                            >
+                                <HBox
+                                    alignItems="Center"
+                                    class="liabilityItemMain"
+                                >
+                                    <VBox>
+                                        <HBox alignItems="Center">
+                                            <Text
+                                                text="{Name}"
+                                                class="transactionTitle"
+                                            />
+                                            <ObjectStatus
+                                                text="{ path: 'Status', formatter: 'formatter.liabilityStatusText' }"
+                                                state="{ path: 'Status', formatter: 'formatter.liabilityStatusState' }"
+                                                class="sapUiTinyMarginBegin"
+                                            />
+                                        </HBox>
+                                        <Text
+                                            text="{Creditor}"
+                                            class="transactionDate"
+                                        />
+                                        <HBox
+                                            alignItems="Center"
+                                            class="sapUiTinyMarginTop"
+                                        >
+                                            <ProgressIndicator
+                                                percentValue="{ path: 'ProgressPercent', formatter: 'formatter.liabilityProgressValue' }"
+                                                displayValue="{ path: 'ProgressPercent', formatter: 'formatter.liabilityProgressText' }"
+                                                state="None"
+                                                width="8rem"
+                                            />
+                                            <Text
+                                                text="{ path: 'NextDueDate', formatter: 'formatter.formatDate' }"
+                                                class="transactionDate sapUiTinyMarginBegin"
+                                            />
+                                        </HBox>
+                                    </VBox>
+                                </HBox>
+                                <VBox
+                                    alignItems="End"
+                                    class="sapUiTinyMarginEnd"
+                                >
+                                    <ObjectNumber
+                                        number="{
+                                            parts: [{
+                                                path: 'CurrentBalance'
+                                            }, {
+                                                path: 'Currency_code'
+                                            }],
+                                            formatter: 'formatter.formatCardAmount'
+                                        }"
+                                        class="transactionAmount"
+                                    />
+                                    <HBox class="sapUiTinyMarginTop">
+                                        <Button
+                                            icon="sap-icon://activity-items"
+                                            type="Transparent"
+                                            tooltip="{i18n>liabilitiesMovementsTooltip}"
+                                            press=".onOpenLiabilityTransactions"
+                                        />
+                                        <Button
+                                            icon="sap-icon://edit"
+                                            type="Transparent"
+                                            tooltip="{i18n>liabilitiesEditTooltip}"
+                                            press=".onOpenLiabilityEdit"
+                                        />
+                                    </HBox>
+                                </VBox>
+                            </HBox>
+                        </CustomListItem>
+                    </List>
+                </VBox>
             </VBox>
         </content>
     </Page>
