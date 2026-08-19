@@ -71,6 +71,21 @@ export interface UiNewShare {
     permission: string;
 }
 
+export interface NewLiability {
+    name: string;
+    creditor: string;
+    description: string;
+    type: string;
+    originalAmount: string;
+    currency: string;
+    interestMode: string;
+    interestRate: string;
+    installments: string;
+    startDate: string;
+    firstDueDate: string;
+    externalReference: string;
+}
+
 export interface UiSimulation {
     month: string;
     year: string;
@@ -100,6 +115,12 @@ export interface IUiState {
     newCard: NewCard;
     newCategory: NewCategory;
     newShare: UiNewShare;
+    newLiability: NewLiability;
+    liabilityEditId: string;
+    liabilityTypeOptions: UiEntityOption[];
+    liabilityStatusOptions: UiEntityOption[];
+    liabilityInterestModeOptions: UiEntityOption[];
+    liabilityTxTypeOptions: UiEntityOption[];
     entityOptions: UiEntityOption[];
     permissionOptions: UiEntityOption[];
     simulation: UiSimulation;
@@ -229,6 +250,60 @@ export default class UiModel extends JSONModel {
                 entity: "1",
                 permission: "1"
             },
+
+            newLiability: {
+                name: "",
+                creditor: "",
+                description: "",
+                type: "GENERAL",
+                originalAmount: "",
+                currency: "BRL",
+                interestMode: "MANUAL",
+                interestRate: "",
+                installments: "1",
+                startDate: new Date().toISOString().slice(0, 10),
+                firstDueDate: "",
+                externalReference: ""
+            },
+
+            liabilityEditId: "",
+
+            liabilityTypeOptions: [
+                { key: "GENERAL", text: "Genérica" },
+                { key: "PERSONAL_LOAN", text: "Empréstimo pessoal" },
+                { key: "FAMILY", text: "Familiar" },
+                { key: "BANK", text: "Banco" },
+                { key: "STORE", text: "Loja / Carnê" },
+                { key: "TAX", text: "Imposto" },
+                { key: "LEGAL", text: "Judicial" },
+                { key: "CREDIT_LINE", text: "Limite / cheque especial" },
+                { key: "OTHER", text: "Outros" }
+            ],
+
+            liabilityStatusOptions: [
+                { key: "OPEN", text: "Em aberto" },
+                { key: "PAID", text: "Paga" },
+                { key: "CANCELLED", text: "Cancelada" },
+                { key: "RENEGOTIATED", text: "Renegociada" },
+                { key: "OVERDUE", text: "Vencida" }
+            ],
+
+            liabilityInterestModeOptions: [
+                { key: "MANUAL", text: "Manual" },
+                { key: "SIMPLE", text: "Simples" },
+                { key: "COMPOUND", text: "Composto" }
+            ],
+
+            liabilityTxTypeOptions: [
+                { key: "OPENING", text: "Abertura" },
+                { key: "PAYMENT", text: "Pagamento" },
+                { key: "INTEREST", text: "Juros" },
+                { key: "FEE", text: "Taxa" },
+                { key: "DISCOUNT", text: "Desconto" },
+                { key: "AMORTIZATION", text: "Amortização" },
+                { key: "RENEGOTIATION", text: "Renegociação" },
+                { key: "REVERSAL", text: "Estorno" }
+            ],
 
             entityOptions: [
                 { key: "1", text: "Persons" },

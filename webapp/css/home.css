@@ -199,3 +199,15 @@
 .invoiceCategoryAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
 .deleteTxItem { gap: .75rem; }
 
+.liabilitiesPanel { margin-top: 1.2rem; }
+.liabilityList { background: transparent; max-height: 26rem; overflow-y: auto; }
+.liabilityItem { padding: .7rem 0; gap: .75rem; }
+.liabilityItemMain { min-width: 0; }
+.liabilityCreditor { font-weight: 600; color: var(--ink); }
+.liabilityMuted { color: var(--muted); font-size: .82rem; }
+.liabilityFieldLabel { color: var(--muted); font-size: .72rem; font-weight: 600; letter-spacing: .04em; }
+.liabilityAmount .sapMObjectNumberText { font-size: 1rem; font-weight: 700; color: var(--ink); }
+.liabilityRow { gap: .4rem; }
+.liabilityView, .liabilityEdit { gap: .35rem; }
+.liabilityEdit { padding-top: .2rem; }
+

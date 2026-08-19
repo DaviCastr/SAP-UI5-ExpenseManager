@@ -1,0 +1,109 @@
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m"
+    id="LiabilityTransactions"
+    core:require="{
+        formatter: 'apps/dflc/expensemanager/util/format',
+        handler: 'apps/dflc/expensemanager/controller/fragments/LiabilityTransactions'
+    }"
+>
+    <Dialog
+        id="liabilityTransactionsDialog"
+        title="{i18n>liabilityTransactionsDialogTitle}"
+        class="financeDialog"
+        contentWidth="54rem"
+        stretch="{device>/system/phone}"
+        afterOpen="handler.onDialogAfterOpen"
+        afterClose="handler.onDialogAfterClose"
+        busy="{ui>/busy}"
+    >
+        <content>
+            <VBox class="sapUiSmallMargin">
+                <MessageStrip
+                    text="{i18n>liabilityTransactionsDialogIntro}"
+                    type="Information"
+                    showIcon="true"
+                    class="sapUiSmallMarginBottom"
+                />
+
+                <Table
+                    id="liabilityTransactionsTable"
+                    items="{LiabilityTransactions}"
+                    class="shareList"
+                    growing="true"
+                    noData="{i18n>liabilityTransactionsNoData}"
+                >
+                    <columns>
+                        <Column width="9rem">
+                            <Text text="{i18n>liabilityTransactionsTypeColumn}" />
+                        </Column>
+                        <Column>
+                            <Text text="{i18n>liabilityTransactionsDescriptionColumn}" />
+                        </Column>
+                        <Column width="7rem">
+                            <Text text="{i18n>liabilityTransactionsDateColumn}" />
+                        </Column>
+                        <Column width="7rem" hAlign="Center">
+                            <Text text="{i18n>liabilityTransactionsInstallmentColumn}" />
+                        </Column>
+                        <Column width="8rem" hAlign="End">
+                            <Text text="{i18n>liabilityTransactionsAmountColumn}" />
+                        </Column>
+                        <Column width="8rem" hAlign="End">
+                            <Text text="{i18n>liabilityTransactionsBalanceColumn}" />
+                        </Column>
+                        <Column width="6rem" hAlign="Center">
+                            <Text text="{i18n>liabilityTransactionsAutomaticColumn}" />
+                        </Column>
+                        <Column>
+                            <Text text="{i18n>liabilityTransactionsReferenceColumn}" />
+                        </Column>
+                    </columns>
+                    <items>
+                        <ColumnListItem>
+                            <cells>
+                                <Text text="{ path: 'Type', formatter: 'formatter.liabilityTxTypeText' }" />
+                                <Text text="{Description}" wrapping="false" />
+                                <Text text="{ path: 'MovementDate', formatter: 'formatter.formatDate' }" />
+                                <Text
+                                    text="{
+                                        parts: [ { path: 'Installment' }, { path: 'TotalInstallments' } ],
+                                        formatter: 'formatter.liabilityInstallmentText'
+                                    }"
+                                    textAlign="Center"
+                                />
+                                <ObjectNumber
+                                    number="{
+                                        parts: [ { path: 'Amount' }, { path: 'Currency_code' } ],
+                                        formatter: 'formatter.formatCardAmount'
+                                    }"
+                                    emphasized="false"
+                                />
+                                <ObjectNumber
+                                    number="{
+                                        parts: [ { path: 'BalanceAfter' }, { path: 'Currency_code' } ],
+                                        formatter: 'formatter.formatCardAmount'
+                                    }"
+                                    emphasized="false"
+                                />
+                                <Text
+                                    text="{ path: 'IsAutomatic', formatter: 'formatter.liabilityYesNoText' }"
+                                    textAlign="Center"
+                                />
+                                <Text text="{ExternalReference}" wrapping="false" />
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+                </Table>
+            </VBox>
+        </content>
+        <buttons>
+            <Button
+                text="{i18n>liabilityTransactionsCloseButton}"
+                icon="sap-icon://decline"
+                type="Emphasized"
+                press="handler.onClose"
+            />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>
