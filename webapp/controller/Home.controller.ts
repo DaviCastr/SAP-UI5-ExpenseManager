@@ -409,10 +409,12 @@ export default class Home extends BaseController {
     }
 
     /**
-     * Opens the read-only movements dialog of the given liability. The dialog
-     * is bound to the liability inside the person's current context (draft when
-     * a draft is open, active otherwise) so both persisted and newly created
-     * (unactivated) debts can be inspected without side effects.
+     * Opens the movements dialog of the given liability. Because
+     * LiabilityTransactions are compositions of the liability inside the
+     * person's draft, the dialog is bound to the liability within the person
+     * draft: a draft is opened first when none is open, so adds, edits and
+     * deletions made here are contained in the same draft as the rest of the
+     * entity tree. Saving activates that draft; discarding drops it.
      *
      * @param {string} liabilityId the ID of the liability whose movements are shown
      * @returns {Promise<void>} resolves once the dialog is open
@@ -429,7 +431,15 @@ export default class Home extends BaseController {
         ui.setProperty("/busy", true);
 
         try {
-            const path = `${this.personPathFor(personId)}/Liabilities(ID='${encodeURIComponent(liabilityId)}')`;
+            const person = this.getPersonsFromSource().find((candidate) => candidate.ID === personId);
+            const isDraft = person?.IsActiveEntity === false || person?.hasDraft === true;
+
+            if (this._odata && !isDraft) {
+                await this._odata.enableDraftEdit("Persons", personId);
+            }
+
+            const draftPath = this._odata?.draftPath("Persons", personId) ?? this.personPathFor(personId);
+            const path = `${draftPath}/Liabilities(ID='${encodeURIComponent(liabilityId)}')`;
 
             await this.openPreparedDialog("LiabilityTransactions", (dialog) => {
                 dialog.setModel(this.getServiceModel());
