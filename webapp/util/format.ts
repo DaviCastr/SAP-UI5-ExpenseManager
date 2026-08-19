@@ -12,7 +12,8 @@ export function currencyCode(currency: unknown, fallback = "BRL"): string {
 
 function toFinite(value: string): number {
     const parsed = Number.parseFloat(value);
-    return Number.isFinite(parsed) ? parsed : 0;
+    const result = Number.isFinite(parsed) ? parsed : 0;
+    return result;
 }
 
 function toNumber(value: number | string): number {
@@ -450,4 +451,15 @@ export function liabilityOverdueText(label?: string, isOverdue?: boolean): strin
         return "";
     }
     return `${label}: ${liabilityYesNoText(isOverdue)}`;
+}
+
+export function isLiabilityBeingEdited(liabilityEditId: string, liabilityId: string): boolean {
+    return liabilityEditId === liabilityId;
+}
+
+export function isLiabilityNotBeingEdited(
+    liabilityEditId: string | undefined,
+    liabilityId: string | undefined
+): boolean {
+    return !liabilityEditId || liabilityEditId !== liabilityId;
 }
