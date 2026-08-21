@@ -14,6 +14,10 @@
 
 .metricGrid, .dashboardGrid { gap: 1rem; }
 .surfaceCard { flex: 1 1 22rem; min-width: 0; padding: 1.4rem; border-radius: 1.2rem; background: var(--white); box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid var(--line); }
+.transactionsPanel { flex: 8 1 30rem; }
+.categoriesPanel { flex: 5 1 19rem; }
+.cardsPanel { flex: 5 1 19rem; }
+.liabilitiesPanel { flex: 8 1 27rem; }
 .sectionHeader { margin-bottom: .4rem; }
 
 .periodNav { gap: 1rem; padding: 1rem 1.15rem; border-radius: 1rem; background: var(--white); box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid var(--line); }
