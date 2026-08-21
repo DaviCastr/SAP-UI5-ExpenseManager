@@ -301,6 +301,36 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
       maximumFractionDigits: 1
     })}%`;
   }
+
+  /**
+   * Computes the frontend progress of the month expenses against the overall
+   * expenses total of the selected person (0-100).
+   *
+   * @param {number|string} [month] the TotalExpensesMonth value
+   * @param {number|string} [total] the TotalExpenses value
+   * @returns {number} a percent between 0 and 100
+   */
+  function expensePeriodProgress(month, total) {
+    const monthValue = toNumber(month) || 0;
+    const totalValue = toNumber(total) || 0;
+    if (totalValue <= 0) {
+      return 0;
+    }
+    return Math.max(0, Math.min(100, monthValue / totalValue * 100));
+  }
+
+  /**
+   * Renders the expense period progress as display text (e.g. "54,2%").
+   *
+   * @param {number|string} [month] the TotalExpensesMonth value
+   * @param {number|string} [total] the TotalExpenses value
+   * @returns {string} the formatted percent
+   */
+  function expensePeriodProgressText(month, total) {
+    return `${expensePeriodProgress(month, total).toLocaleString("pt-BR", {
+      maximumFractionDigits: 1
+    })}%`;
+  }
   function isLiabilityBeingEdited(liabilityEditId, liabilityId) {
     return liabilityEditId === liabilityId;
   }
@@ -334,6 +364,8 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   __exports.liabilityStatusState = liabilityStatusState;
   __exports.liabilityProgressValue = liabilityProgressValue;
   __exports.liabilityProgressText = liabilityProgressText;
+  __exports.expensePeriodProgress = expensePeriodProgress;
+  __exports.expensePeriodProgressText = expensePeriodProgressText;
   __exports.isLiabilityBeingEdited = isLiabilityBeingEdited;
   __exports.isLiabilityNotBeingEdited = isLiabilityNotBeingEdited;
   return __exports;
