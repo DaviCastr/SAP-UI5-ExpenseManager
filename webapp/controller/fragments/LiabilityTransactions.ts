@@ -135,6 +135,24 @@ function resetNewTransaction(ui: JSONModel): void {
 }
 
 /**
+ * Normalizes a date coming from the ui model to the ISO `yyyy-MM-dd` format
+ * expected by the backend's Edm.Date. The DatePicker writes its display value
+ * back into the model (e.g. "21/08/2026" under dd/MM/yyyy), so both shapes
+ * must be accepted.
+ *
+ * @param {string} value raw model value
+ * @returns {string} ISO date, or the trimmed input when not parseable
+ */
+function toIsoDate(value: string): string {
+    const brPattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    const match = brPattern.exec(value.trim());
+    if (match) {
+        return `${match[3]}-${match[2]}-${match[1]}`;
+    }
+    return value.trim();
+}
+
+/**
  * Validates the "new transaction" form and builds the OData create payload.
  * Returns `undefined` when the required fields are missing or invalid.
  *
@@ -145,9 +163,14 @@ function resetNewTransaction(ui: JSONModel): void {
 function buildTransactionPayload(form: Partial<NewLiabilityTransaction>): Record<string, unknown> | undefined {
     const type = form.type || "";
     const amount = Number(String(form.amount ?? "").replace(",", "."));
-    const date = form.date || "";
+    const date = toIsoDate(form.date ?? "");
 
-    if ((type !== "IN" && type !== "OUT") || !Number.isFinite(amount) || amount <= 0 || !date) {
+    if (
+        (type !== "IN" && type !== "OUT") ||
+        !Number.isFinite(amount) ||
+        amount <= 0 ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(date)
+    ) {
         return undefined;
     }
 

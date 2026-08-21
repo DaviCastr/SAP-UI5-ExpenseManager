@@ -91,6 +91,7 @@
                             />
                             <DatePicker
                                 id="newLiabilityTransactionDate"
+                                displayFormat="dd/MM/yyyy"
                                 value="{ui>/newLiabilityTransaction/date}"
                                 width="100%"
                             />
