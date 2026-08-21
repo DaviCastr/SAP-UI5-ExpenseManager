@@ -38,8 +38,9 @@
 .categoryItemMain { gap: .85rem; }
 .categoryItemAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
 .categoryProgress { margin-top: .3rem; }
-.categoryProgress .sapMProgressIndicator { background: var(--teal-050); border-radius: .5rem; height: .45rem; }
-.categoryProgress .sapMProgressIndicator .sapMProgressBar { background: var(--teal-700); border-radius: .5rem; }
+/* .categoryProgress.sapMPI { background: var(--teal-050); border-radius: .5rem; height: .45rem; overflow: hidden; }
+.categoryProgress .sapMPIBar { background: var(--teal-700); border-radius: .5rem; height: 100%; } */
+/* .categoryPercent { font-size: .78rem; font-weight: 700; color: var(--teal-700); } */
 
 .creditCardItem { padding: .6rem 0; }
 .creditCardName { font-weight: 700; color: var(--ink); }
@@ -199,7 +200,6 @@
 .invoiceCategoryAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
 .deleteTxItem { gap: .75rem; }
 
-.liabilitiesPanel { margin-top: 1.2rem; }
 .liabilityList { background: transparent; max-height: 26rem; overflow-y: auto; }
 .liabilityItem { padding: .7rem 0; gap: .75rem; }
 .liabilityItemMain { min-width: 0; flex: 1 1 auto; }
@@ -213,11 +213,50 @@
 .liabilityView, .liabilityEdit { gap: .35rem; }
 .liabilityEdit { padding-top: .2rem; }
 .liabilityProgress { min-width: 6rem; }
+/* .liabilityProgress.sapMPI { background: var(--teal-050); border-radius: .5rem; height: .55rem; overflow: hidden; }
+.liabilityProgress .sapMPIBar { background: var(--teal-700); border-radius: .5rem; height: 100%; } */
+.liabilityPercent { font-size: .78rem; font-weight: 700; color: var(--teal-700); min-width: 2.8rem; text-align: end; }
+.liabilityStatus .sapMObjectStatusText { padding: .12rem .65rem; border-radius: 1rem; font-size: .7rem; font-weight: 700; letter-spacing: .02em; }
+.liabilityStatus.sapMObjectStatusSuccess .sapMObjectStatusText { background: #d9f8ec; color: #1b6b4f; }
+.liabilityStatus:not(.sapMObjectStatusSuccess):not(.sapMObjectStatusWarning):not(.sapMObjectStatusError):not(.sapMObjectStatusInformation) .sapMObjectStatusText { background: #fdeecb; color: #96690a; }
+.liabilityOriginalValue .sapMObjectNumberText { font-size: .85rem; font-weight: 600; color: var(--muted); }
 
 /* Campos dos formulários dos diálogos (dívidas e movimentações) */
 .dialogFormField { min-width: 0; }
 .dialogFormAction { align-self: flex-end; }
 .liabilityGridField { min-width: 0; }
+
+/* Layout do dashboard: linha 1 (movimentações + categorias) mais alta */
+.transactionsPanel .transactionList,
+.categoriesPanel .categoryList { max-height: 32rem; }
+
+/* Interação: destaque suave ao passar o mouse nos itens */
+.transactionItem,
+.categoryItem,
+.creditCardItem,
+.liabilityItem { border-radius: .75rem; transition: background-color .15s ease; }
+.transactionItem:hover,
+.categoryItem:hover,
+.creditCardItem:hover,
+.liabilityItem:hover { background-color: #f2faf7; }
+
+/* Scrollbar discreta nas listas dos painéis */
+.transactionList::-webkit-scrollbar,
+.categoryList::-webkit-scrollbar,
+.cardList::-webkit-scrollbar,
+.liabilityList::-webkit-scrollbar { width: .45rem; }
+.transactionList::-webkit-scrollbar-thumb,
+.categoryList::-webkit-scrollbar-thumb,
+.cardList::-webkit-scrollbar-thumb,
+.liabilityList::-webkit-scrollbar-thumb { background: #cfe6e0; border-radius: 1rem; }
+.transactionList::-webkit-scrollbar-thumb:hover,
+.categoryList::-webkit-scrollbar-thumb:hover,
+.cardList::-webkit-scrollbar-thumb:hover,
+.liabilityList::-webkit-scrollbar-thumb:hover { background: #b3d9d0; }
+.transactionList::-webkit-scrollbar-track,
+.categoryList::-webkit-scrollbar-track,
+.cardList::-webkit-scrollbar-track,
+.liabilityList::-webkit-scrollbar-track { background: transparent; }
 
 @media (max-width: 600px) {
     .dialogFormField,
@@ -234,11 +273,25 @@
         width: 100%;
     }
 
+    .liabilityItem {
+        flex-direction: column;
+    }
+
+    .liabilityItemMain {
+        width: 100%;
+    }
+
     .liabilityItemActions {
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
         width: 100%;
+        margin-top: .4rem;
+        margin-inline-end: 0;
+    }
+
+    .liabilityAmounts {
+        align-items: flex-end;
     }
 }
 
