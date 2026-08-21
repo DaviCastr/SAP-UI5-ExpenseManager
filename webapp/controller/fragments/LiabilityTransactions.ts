@@ -14,6 +14,7 @@ import { ODataService } from "../../service/ODataService";
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import { createRejectedChangeGuard } from "../../util/rejectedChanges";
+import { deleteRowInDialogDraft, ensureDialogDraft, waitForDraftListBinding } from "../../util/draftDialogFlow";
 import { TRANSACTION_TYPE_OPTIONS } from "../../util/liabilityRules";
 import type { NewLiabilityTransaction } from "../../model/UiModel";
 import type Home from "../../controller/Home.controller";
@@ -174,6 +175,32 @@ function personIdFromPath(path: string): string {
     return match ? decodeURIComponent(match[1]) : "";
 }
 
+/**
+ * Reads the ID of the liability the dialog is currently bound to. Captured
+ * before switching the dialog to the draft binding, whose context is a
+ * different object.
+ *
+ * @param {Dialog} dialog the movements dialog
+ * @returns {string} the liability ID, or an empty string
+ */
+function boundLiabilityId(dialog: Dialog): string {
+    const liability = dialog.getBindingContext()?.getObject() as { ID?: string } | undefined;
+    return liability?.ID ?? "";
+}
+
+/**
+ * Builds the composition path of the bound liability, appended to the person
+ * draft root when the dialog switches to its draft binding.
+ *
+ * @param {Dialog} dialog the movements dialog
+ * @returns {string} the liability path segment (e.g. "/Liabilities(ID='x')"),
+ * or an empty string when the dialog is not bound
+ */
+function liabilitySubPath(dialog: Dialog): string {
+    const liabilityId = boundLiabilityId(dialog);
+    return liabilityId ? `/Liabilities(ID='${encodeURIComponent(liabilityId)}')` : "";
+}
+
 // Watches the service model's `messageChange` event while the dialog is open so
 // rejected backend changes (e.g. field validation) are shown and reverted
 // instead of being silently dropped or re-sent by the next submit.
@@ -187,19 +214,22 @@ const LiabilityTransactions = {
         if (ui) {
             resetNewTransaction(ui);
             ui.setProperty("/liabilityTransactionEditId", "");
+            ui.setProperty("/managerDialogInDraft", false);
         }
     },
 
     /**
      * Creates a new LiabilityTransaction row inside the liability's
-     * transactions collection. The row is created inside the person draft (the
-     * dialog is bound to the liability inside the draft path), so it
-     * participates in the same draft as the whole tree. The backend recalculates
-     * the liability balance once the transaction is created.
+     * transactions collection. The dialog opens read-only bound to the active
+     * entity, so the person draft is created (when none is open) and the
+     * dialog rebound to the liability inside the draft before the row is
+     * created, keeping the change in the same draft as the whole tree. The
+     * backend recalculates the liability balance once the transaction is
+     * created.
      *
      * @param {Control} this the pressed add-transaction button
      */
-    onAddTransaction: function (this: Control): void {
+    onAddTransaction: async function (this: Control): Promise<void> {
         const dialog = findTransactionsDialog(this);
         const view = dialog?.getParent() as XMLView | undefined;
         const ui = view?.getModel("ui") as JSONModel | undefined;
@@ -215,8 +245,28 @@ const LiabilityTransactions = {
             return;
         }
 
-        const binding = (Fragment.byId("LiabilityTransactions", "liabilityTransactionsList") as List | undefined)
-            ?.getBinding("items") as ODataListBinding | undefined;
+        const liabilityId = boundLiabilityId(dialog);
+        if (!liabilityId) {
+            showWarning(view, "liabilityTransactionsLoadError");
+            return;
+        }
+
+        if (!(await ensureDialogDraft(view, dialog, "liabilityTransactionsAddError", liabilitySubPath(dialog)))) {
+            return;
+        }
+
+        // Wait until the list binding points at the DRAFT: right after the
+        // switch the previous binding (active collection) is still reachable
+        // and creating through it fails, leaving a stuck transient row.
+        let binding: ODataListBinding | undefined;
+        try {
+            binding = await waitForDraftListBinding(
+                Fragment.byId("LiabilityTransactions", "liabilityTransactionsList") as List | undefined
+            );
+        } catch (error) {
+            handleActionError(view, error, "liabilityTransactionsAddError");
+            return;
+        }
         if (!binding) {
             showWarning(view, "liabilityTransactionsLoadError");
             return;
@@ -232,7 +282,9 @@ const LiabilityTransactions = {
 
     /**
      * Toggles the read-only view and the editable form of the transaction row
-     * that owns the pressed button.
+     * that owns the pressed button. Entering edit mode first switches the
+     * dialog to the person draft binding (the dialog opens read-only), so the
+     * two-way bound fields PATCH the draft instead of the active entity.
      *
      * @param {Control} this the pressed edit/finish button
      */
@@ -240,32 +292,55 @@ const LiabilityTransactions = {
         const item = containingListItem(this);
         const context = item?.getBindingContext() as Context | undefined;
         const transaction = context?.getObject() as { ID?: string } | undefined;
-        const view = findTransactionsDialog(this)?.getParent() as XMLView | undefined;
+        const dialog = findTransactionsDialog(this);
+        const view = dialog?.getParent() as XMLView | undefined;
         const ui = view?.getModel("ui") as JSONModel | undefined;
 
-        if (!ui || !transaction?.ID) {
+        if (!ui || !dialog || !view || !transaction?.ID) {
             return;
         }
 
         const current = ui.getProperty("/liabilityTransactionEditId") as string;
-        ui.setProperty("/liabilityTransactionEditId", current === transaction.ID ? "" : transaction.ID);
+        if (current === transaction.ID) {
+            ui.setProperty("/liabilityTransactionEditId", "");
+            return;
+        }
+
+        const liabilityId = boundLiabilityId(dialog);
+        if (!liabilityId) {
+            showWarning(view, "liabilityTransactionsLoadError");
+            return;
+        }
+
+        void (async () => {
+            if (await ensureDialogDraft(view, dialog, "liabilityTransactionsEditError", liabilitySubPath(dialog))) {
+                ui.setProperty("/liabilityTransactionEditId", transaction.ID as string);
+            }
+        })();
     },
 
     onRemoveTransaction: function (this: Control): void {
         const dialog = findTransactionsDialog(this);
         const view = dialog?.getParent() as XMLView | undefined;
         const context = this.getBindingContext() as Context | undefined;
+        const transaction = context?.getObject() as { ID?: string } | undefined;
 
-        if (!dialog || !view || !context) {
+        if (!dialog || !view || !transaction?.ID) {
             return;
         }
 
+        const liabilityId = boundLiabilityId(dialog);
+
         confirmAction(view, "liabilityTransactionsRemoveConfirm", "liabilityTransactionsRemoveTitle", () => {
-            try {
-                void context.delete().catch((error) => handleActionError(view, error, "liabilityTransactionsRemoveError"));
-            } catch (error) {
-                handleActionError(view, error, "liabilityTransactionsRemoveError");
-            }
+            void deleteRowInDialogDraft({
+                view,
+                dialog,
+                list: Fragment.byId("LiabilityTransactions", "liabilityTransactionsList") as List | undefined,
+                rowId: transaction.ID as string,
+                errorKey: "liabilityTransactionsRemoveError",
+                missingRowKey: "liabilityTransactionsLoadError",
+                subPath: liabilityId ? `/Liabilities(ID='${encodeURIComponent(liabilityId)}')` : undefined
+            });
         });
     },
 
@@ -306,7 +381,9 @@ const LiabilityTransactions = {
             await odata.prepareDraft("Persons", personId);
             await odata.activateDraft("Persons", personId);
 
-            await (view.getController() as Home).reopenLiabilitiesDialogDraft();
+            await (view.getController() as Home).resetManagerDialogToActive("Liabilities", {
+                editIdPaths: ["/liabilityEditId"]
+            });
             releaseDraftBinding(dialog);
             dialog.close();
             showToast(view, "liabilityTransactionsSaved");
@@ -341,7 +418,9 @@ const LiabilityTransactions = {
                     rejectedGuard.suspend();
                     await odata.submitPending();
                     await odata.discardDraft("Persons", personId);
-                    await (view.getController() as Home).reopenLiabilitiesDialogDraft();
+                    await (view.getController() as Home).resetManagerDialogToActive("Liabilities", {
+                        editIdPaths: ["/liabilityEditId"]
+                    });
                     releaseDraftBinding(dialog);
                     dialog.close();
                     showToast(view, "liabilityTransactionsDiscarded");
