@@ -19,6 +19,33 @@ function isDraftPath(path?: string): boolean {
     return !!path && path.includes(DRAFT_PATH_MARKER);
 }
 
+// Actions that switch the dialog to the draft (add/edit/remove/save) must not
+// run twice in parallel for the same dialog: double clicks before the current
+// processing ends would start a second draft switch and fail with
+// "a draft already exists" (or duplicate the created row).
+const busyDialogs = new WeakSet<Dialog>();
+
+/**
+ * Runs an exclusive dialog action: while one action is still processing for
+ * the given dialog, further invocations are ignored.
+ *
+ * @param {Dialog} dialog the manager dialog whose action is exclusive
+ * @param {Function} action the action to run
+ * @returns {Promise<T | undefined>} the action result, or `undefined` when
+ * another action was already running for the dialog
+ */
+export async function runExclusiveDialogAction<T>(dialog: Dialog, action: () => Promise<T>): Promise<T | undefined> {
+    if (busyDialogs.has(dialog)) {
+        return undefined;
+    }
+    busyDialogs.add(dialog);
+    try {
+        return await action();
+    } finally {
+        busyDialogs.delete(dialog);
+    }
+}
+
 /**
  * Switches the dialog to the person draft binding (creating the draft when
  * none is open) and reports failures through the given i18n error key.

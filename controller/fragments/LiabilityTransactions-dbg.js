@@ -9,6 +9,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
   const createRejectedChangeGuard = ____util_rejectedChanges["createRejectedChangeGuard"];
   const deleteRowInDialogDraft = ____util_draftDialogFlow["deleteRowInDialogDraft"];
   const ensureDialogDraft = ____util_draftDialogFlow["ensureDialogDraft"];
+  const runExclusiveDialogAction = ____util_draftDialogFlow["runExclusiveDialogAction"];
   const waitForDraftListBinding = ____util_draftDialogFlow["waitForDraftListBinding"];
   const TRANSACTION_TYPE_OPTIONS = ____util_liabilityRules["TRANSACTION_TYPE_OPTIONS"];
   /**
@@ -248,30 +249,32 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
         showWarning(view, "liabilityTransactionsLoadError");
         return;
       }
-      if (!(await ensureDialogDraft(view, dialog, "liabilityTransactionsAddError", liabilitySubPath(dialog)))) {
-        return;
-      }
+      await runExclusiveDialogAction(dialog, async () => {
+        if (!(await ensureDialogDraft(view, dialog, "liabilityTransactionsAddError", liabilitySubPath(dialog)))) {
+          return;
+        }
 
-      // Wait until the list binding points at the DRAFT: right after the
-      // switch the previous binding (active collection) is still reachable
-      // and creating through it fails, leaving a stuck transient row.
-      let binding;
-      try {
-        binding = await waitForDraftListBinding(Fragment.byId("LiabilityTransactions", "liabilityTransactionsList"));
-      } catch (error) {
-        handleActionError(view, error, "liabilityTransactionsAddError");
-        return;
-      }
-      if (!binding) {
-        showWarning(view, "liabilityTransactionsLoadError");
-        return;
-      }
-      try {
-        const context = binding.create(payload);
-        trackCreate(binding, context, () => resetNewTransaction(ui));
-      } catch (error) {
-        handleActionError(view, error, "liabilityTransactionsAddError");
-      }
+        // Wait until the list binding points at the DRAFT: right after the
+        // switch the previous binding (active collection) is still reachable
+        // and creating through it fails, leaving a stuck transient row.
+        let binding;
+        try {
+          binding = await waitForDraftListBinding(Fragment.byId("LiabilityTransactions", "liabilityTransactionsList"));
+        } catch (error) {
+          handleActionError(view, error, "liabilityTransactionsAddError");
+          return;
+        }
+        if (!binding) {
+          showWarning(view, "liabilityTransactionsLoadError");
+          return;
+        }
+        try {
+          const context = binding.create(payload);
+          trackCreate(binding, context, () => resetNewTransaction(ui));
+        } catch (error) {
+          handleActionError(view, error, "liabilityTransactionsAddError");
+        }
+      });
     },
     /**
      * Toggles the read-only view and the editable form of the transaction row
@@ -301,11 +304,11 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
         showWarning(view, "liabilityTransactionsLoadError");
         return;
       }
-      void (async () => {
+      void runExclusiveDialogAction(dialog, async () => {
         if (await ensureDialogDraft(view, dialog, "liabilityTransactionsEditError", liabilitySubPath(dialog))) {
           ui.setProperty("/liabilityTransactionEditId", transaction.ID);
         }
-      })();
+      });
     },
     onRemoveTransaction: function () {
       const dialog = findTransactionsDialog(this);
@@ -317,14 +320,16 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
       }
       const liabilityId = boundLiabilityId(dialog);
       confirmAction(view, "liabilityTransactionsRemoveConfirm", "liabilityTransactionsRemoveTitle", () => {
-        void deleteRowInDialogDraft({
-          view,
-          dialog,
-          list: Fragment.byId("LiabilityTransactions", "liabilityTransactionsList"),
-          rowId: transaction.ID,
-          errorKey: "liabilityTransactionsRemoveError",
-          missingRowKey: "liabilityTransactionsLoadError",
-          subPath: liabilityId ? `/Liabilities(ID='${encodeURIComponent(liabilityId)}')` : undefined
+        void runExclusiveDialogAction(dialog, async () => {
+          await deleteRowInDialogDraft({
+            view,
+            dialog,
+            list: Fragment.byId("LiabilityTransactions", "liabilityTransactionsList"),
+            rowId: transaction.ID,
+            errorKey: "liabilityTransactionsRemoveError",
+            missingRowKey: "liabilityTransactionsLoadError",
+            subPath: liabilityId ? `/Liabilities(ID='${encodeURIComponent(liabilityId)}')` : undefined
+          });
         });
       });
     },
@@ -345,31 +350,33 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
       if (rejectedGuard.warnIfBlocked()) {
         return;
       }
-      rejectedGuard.suspend();
-      try {
-        view.getModel("ui").setProperty("/busy", true);
-        const liability = context?.getObject();
-        const personId = liability?.Person_ID || personIdFromPath(context?.getPath() || "");
-        if (!personId) {
-          showWarning(view, "errorMissingPerson");
-          return;
+      await runExclusiveDialogAction(dialog, async () => {
+        rejectedGuard.suspend();
+        try {
+          view.getModel("ui").setProperty("/busy", true);
+          const liability = context?.getObject();
+          const personId = liability?.Person_ID || personIdFromPath(context?.getPath() || "");
+          if (!personId) {
+            showWarning(view, "errorMissingPerson");
+            return;
+          }
+          const odata = new ODataService(context?.getModel());
+          await odata.submitPending();
+          await odata.prepareDraft("Persons", personId);
+          await odata.activateDraft("Persons", personId);
+          await view.getController().resetManagerDialogToActive("Liabilities", {
+            editIdPaths: ["/liabilityEditId"]
+          });
+          releaseDraftBinding(dialog);
+          dialog.close();
+          showToast(view, "liabilityTransactionsSaved");
+        } catch (error) {
+          handleActionError(view, error, "liabilityTransactionsSaveError");
+        } finally {
+          rejectedGuard.resume();
+          view.getModel("ui").setProperty("/busy", false);
         }
-        const odata = new ODataService(context?.getModel());
-        await odata.submitPending();
-        await odata.prepareDraft("Persons", personId);
-        await odata.activateDraft("Persons", personId);
-        await view.getController().resetManagerDialogToActive("Liabilities", {
-          editIdPaths: ["/liabilityEditId"]
-        });
-        releaseDraftBinding(dialog);
-        dialog.close();
-        showToast(view, "liabilityTransactionsSaved");
-      } catch (error) {
-        handleActionError(view, error, "liabilityTransactionsSaveError");
-      } finally {
-        rejectedGuard.resume();
-        view.getModel("ui").setProperty("/busy", false);
-      }
+      });
     },
     onDiscardTransactions: function () {
       const dialog = findTransactionsDialog(this);
@@ -378,7 +385,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
         return;
       }
       confirmAction(view, "liabilityTransactionsDiscardConfirm", "liabilityTransactionsDiscardTitle", () => {
-        void (async () => {
+        void runExclusiveDialogAction(dialog, async () => {
           const context = dialog.getBindingContext();
           const liability = context?.getObject();
           const personId = liability?.Person_ID || personIdFromPath(context?.getPath() || "");
@@ -403,7 +410,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
             rejectedGuard.resume();
             view.getModel("ui").setProperty("/busy", false);
           }
-        })();
+        });
       });
     },
     onCancelTransactions: function () {

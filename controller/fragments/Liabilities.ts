@@ -14,7 +14,7 @@ import { ODataService } from "../../service/ODataService";
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import { createRejectedChangeGuard } from "../../util/rejectedChanges";
-import { deleteRowInDialogDraft, ensureDialogDraft, waitForDraftListBinding } from "../../util/draftDialogFlow";
+import { deleteRowInDialogDraft, ensureDialogDraft, runExclusiveDialogAction, waitForDraftListBinding } from "../../util/draftDialogFlow";
 import type { NewLiability } from "../../model/UiModel";
 import type Home from "../../controller/Home.controller";
 
@@ -215,33 +215,35 @@ const Liabilities = {
             return;
         }
 
-        if (!(await ensureDialogDraft(view, dialog, "liabilitiesAddError"))) {
-            return;
-        }
+        await runExclusiveDialogAction(dialog, async () => {
+            if (!(await ensureDialogDraft(view, dialog, "liabilitiesAddError"))) {
+                return;
+            }
 
-        // Wait until the list binding points at the DRAFT: right after the
-        // switch the previous binding (active collection) is still reachable
-        // and creating through it fails, leaving a stuck transient row.
-        let binding: ODataListBinding | undefined;
-        try {
-            binding = await waitForDraftListBinding(
-                Fragment.byId("Liabilities", "liabilitiesList") as List | undefined
-            );
-        } catch (error) {
-            handleActionError(view, error, "liabilitiesAddError");
-            return;
-        }
-        if (!binding) {
-            showWarning(view, "liabilitiesLoadError");
-            return;
-        }
+            // Wait until the list binding points at the DRAFT: right after the
+            // switch the previous binding (active collection) is still reachable
+            // and creating through it fails, leaving a stuck transient row.
+            let binding: ODataListBinding | undefined;
+            try {
+                binding = await waitForDraftListBinding(
+                    Fragment.byId("Liabilities", "liabilitiesList") as List | undefined
+                );
+            } catch (error) {
+                handleActionError(view, error, "liabilitiesAddError");
+                return;
+            }
+            if (!binding) {
+                showWarning(view, "liabilitiesLoadError");
+                return;
+            }
 
-        try {
-            const context = binding.create(payload);
-            trackCreate(binding, context, () => resetNewLiability(ui));
-        } catch (error) {
-            handleActionError(view, error, "liabilitiesAddError");
-        }
+            try {
+                const context = binding.create(payload);
+                trackCreate(binding, context, () => resetNewLiability(ui));
+            } catch (error) {
+                handleActionError(view, error, "liabilitiesAddError");
+            }
+        });
     },
 
     onRemoveLiability: function (this: Control): void {
@@ -255,13 +257,15 @@ const Liabilities = {
         }
 
         confirmAction(view, "liabilitiesRemoveConfirm", "liabilitiesRemoveTitle", () => {
-            void deleteRowInDialogDraft({
-                view,
-                dialog,
-                list: Fragment.byId("Liabilities", "liabilitiesList") as List | undefined,
-                rowId: liability.ID as string,
-                errorKey: "liabilitiesRemoveError",
-                missingRowKey: "liabilitiesLoadError"
+            void runExclusiveDialogAction(dialog, async () => {
+                await deleteRowInDialogDraft({
+                    view,
+                    dialog,
+                    list: Fragment.byId("Liabilities", "liabilitiesList") as List | undefined,
+                    rowId: liability.ID as string,
+                    errorKey: "liabilitiesRemoveError",
+                    missingRowKey: "liabilitiesLoadError"
+                });
             });
         });
     },
@@ -292,11 +296,11 @@ const Liabilities = {
             return;
         }
 
-        void (async () => {
+        void runExclusiveDialogAction(dialog, async () => {
             if (await ensureDialogDraft(view, dialog, "liabilitiesEditError")) {
                 ui.setProperty("/liabilityEditId", liability.ID as string);
             }
-        })();
+        });
     },
 
     /**
@@ -342,30 +346,32 @@ const Liabilities = {
             return;
         }
 
-        rejectedGuard.suspend();
-        try {
-            (view.getModel("ui") as JSONModel).setProperty("/busy", true);
+        await runExclusiveDialogAction(dialog, async () => {
+            rejectedGuard.suspend();
+            try {
+                (view.getModel("ui") as JSONModel).setProperty("/busy", true);
 
-            const person = context?.getObject() as { ID?: string } | undefined;
-            if (!person?.ID) {
-                showWarning(view, "errorMissingPerson");
-                return;
+                const person = context?.getObject() as { ID?: string } | undefined;
+                if (!person?.ID) {
+                    showWarning(view, "errorMissingPerson");
+                    return;
+                }
+
+                const odata = new ODataService(context?.getModel() as ODataModel);
+                await odata.submitPending();
+                await odata.prepareDraft("Persons", person.ID);
+                await odata.activateDraft("Persons", person.ID);
+
+                releaseDraftBinding(dialog);
+                dialog.close();
+                showToast(view, "liabilitiesSaved");
+            } catch (error) {
+                handleActionError(view, error, "liabilitiesSaveError");
+            } finally {
+                rejectedGuard.resume();
+                (view.getModel("ui") as JSONModel).setProperty("/busy", false);
             }
-
-            const odata = new ODataService(context?.getModel() as ODataModel);
-            await odata.submitPending();
-            await odata.prepareDraft("Persons", person.ID);
-            await odata.activateDraft("Persons", person.ID);
-
-            releaseDraftBinding(dialog);
-            dialog.close();
-            showToast(view, "liabilitiesSaved");
-        } catch (error) {
-            handleActionError(view, error, "liabilitiesSaveError");
-        } finally {
-            rejectedGuard.resume();
-            (view.getModel("ui") as JSONModel).setProperty("/busy", false);
-        }
+        });
     },
 
     onDiscardLiabilities: function (this: Control): void {
@@ -377,7 +383,7 @@ const Liabilities = {
         }
 
         confirmAction(view, "liabilitiesDiscardConfirm", "liabilitiesDiscardTitle", () => {
-            void (async () => {
+            void runExclusiveDialogAction(dialog, async () => {
                 const context = dialog.getBindingContext() as Context | undefined;
                 const person = context?.getObject() as { ID?: string } | undefined;
                 if (!person?.ID) {
@@ -399,7 +405,7 @@ const Liabilities = {
                     rejectedGuard.resume();
                     (view.getModel("ui") as JSONModel).setProperty("/busy", false);
                 }
-            })();
+            });
         });
     },
 

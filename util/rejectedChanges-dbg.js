@@ -23,8 +23,20 @@ sap.ui.define(["sap/ui/core/message/MessageType", "./feedback"], function (Messa
    * Creates a rejected-change guard bound to one dialog session. Each dialog
    * keeps its own guard instance so handlers are not shared between screens.
    *
+   * All dialogs share ONE service model, and stacked dialogs (e.g. movements on
+   * top of liabilities) attach their guards to it simultaneously: without
+   * coordination a single backend error would pop up once per open dialog.
+   * Attached guards therefore form a stack where only the topmost one reacts;
+   * closing the top dialog reactivates the one below.
+   *
    * @returns {RejectedChangeGuard} the guard
    */
+  const attachedGuardSessions = [];
+  function refreshGuardSessionSuspension() {
+    attachedGuardSessions.forEach((session, index) => {
+      session.sessionSuspended = index !== attachedGuardSessions.length - 1;
+    });
+  }
   function createRejectedChangeGuard() {
     let messageChangeModel;
     let messageChangeListener;
@@ -33,6 +45,9 @@ sap.ui.define(["sap/ui/core/message/MessageType", "./feedback"], function (Messa
     let rejectedKey = "";
     let rejected = false;
     let suspended = false;
+    const session = {
+      sessionSuspended: false
+    };
 
     // The failed PATCH is parked in "$parked.<group>" so it can be retried,
     // which is why it is re-sent by the next submitBatch (in Save) and fails
@@ -50,7 +65,7 @@ sap.ui.define(["sap/ui/core/message/MessageType", "./feedback"], function (Messa
       });
     }
     function onServiceMessageChange(event) {
-      if (suspended) {
+      if (suspended || session.sessionSuspended) {
         return;
       }
       const newMessages = event.getParameters().newMessages;
@@ -85,8 +100,15 @@ sap.ui.define(["sap/ui/core/message/MessageType", "./feedback"], function (Messa
         messageChangeListener = event => onServiceMessageChange(event);
         model.attachEvent("messageChange", messageChangeListener);
         messageChangeModel = model;
+        attachedGuardSessions.push(session);
+        refreshGuardSessionSuspension();
       },
       detach() {
+        const sessionIndex = attachedGuardSessions.indexOf(session);
+        if (sessionIndex >= 0) {
+          attachedGuardSessions.splice(sessionIndex, 1);
+          refreshGuardSessionSuspension();
+        }
         if (messageChangeListener && messageChangeModel) {
           messageChangeModel.detachEvent("messageChange", messageChangeListener);
         }
