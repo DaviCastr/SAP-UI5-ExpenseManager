@@ -1,4 +1,5 @@
 import JSONModel from "sap/ui/model/json/JSONModel";
+import { LIABILITY_STATUS_OPTIONS, TRANSACTION_TYPE_OPTIONS } from "../util/liabilityRules";
 
 export interface UiPerson {
     ID: string;
@@ -73,28 +74,18 @@ export interface UiNewShare {
 
 export interface NewLiability {
     name: string;
-    creditor: string;
     description: string;
-    type: string;
-    originalAmount: string;
+    totalAmount: string;
     currency: string;
-    interestMode: string;
-    interestRate: string;
-    installments: string;
-    startDate: string;
-    firstDueDate: string;
-    externalReference: string;
+    dueDay: string;
 }
 
 export interface NewLiabilityTransaction {
     type: string;
     description: string;
-    movementDate: string;
-    installment: string;
-    totalInstallments: string;
+    date: string;
     amount: string;
     currency: string;
-    externalReference: string;
 }
 
 export interface UiSimulation {
@@ -130,9 +121,7 @@ export interface IUiState {
     liabilityEditId: string;
     newLiabilityTransaction: NewLiabilityTransaction;
     liabilityTransactionEditId: string;
-    liabilityTypeOptions: UiEntityOption[];
     liabilityStatusOptions: UiEntityOption[];
-    liabilityInterestModeOptions: UiEntityOption[];
     liabilityTxTypeOptions: UiEntityOption[];
     entityOptions: UiEntityOption[];
     permissionOptions: UiEntityOption[];
@@ -266,70 +255,27 @@ export default class UiModel extends JSONModel {
 
             newLiability: {
                 name: "",
-                creditor: "",
                 description: "",
-                type: "GENERAL",
-                originalAmount: "",
+                totalAmount: "",
                 currency: "BRL",
-                interestMode: "MANUAL",
-                interestRate: "",
-                installments: "1",
-                startDate: new Date().toISOString().slice(0, 10),
-                firstDueDate: "",
-                externalReference: ""
+                dueDay: String(new Date().getDate())
             },
 
             liabilityEditId: "",
 
             newLiabilityTransaction: {
-                type: "PAYMENT",
+                type: "IN",
                 description: "",
-                movementDate: new Date().toISOString().slice(0, 10),
-                installment: "1",
-                totalInstallments: "1",
+                date: new Date().toISOString().slice(0, 10),
                 amount: "",
-                currency: "BRL",
-                externalReference: ""
+                currency: "BRL"
             },
 
             liabilityTransactionEditId: "",
 
-            liabilityTypeOptions: [
-                { key: "GENERAL", text: "Genérica" },
-                { key: "PERSONAL_LOAN", text: "Empréstimo pessoal" },
-                { key: "FAMILY", text: "Familiar" },
-                { key: "BANK", text: "Banco" },
-                { key: "STORE", text: "Loja / Carnê" },
-                { key: "TAX", text: "Imposto" },
-                { key: "LEGAL", text: "Judicial" },
-                { key: "CREDIT_LINE", text: "Limite / cheque especial" },
-                { key: "OTHER", text: "Outros" }
-            ],
+            liabilityStatusOptions: LIABILITY_STATUS_OPTIONS,
 
-            liabilityStatusOptions: [
-                { key: "OPEN", text: "Em aberto" },
-                { key: "PAID", text: "Paga" },
-                { key: "CANCELLED", text: "Cancelada" },
-                { key: "RENEGOTIATED", text: "Renegociada" },
-                { key: "OVERDUE", text: "Vencida" }
-            ],
-
-            liabilityInterestModeOptions: [
-                { key: "MANUAL", text: "Manual" },
-                { key: "SIMPLE", text: "Simples" },
-                { key: "COMPOUND", text: "Composto" }
-            ],
-
-            liabilityTxTypeOptions: [
-                { key: "OPENING", text: "Abertura" },
-                { key: "PAYMENT", text: "Pagamento" },
-                { key: "INTEREST", text: "Juros" },
-                { key: "FEE", text: "Taxa" },
-                { key: "DISCOUNT", text: "Desconto" },
-                { key: "AMORTIZATION", text: "Amortização" },
-                { key: "RENEGOTIATION", text: "Renegociação" },
-                { key: "REVERSAL", text: "Estorno" }
-            ],
+            liabilityTxTypeOptions: TRANSACTION_TYPE_OPTIONS,
 
             entityOptions: [
                 { key: "1", text: "Persons" },

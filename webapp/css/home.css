@@ -202,7 +202,9 @@
 .liabilitiesPanel { margin-top: 1.2rem; }
 .liabilityList { background: transparent; max-height: 26rem; overflow-y: auto; }
 .liabilityItem { padding: .7rem 0; gap: .75rem; }
-.liabilityItemMain { min-width: 0; }
+.liabilityItemMain { min-width: 0; flex: 1 1 auto; }
+.liabilityItemMain > .sapMVBox { min-width: 0; }
+.liabilityItemActions { min-width: 0; }
 .liabilityCreditor { font-weight: 600; color: var(--ink); }
 .liabilityMuted { color: var(--muted); font-size: .82rem; }
 .liabilityFieldLabel { color: var(--muted); font-size: .72rem; font-weight: 600; letter-spacing: .04em; }
@@ -210,4 +212,33 @@
 .liabilityRow { gap: .4rem; }
 .liabilityView, .liabilityEdit { gap: .35rem; }
 .liabilityEdit { padding-top: .2rem; }
+.liabilityProgress { min-width: 6rem; }
+
+/* Campos dos formulários dos diálogos (dívidas e movimentações) */
+.dialogFormField { min-width: 0; }
+.dialogFormAction { align-self: flex-end; }
+.liabilityGridField { min-width: 0; }
+
+@media (max-width: 600px) {
+    .dialogFormField,
+    .liabilityGridField {
+        flex-basis: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .dialogFormAction {
+        align-self: stretch;
+    }
+
+    .dialogFormAction .sapMBtn {
+        width: 100%;
+    }
+
+    .liabilityItemActions {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+}
 
