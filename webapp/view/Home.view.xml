@@ -256,6 +256,48 @@
                                     <core:Icon src="{ui>/summary/trendIcon}" />
                                     <Text text="{ui>/summary/trendText}" />
                                 </HBox>
+                                <VBox class="heroExpenseProgress">
+                                    <Text
+                                        text="{i18n>heroExpenseProgressLabel}"
+                                        class="balanceLabel"
+                                    />
+                                    <HBox
+                                        alignItems="Center"
+                                        class="sapUiTinyMarginTop"
+                                    >
+                                        <ProgressIndicator
+                                            percentValue="{
+                                                parts: [{
+                                                    path: 'TotalExpensesMonth'
+                                                }, {
+                                                    path: 'TotalExpenses'
+                                                }],
+                                                formatter: 'formatter.expensePeriodProgress'
+                                            }"
+                                            showValue="false"
+                                            state="None"
+                                            class="heroProgress"
+                                        >
+                                            <layoutData>
+                                                <FlexItemData
+                                                    minWidth="9rem"
+                                                    growFactor="1"
+                                                />
+                                            </layoutData>
+                                        </ProgressIndicator>
+                                        <Text
+                                            text="{
+                                                parts: [{
+                                                    path: 'TotalExpensesMonth'
+                                                }, {
+                                                    path: 'TotalExpenses'
+                                                }],
+                                                formatter: 'formatter.expensePeriodProgressText'
+                                            }"
+                                            class="heroProgressPercent sapUiTinyMarginBegin"
+                                        />
+                                    </HBox>
+                                </VBox>
                             </VBox>
                         </HBox>
                     </VBox>

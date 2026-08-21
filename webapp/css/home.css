@@ -17,6 +17,10 @@
 .balanceNumber { margin: .5rem 0; }
 .balanceNumber .sapMObjectNumberText { font-size: 2.2rem; line-height: 1.25; }
 .balanceTrend { gap: .35rem; font-size: .8rem; }
+.heroExpenseProgress { margin-top: .8rem; min-width: 14rem; }
+/* .heroProgress.sapMPI { background: rgba(255,255,255,.22); border-radius: .5rem; height: .55rem; overflow: hidden; } */
+.heroProgress .sapMPIBar { background: #a7f4d7; border-radius: .5rem; height: 10px; }
+.heroProgressPercent { font-size: .82rem; font-weight: 700; color: #a7f4d7; min-width: 2.8rem; text-align: end; }
 
 .metricCard { flex: 1 1 12rem; min-width: 0; padding: 1.15rem; border-radius: 1rem; background: var(--white); box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid var(--line); }
 .metricCard .sapUiIcon { padding: .5rem; border-radius: .6rem; }
@@ -38,9 +42,9 @@
 .categoryItemMain { gap: .85rem; }
 .categoryItemAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
 .categoryProgress { margin-top: .3rem; }
-/* .categoryProgress.sapMPI { background: var(--teal-050); border-radius: .5rem; height: .45rem; overflow: hidden; }
-.categoryProgress .sapMPIBar { background: var(--teal-700); border-radius: .5rem; height: 100%; } */
-/* .categoryPercent { font-size: .78rem; font-weight: 700; color: var(--teal-700); } */
+/* .categoryProgress.sapMPI { background: var(--teal-050); border-radius: .5rem; height: .45rem; overflow: hidden; } */
+.categoryProgress .sapMPIBar { background: var(--teal-700); border-radius: .5rem; height: 10px; } */
+/* /* .categoryPercent { font-size: .78rem; font-weight: 700; color: var(--teal-700); } */
 
 .creditCardItem { padding: .6rem 0; }
 .creditCardName { font-weight: 700; color: var(--ink); }
@@ -213,12 +217,14 @@
 .liabilityView, .liabilityEdit { gap: .35rem; }
 .liabilityEdit { padding-top: .2rem; }
 .liabilityProgress { min-width: 6rem; }
-/* .liabilityProgress.sapMPI { background: var(--teal-050); border-radius: .5rem; height: .55rem; overflow: hidden; }
-.liabilityProgress .sapMPIBar { background: var(--teal-700); border-radius: .5rem; height: 100%; } */
+/* .liabilityProgress.sapMPI { background: var(--teal-050); border-radius: .5rem; height: .55rem; overflow: hidden; } */
+.liabilityProgress .sapMPIBar { background: var(--teal-700); border-radius: .5rem; height: 10px; }
 .liabilityPercent { font-size: .78rem; font-weight: 700; color: var(--teal-700); min-width: 2.8rem; text-align: end; }
-.liabilityStatus .sapMObjectStatusText { padding: .12rem .65rem; border-radius: 1rem; font-size: .7rem; font-weight: 700; letter-spacing: .02em; }
-.liabilityStatus.sapMObjectStatusSuccess .sapMObjectStatusText { background: #d9f8ec; color: #1b6b4f; }
-.liabilityStatus:not(.sapMObjectStatusSuccess):not(.sapMObjectStatusWarning):not(.sapMObjectStatusError):not(.sapMObjectStatusInformation) .sapMObjectStatusText { background: #fdeecb; color: #96690a; }
+/* Badge de status da dívida (DOM real usa sapMObjStatus*, sem "ect") */
+.liabilityStatus .sapMObjStatusText { display: inline-flex; align-items: center; gap: .38rem; padding: .22rem .75rem; border-radius: 1rem; font-size: .72rem; font-weight: 700; letter-spacing: .02em; }
+.liabilityStatus .sapMObjStatusText::before { content: ""; width: .42rem; height: .42rem; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.liabilityStatus.sapMObjStatusSuccess .sapMObjStatusText { background: #dcf7ea; border: 1px solid #b9ead4; color: #1a6b4f; }
+.liabilityStatus:not(.sapMObjStatusSuccess):not(.sapMObjStatusWarning):not(.sapMObjStatusError):not(.sapMObjStatusInformation) .sapMObjStatusText { background: #fdf1cf; border: 1px solid #f3dfa4; color: #8f6400; }
 .liabilityOriginalValue .sapMObjectNumberText { font-size: .85rem; font-weight: 600; color: var(--muted); }
 
 /* Campos dos formulários dos diálogos (dívidas e movimentações) */
