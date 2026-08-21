@@ -111,17 +111,10 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
   function resetNewLiability(ui) {
     ui.setProperty("/newLiability", {
       name: "",
-      creditor: "",
       description: "",
-      type: "GENERAL",
-      originalAmount: "",
+      totalAmount: "",
       currency: "BRL",
-      interestMode: "MANUAL",
-      interestRate: "",
-      installments: "1",
-      startDate: new Date().toISOString().slice(0, 10),
-      firstDueDate: "",
-      externalReference: ""
+      dueDay: String(new Date().getDate())
     });
   }
 
@@ -129,12 +122,11 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
    * Validates the parsed "new liability" form values.
    *
    * @param {string} name the trimmed liability name
-   * @param {number} originalAmount the parsed original amount
-   * @param {number} installments the number of installments
+   * @param {number} totalAmount the parsed total amount
    * @returns {boolean} whether the form can be submitted
    */
-  function isValidLiabilityForm(name, originalAmount, installments) {
-    return !!name && Number.isFinite(originalAmount) && originalAmount > 0 && Number.isInteger(installments) && installments >= 1;
+  function isValidLiabilityForm(name, totalAmount, dueDay) {
+    return !!name && Number.isFinite(totalAmount) && totalAmount > 0 && Number.isInteger(dueDay) && dueDay >= 1 && dueDay <= 31;
   }
 
   /**
@@ -147,26 +139,18 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
    */
   function buildLiabilityPayload(form) {
     const name = (form.name ?? "").trim();
-    const originalAmount = Number(String(form.originalAmount ?? "").replace(",", "."));
-    const installments = Number(form.installments) || 1;
-    if (!isValidLiabilityForm(name, originalAmount, installments)) {
+    const totalAmount = Number(String(form.totalAmount ?? "").replace(",", "."));
+    const dueDay = Number(form.dueDay);
+    if (!isValidLiabilityForm(name, totalAmount, dueDay)) {
       return undefined;
     }
-    const interestRate = String(form.interestRate ?? "").trim();
     return {
       Name: name,
-      Creditor: (form.creditor ?? "").trim() || undefined,
       Description: (form.description ?? "").trim() || undefined,
-      Type: form.type || "GENERAL",
-      OriginalAmount: originalAmount,
+      TotalAmount: totalAmount,
       // eslint-disable-next-line camelcase
       Currency_code: form.currency || "BRL",
-      InterestMode: form.interestMode || "MANUAL",
-      InterestRate: interestRate ? Number(interestRate.replace(",", ".")) : undefined,
-      Installments: installments,
-      StartDate: form.startDate,
-      FirstDueDate: form.firstDueDate || undefined,
-      ExternalReference: (form.externalReference ?? "").trim() || undefined
+      DueDay: dueDay
     };
   }
 

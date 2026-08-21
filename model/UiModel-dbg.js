@@ -1,6 +1,8 @@
-sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
+sap.ui.define(["sap/ui/model/json/JSONModel", "../util/liabilityRules"], function (JSONModel, ___util_liabilityRules) {
   "use strict";
 
+  const LIABILITY_STATUS_OPTIONS = ___util_liabilityRules["LIABILITY_STATUS_OPTIONS"];
+  const TRANSACTION_TYPE_OPTIONS = ___util_liabilityRules["TRANSACTION_TYPE_OPTIONS"];
   class UiModel extends JSONModel {
     constructor() {
       const now = new Date();
@@ -82,109 +84,22 @@ sap.ui.define(["sap/ui/model/json/JSONModel"], function (JSONModel) {
         },
         newLiability: {
           name: "",
-          creditor: "",
           description: "",
-          type: "GENERAL",
-          originalAmount: "",
+          totalAmount: "",
           currency: "BRL",
-          interestMode: "MANUAL",
-          interestRate: "",
-          installments: "1",
-          startDate: new Date().toISOString().slice(0, 10),
-          firstDueDate: "",
-          externalReference: ""
+          dueDay: String(new Date().getDate())
         },
         liabilityEditId: "",
         newLiabilityTransaction: {
-          type: "PAYMENT",
+          type: "IN",
           description: "",
-          movementDate: new Date().toISOString().slice(0, 10),
-          installment: "1",
-          totalInstallments: "1",
+          date: new Date().toISOString().slice(0, 10),
           amount: "",
-          currency: "BRL",
-          externalReference: ""
+          currency: "BRL"
         },
         liabilityTransactionEditId: "",
-        liabilityTypeOptions: [{
-          key: "GENERAL",
-          text: "Genérica"
-        }, {
-          key: "PERSONAL_LOAN",
-          text: "Empréstimo pessoal"
-        }, {
-          key: "FAMILY",
-          text: "Familiar"
-        }, {
-          key: "BANK",
-          text: "Banco"
-        }, {
-          key: "STORE",
-          text: "Loja / Carnê"
-        }, {
-          key: "TAX",
-          text: "Imposto"
-        }, {
-          key: "LEGAL",
-          text: "Judicial"
-        }, {
-          key: "CREDIT_LINE",
-          text: "Limite / cheque especial"
-        }, {
-          key: "OTHER",
-          text: "Outros"
-        }],
-        liabilityStatusOptions: [{
-          key: "OPEN",
-          text: "Em aberto"
-        }, {
-          key: "PAID",
-          text: "Paga"
-        }, {
-          key: "CANCELLED",
-          text: "Cancelada"
-        }, {
-          key: "RENEGOTIATED",
-          text: "Renegociada"
-        }, {
-          key: "OVERDUE",
-          text: "Vencida"
-        }],
-        liabilityInterestModeOptions: [{
-          key: "MANUAL",
-          text: "Manual"
-        }, {
-          key: "SIMPLE",
-          text: "Simples"
-        }, {
-          key: "COMPOUND",
-          text: "Composto"
-        }],
-        liabilityTxTypeOptions: [{
-          key: "OPENING",
-          text: "Abertura"
-        }, {
-          key: "PAYMENT",
-          text: "Pagamento"
-        }, {
-          key: "INTEREST",
-          text: "Juros"
-        }, {
-          key: "FEE",
-          text: "Taxa"
-        }, {
-          key: "DISCOUNT",
-          text: "Desconto"
-        }, {
-          key: "AMORTIZATION",
-          text: "Amortização"
-        }, {
-          key: "RENEGOTIATION",
-          text: "Renegociação"
-        }, {
-          key: "REVERSAL",
-          text: "Estorno"
-        }],
+        liabilityStatusOptions: LIABILITY_STATUS_OPTIONS,
+        liabilityTxTypeOptions: TRANSACTION_TYPE_OPTIONS,
         entityOptions: [{
           key: "1",
           text: "Persons"

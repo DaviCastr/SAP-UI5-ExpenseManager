@@ -11,6 +11,24 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
     }
     return fallback;
   }
+  const CURRENCY_LABELS = {
+    BRL: "Real brasileiro (BRL)",
+    USD: "Dólar americano (USD)"
+  };
+
+  /**
+   * Resolves the human readable label of a currency code used in the liability
+   * dialogs (e.g. "BRL" → "Real brasileiro (BRL)").
+   *
+   * @param {string} [code] the currency code
+   * @returns {string} the descriptive label, or the raw code when unknown
+   */
+  function currencyDisplayName(code) {
+    if (code && code in CURRENCY_LABELS) {
+      return CURRENCY_LABELS[code];
+    }
+    return code || "";
+  }
   function toFinite(value) {
     const parsed = Number.parseFloat(value);
     const result = Number.isFinite(parsed) ? parsed : 0;
@@ -208,38 +226,13 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
     }
     return images[id] || "";
   }
-  const LIABILITY_TYPE_LABELS = {
-    GENERAL: "Genérica",
-    PERSONAL_LOAN: "Empréstimo pessoal",
-    FAMILY: "Familiar",
-    BANK: "Banco",
-    STORE: "Loja / Carnê",
-    TAX: "Imposto",
-    LEGAL: "Judicial",
-    CREDIT_LINE: "Limite / cheque especial",
-    OTHER: "Outros"
-  };
   const LIABILITY_STATUS_LABELS = {
     OPEN: "Em aberto",
-    PAID: "Paga",
-    CANCELLED: "Cancelada",
-    RENEGOTIATED: "Renegociada",
-    OVERDUE: "Vencida"
-  };
-  const LIABILITY_INTEREST_MODE_LABELS = {
-    MANUAL: "Manual",
-    SIMPLE: "Simples",
-    COMPOUND: "Composto"
+    PAID: "Paga"
   };
   const LIABILITY_TX_TYPE_LABELS = {
-    OPENING: "Abertura",
-    PAYMENT: "Pagamento",
-    INTEREST: "Juros",
-    FEE: "Taxa",
-    DISCOUNT: "Desconto",
-    AMORTIZATION: "Amortização",
-    RENEGOTIATION: "Renegociação",
-    REVERSAL: "Estorno"
+    IN: "Entrada",
+    OUT: "Saída"
   };
   function labelFromMap(map, value, fallback = "") {
     if (value && value in map) {
@@ -249,19 +242,8 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   }
 
   /**
-   * Resolves the human readable label of a liability type enum value
-   * (e.g. "PERSONAL_LOAN" → "Empréstimo pessoal").
-   *
-   * @param {string} [value] the enum value
-   * @returns {string} the label, or the raw value when unknown
-   */
-  function liabilityTypeText(value) {
-    return labelFromMap(LIABILITY_TYPE_LABELS, value);
-  }
-
-  /**
    * Resolves the human readable label of a liability status enum value
-   * (e.g. "OVERDUE" → "Vencida").
+   * (e.g. "OPEN" → "Em aberto").
    *
    * @param {string} [value] the enum value
    * @returns {string} the label, or the raw value when unknown
@@ -271,19 +253,8 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   }
 
   /**
-   * Resolves the human readable label of a liability interest mode enum value
-   * (e.g. "COMPOUND" → "Composto").
-   *
-   * @param {string} [value] the enum value
-   * @returns {string} the label, or the raw value when unknown
-   */
-  function liabilityInterestModeText(value) {
-    return labelFromMap(LIABILITY_INTEREST_MODE_LABELS, value);
-  }
-
-  /**
    * Resolves the human readable label of a liability transaction type enum value
-   * (e.g. "PAYMENT" → "Pagamento").
+   * (e.g. "IN" → "Entrada").
    *
    * @param {string} [value] the enum value
    * @returns {string} the label, or the raw value when unknown
@@ -293,46 +264,15 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   }
 
   /**
-   * Renders the "paid/total installments" summary of a liability (e.g. "3 de 10").
-   *
-   * @param {number|string} [paid] the number of paid installments
-   * @param {number|string} [total] the total number of installments
-   * @returns {string} the summary, or an empty string when there is no total
-   */
-  function liabilityInstallmentText(paid, total) {
-    const totalNumber = Number(total) || 0;
-    if (totalNumber <= 0) {
-      return "";
-    }
-    return `${Number(paid) || 0} de ${totalNumber}`;
-  }
-
-  /**
-   * Renders "Sim"/"Não" for the overdue flag of a liability.
-   *
-   * @param {boolean} [value] the flag
-   * @returns {string} "Sim" or "Não"
-   */
-  function liabilityYesNoText(value) {
-    return value ? "Sim" : "Não";
-  }
-
-  /**
    * Maps a liability status to the ObjectStatus/state used by the UI
-   * (e.g. "OVERDUE" → "Error").
+   * (e.g. "PAID" → "Success").
    *
    * @param {string} [status] the status enum value
    * @returns {string} the UI state
    */
   function liabilityStatusState(status) {
-    if (status === "OVERDUE") {
-      return "Error";
-    }
     if (status === "PAID") {
       return "Success";
-    }
-    if (status === "RENEGOTIATED") {
-      return "Warning";
     }
     return "None";
   }
@@ -345,8 +285,8 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
    * @returns {number} a percent between 0 and 100
    */
   function liabilityProgressValue(value) {
-    const parsed = Number(value) || 0;
-    return Math.max(0, Math.min(100, parsed));
+    const parsed = typeof value === "string" ? Number(value.replace(",", ".")) : Number(value);
+    return Math.max(0, Math.min(100, parsed || 0));
   }
 
   /**
@@ -356,83 +296,10 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
    * @returns {string} the formatted percent
    */
   function liabilityProgressText(value) {
-    const parsed = Number(value) || 0;
-    return `${parsed.toLocaleString("pt-BR", {
+    const parsed = typeof value === "string" ? Number(value.replace(",", ".")) : Number(value);
+    return `${(parsed || 0).toLocaleString("pt-BR", {
       maximumFractionDigits: 1
     })}%`;
-  }
-
-  /**
-   * Maps a liability health score (0-100) to the ObjectNumber state used by the
-   * UI (the higher the score, the healthier the debt).
-   *
-   * @param {number|string} [value] the health score
-   * @returns {string} the UI state
-   */
-  function liabilityHealthState(value) {
-    const score = Number(value);
-    if (!Number.isFinite(score)) {
-      return "None";
-    }
-    if (score < 40) {
-      return "Error";
-    }
-    if (score < 70) {
-      return "Warning";
-    }
-    return "Success";
-  }
-
-  /**
-   * Renders the "StartDate • FirstDueDate" summary of a liability.
-   *
-   * @param {string} [start] the start date
-   * @param {string} [firstDue] the first due date
-   * @returns {string} the summary
-   */
-  function liabilityDatesText(start, firstDue) {
-    const parts = [];
-    if (start) {
-      parts.push(`Início ${formatDate(start)}`);
-    }
-    if (firstDue) {
-      parts.push(`1º venc. ${formatDate(firstDue)}`);
-    }
-    return parts.join(" • ");
-  }
-
-  /**
-   * Renders the "InterestMode • InterestRate" summary of a liability
-   * (e.g. "Juros Simples • 2,5%").
-   *
-   * @param {string} [mode] the interest mode enum value
-   * @param {number|string} [rate] the interest rate
-   * @returns {string} the summary
-   */
-  function liabilityInterestText(mode, rate) {
-    const modeText = liabilityInterestModeText(mode);
-    const parsed = Number(rate);
-    if (modeText && Number.isFinite(parsed)) {
-      return `${modeText} • ${parsed.toLocaleString("pt-BR", {
-        maximumFractionDigits: 4
-      })}%`;
-    }
-    return modeText || (Number.isFinite(parsed) ? `${parsed}%` : "");
-  }
-
-  /**
-   * Renders the overdue label of a liability from the shared i18n label
-   * (e.g. "Vencida: Sim").
-   *
-   * @param {string} [label] the i18n label
-   * @param {boolean} [isOverdue] whether the liability is overdue
-   * @returns {string} the labeled value
-   */
-  function liabilityOverdueText(label, isOverdue) {
-    if (!label) {
-      return "";
-    }
-    return `${label}: ${liabilityYesNoText(isOverdue)}`;
   }
   function isLiabilityBeingEdited(liabilityEditId, liabilityId) {
     return liabilityEditId === liabilityId;
@@ -444,6 +311,7 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
     __esModule: true
   };
   __exports.currencyCode = currencyCode;
+  __exports.currencyDisplayName = currencyDisplayName;
   __exports.formatCurrency = formatCurrency;
   __exports.formatCardAmount = formatCardAmount;
   __exports.criticalityState = criticalityState;
@@ -461,19 +329,11 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   __exports.formatTotalWithLabel = formatTotalWithLabel;
   __exports.initials = initials;
   __exports.cardImageValue = cardImageValue;
-  __exports.liabilityTypeText = liabilityTypeText;
   __exports.liabilityStatusText = liabilityStatusText;
-  __exports.liabilityInterestModeText = liabilityInterestModeText;
   __exports.liabilityTxTypeText = liabilityTxTypeText;
-  __exports.liabilityInstallmentText = liabilityInstallmentText;
-  __exports.liabilityYesNoText = liabilityYesNoText;
   __exports.liabilityStatusState = liabilityStatusState;
   __exports.liabilityProgressValue = liabilityProgressValue;
   __exports.liabilityProgressText = liabilityProgressText;
-  __exports.liabilityHealthState = liabilityHealthState;
-  __exports.liabilityDatesText = liabilityDatesText;
-  __exports.liabilityInterestText = liabilityInterestText;
-  __exports.liabilityOverdueText = liabilityOverdueText;
   __exports.isLiabilityBeingEdited = isLiabilityBeingEdited;
   __exports.isLiabilityNotBeingEdited = isLiabilityNotBeingEdited;
   return __exports;

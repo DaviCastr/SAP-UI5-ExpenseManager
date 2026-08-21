@@ -431,12 +431,7 @@ export default class Home extends BaseController {
         ui.setProperty("/busy", true);
 
         try {
-            const person = this.getPersonsFromSource().find((candidate) => candidate.ID === personId);
-            const isDraft = person?.IsActiveEntity === false || person?.hasDraft === true;
-
-            if (this._odata && !isDraft) {
-                await this._odata.enableDraftEdit("Persons", personId);
-            }
+            await this.ensurePersonDraft(personId);
 
             const draftPath = this._odata?.draftPath("Persons", personId) ?? this.personPathFor(personId);
             const path = `${draftPath}/Liabilities(ID='${encodeURIComponent(liabilityId)}')`;
@@ -766,6 +761,42 @@ export default class Home extends BaseController {
         return `/Persons(ID='${encodeURIComponent(id)}',IsActiveEntity=${isDraft ? "false" : "true"})`;
     }
 
+    /**
+     * Ensures an editable draft of the selected person exists and keeps the
+     * `/selectedPersonDraft` flag in sync with reality.
+     *
+     * The flag is the source of truth here: the person metadata cached in
+     * `_persons` may be stale (e.g. the Liabilities dialog already opened a
+     * draft after the list was loaded), and calling draftEdit again while a
+     * draft is open makes the backend answer "a draft for this entity already
+     * exists", which the open dialog would surface as an error message.
+     *
+     * @param {string} personId the person whose draft is ensured
+     * @returns {Promise<boolean>} whether a draft is available
+     */
+    private async ensurePersonDraft(personId: string): Promise<boolean> {
+        const ui = this.getUiModel();
+
+        if (ui.getProperty("/selectedPersonDraft") === true) {
+            return true;
+        }
+
+        const person = this.getPersonsFromSource().find((candidate) => candidate.ID === personId);
+        const isDraft = person?.IsActiveEntity === false || person?.hasDraft === true;
+
+        if (isDraft) {
+            ui.setProperty("/selectedPersonDraft", true);
+            return true;
+        }
+
+        if (this._odata) {
+            await this._odata.enableDraftEdit("Persons", personId);
+        }
+
+        ui.setProperty("/selectedPersonDraft", true);
+        return true;
+    }
+
     private getSelectedPersonId(): string {
         return (this.getUiModel().getProperty("/selectedPersonId") as string) || "";
     }
@@ -932,15 +963,11 @@ export default class Home extends BaseController {
         ui.setProperty("/busy", true);
 
         try {
-            const person = this.getPersonsFromSource().find((candidate) => candidate.ID === personId);
-            const isDraft = person?.IsActiveEntity === false || person?.hasDraft === true;
-
-            if (this._odata && !isDraft) {
-                await this._odata.enableDraftEdit("Persons", personId);
-            }
+            await this.ensurePersonDraft(personId);
 
             // Show the draft's own photo (when it has one), falling back to the
             // active entity image otherwise.
+            const person = this.getPersonsFromSource().find((candidate) => candidate.ID === personId);
             if (this._mediaService && person) {
                 void this._mediaService.resolvePersonImage(person, true);
             }
@@ -979,12 +1006,7 @@ export default class Home extends BaseController {
         ui.setProperty("/busy", true);
 
         try {
-            const person = this.getPersonsFromSource().find((candidate) => candidate.ID === personId);
-            const isDraft = person?.IsActiveEntity === false || person?.hasDraft === true;
-
-            if (this._odata && !isDraft) {
-                await this._odata.enableDraftEdit("Persons", personId);
-            }
+            await this.ensurePersonDraft(personId);
 
             const path = this._odata?.draftPath("Persons", personId) ?? "";
 
@@ -1030,12 +1052,7 @@ export default class Home extends BaseController {
         ui.setProperty("/busy", true);
 
         try {
-            const person = this.getPersonsFromSource().find((candidate) => candidate.ID === personId);
-            const isDraft = person?.IsActiveEntity === false || person?.hasDraft === true;
-
-            if (this._odata && !isDraft) {
-                await this._odata.enableDraftEdit("Persons", personId);
-            }
+            await this.ensurePersonDraft(personId);
 
             const path = this._odata?.draftPath("Persons", personId) ?? "";
 
@@ -1050,6 +1067,41 @@ export default class Home extends BaseController {
             this.handleError(error, errorKey);
         } finally {
             ui.setProperty("/busy", false);
+        }
+    }
+
+    /**
+     * Re-opens a fresh person draft and rebinds the Liabilities management
+     * dialog to it. Called after the LiabilityTransactions dialog saved or
+     * discarded the shared person draft: that action deletes the draft the
+     * Liabilities dialog was bound to, so a new draft must be opened and the
+     * dialog rebound, otherwise the dialog keeps pointing at a draft path that
+     * no longer exists and further save/discard attempts fail.
+     *
+     * @returns {Promise<void>} resolves once the dialog is bound to a fresh draft
+     */
+    public async reopenLiabilitiesDialogDraft(): Promise<void> {
+        const personId = this.getSelectedPersonId();
+        const cached = this._dialogs.get("Liabilities");
+
+        if (!personId || !this._odata || !cached) {
+            return;
+        }
+
+        const dialog = await cached;
+        if (!dialog.isOpen()) {
+            return;
+        }
+
+        try {
+            await this._odata.enableDraftEdit("Persons", personId);
+            this.getUiModel().setProperty("/selectedPersonDraft", true);
+            const path = this._odata.draftPath("Persons", personId) ?? "";
+            dialog.setModel(this.getServiceModel());
+            dialog.unbindObject();
+            dialog.bindObject(path);
+        } catch {
+            // best effort; reload() re-syncs the person-scoped sections anyway
         }
     }
 

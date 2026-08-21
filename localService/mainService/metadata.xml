@@ -68,7 +68,7 @@
                 <EntitySet Name="Liabilities" EntityType="ExpenseManager.Liabilities">
                     <NavigationPropertyBinding Path="Person" Target="Persons"/>
                     <NavigationPropertyBinding Path="Currency" Target="Currencies"/>
-                    <NavigationPropertyBinding Path="Transactions" Target="LiabilityTransactions"/>
+                    <NavigationPropertyBinding Path="LiabilityTransactions" Target="LiabilityTransactions"/>
                 </EntitySet>
                 <EntitySet Name="LiabilityTransactions" EntityType="ExpenseManager.LiabilityTransactions">
                     <NavigationPropertyBinding Path="Liability" Target="Liabilities"/>
@@ -348,34 +348,17 @@
                 </NavigationProperty>
                 <Property Name="Person_ID" Type="Edm.Guid"/>
                 <Property Name="Name" Type="Edm.String" MaxLength="120"/>
-                <Property Name="Creditor" Type="Edm.String" MaxLength="120"/>
                 <Property Name="Description" Type="Edm.String" MaxLength="500"/>
-                <Property Name="Type" Type="Edm.String" DefaultValue="GENERAL"/>
                 <Property Name="Status" Type="Edm.String" DefaultValue="OPEN"/>
-                <Property Name="OriginalAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
-                <Property Name="CurrentBalance" Type="Edm.Decimal" Precision="15" Scale="2"/>
-                <Property Name="PaidAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+                <Property Name="TotalAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+                <Property Name="OutstandingBalance" Type="Edm.Decimal" Precision="15" Scale="2"/>
+                <Property Name="PaymentPercentage" Type="Edm.Decimal" Precision="9" Scale="2"/>
+                <Property Name="DueDay" Type="Edm.Int32"/>
                 <NavigationProperty Name="Currency" Type="ExpenseManager.Currencies">
                     <ReferentialConstraint Property="Currency_code" ReferencedProperty="code"/>
                 </NavigationProperty>
                 <Property Name="Currency_code" Type="Edm.String" MaxLength="3"/>
-                <Property Name="InterestMode" Type="Edm.String" DefaultValue="MANUAL"/>
-                <Property Name="InterestRate" Type="Edm.Decimal" Precision="9" Scale="4"/>
-                <Property Name="Installments" Type="Edm.Int32" DefaultValue="1"/>
-                <Property Name="InstallmentAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
-                <Property Name="StartDate" Type="Edm.Date"/>
-                <Property Name="FirstDueDate" Type="Edm.Date"/>
-                <Property Name="EndDate" Type="Edm.Date"/>
-                <Property Name="LastPaymentDate" Type="Edm.Date"/>
-                <Property Name="ExternalReference" Type="Edm.String" MaxLength="80"/>
-                <Property Name="RemainingAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
-                <Property Name="ProgressPercent" Type="Edm.Decimal" Precision="9" Scale="2"/>
-                <Property Name="PaidInstallments" Type="Edm.Int32"/>
-                <Property Name="RemainingInstallments" Type="Edm.Int32"/>
-                <Property Name="NextDueDate" Type="Edm.Date"/>
-                <Property Name="IsOverdue" Type="Edm.Boolean"/>
-                <Property Name="HealthScore" Type="Edm.Int32"/>
-                <NavigationProperty Name="Transactions" Type="Collection(ExpenseManager.LiabilityTransactions)" Partner="Liability">
+                <NavigationProperty Name="LiabilityTransactions" Type="Collection(ExpenseManager.LiabilityTransactions)" Partner="Liability">
                     <OnDelete Action="Cascade"/>
                 </NavigationProperty>
             </EntityType>
@@ -388,23 +371,18 @@
                 <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
                 <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
                 <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
-                <NavigationProperty Name="Liability" Type="ExpenseManager.Liabilities" Partner="Transactions">
+                <NavigationProperty Name="Liability" Type="ExpenseManager.Liabilities" Partner="LiabilityTransactions">
                     <ReferentialConstraint Property="Liability_ID" ReferencedProperty="ID"/>
                 </NavigationProperty>
                 <Property Name="Liability_ID" Type="Edm.Guid"/>
                 <Property Name="Type" Type="Edm.String"/>
                 <Property Name="Description" Type="Edm.String" MaxLength="250"/>
-                <Property Name="MovementDate" Type="Edm.Date"/>
-                <Property Name="Installment" Type="Edm.Int32"/>
-                <Property Name="TotalInstallments" Type="Edm.Int32"/>
+                <Property Name="Date" Type="Edm.Date"/>
                 <Property Name="Amount" Type="Edm.Decimal" Precision="15" Scale="2"/>
                 <NavigationProperty Name="Currency" Type="ExpenseManager.Currencies">
                     <ReferentialConstraint Property="Currency_code" ReferencedProperty="code"/>
                 </NavigationProperty>
                 <Property Name="Currency_code" Type="Edm.String" MaxLength="3"/>
-                <Property Name="BalanceAfter" Type="Edm.Decimal" Precision="15" Scale="2"/>
-                <Property Name="IsAutomatic" Type="Edm.Boolean" DefaultValue="false"/>
-                <Property Name="ExternalReference" Type="Edm.String" MaxLength="80"/>
             </EntityType>
             <EntityType Name="Currencies">
                 <Key>
@@ -1629,48 +1607,6 @@
             <Annotations Target="ExpenseManager.Liabilities/Name">
                 <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
             </Annotations>
-            <Annotations Target="ExpenseManager.Liabilities/Type">
-                <Annotation Term="Validation.AllowedValues">
-                    <Collection>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="GENERAL"/>
-                            <PropertyValue Property="Value" String="GENERAL"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="PERSONAL_LOAN"/>
-                            <PropertyValue Property="Value" String="PERSONAL_LOAN"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="FAMILY"/>
-                            <PropertyValue Property="Value" String="FAMILY"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="BANK"/>
-                            <PropertyValue Property="Value" String="BANK"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="STORE"/>
-                            <PropertyValue Property="Value" String="STORE"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="TAX"/>
-                            <PropertyValue Property="Value" String="TAX"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="LEGAL"/>
-                            <PropertyValue Property="Value" String="LEGAL"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="CREDIT_LINE"/>
-                            <PropertyValue Property="Value" String="CREDIT_LINE"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="OTHER"/>
-                            <PropertyValue Property="Value" String="OTHER"/>
-                        </Record>
-                    </Collection>
-                </Annotation>
-            </Annotations>
             <Annotations Target="ExpenseManager.Liabilities/Status">
                 <Annotation Term="Validation.AllowedValues">
                     <Collection>
@@ -1682,22 +1618,10 @@
                             <Annotation Term="Core.SymbolicName" String="PAID"/>
                             <PropertyValue Property="Value" String="PAID"/>
                         </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="CANCELLED"/>
-                            <PropertyValue Property="Value" String="CANCELLED"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="RENEGOTIATED"/>
-                            <PropertyValue Property="Value" String="RENEGOTIATED"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="OVERDUE"/>
-                            <PropertyValue Property="Value" String="OVERDUE"/>
-                        </Record>
                     </Collection>
                 </Annotation>
             </Annotations>
-            <Annotations Target="ExpenseManager.Liabilities/OriginalAmount">
+            <Annotations Target="ExpenseManager.Liabilities/TotalAmount">
                 <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
             </Annotations>
             <Annotations Target="ExpenseManager.Liabilities/Currency">
@@ -1726,46 +1650,10 @@
                 </Annotation>
                 <Annotation Term="Core.Description" String="Código de moeda como especificado pelo ISO 4217"/>
             </Annotations>
-            <Annotations Target="ExpenseManager.Liabilities/InterestMode">
-                <Annotation Term="Validation.AllowedValues">
-                    <Collection>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="MANUAL"/>
-                            <PropertyValue Property="Value" String="MANUAL"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="SIMPLE"/>
-                            <PropertyValue Property="Value" String="SIMPLE"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="COMPOUND"/>
-                            <PropertyValue Property="Value" String="COMPOUND"/>
-                        </Record>
-                    </Collection>
-                </Annotation>
-            </Annotations>
-            <Annotations Target="ExpenseManager.Liabilities/StartDate">
-                <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
-            </Annotations>
-            <Annotations Target="ExpenseManager.Liabilities/RemainingAmount">
+            <Annotations Target="ExpenseManager.Liabilities/OutstandingBalance">
                 <Annotation Term="Core.Computed" Bool="true"/>
             </Annotations>
-            <Annotations Target="ExpenseManager.Liabilities/ProgressPercent">
-                <Annotation Term="Core.Computed" Bool="true"/>
-            </Annotations>
-            <Annotations Target="ExpenseManager.Liabilities/PaidInstallments">
-                <Annotation Term="Core.Computed" Bool="true"/>
-            </Annotations>
-            <Annotations Target="ExpenseManager.Liabilities/RemainingInstallments">
-                <Annotation Term="Core.Computed" Bool="true"/>
-            </Annotations>
-            <Annotations Target="ExpenseManager.Liabilities/NextDueDate">
-                <Annotation Term="Core.Computed" Bool="true"/>
-            </Annotations>
-            <Annotations Target="ExpenseManager.Liabilities/IsOverdue">
-                <Annotation Term="Core.Computed" Bool="true"/>
-            </Annotations>
-            <Annotations Target="ExpenseManager.Liabilities/HealthScore">
+            <Annotations Target="ExpenseManager.Liabilities/PaymentPercentage">
                 <Annotation Term="Core.Computed" Bool="true"/>
             </Annotations>
             <Annotations Target="ExpenseManager.LiabilityTransactions/ID">
@@ -1807,41 +1695,17 @@
                 <Annotation Term="Validation.AllowedValues">
                     <Collection>
                         <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="OPENING"/>
-                            <PropertyValue Property="Value" String="OPENING"/>
+                            <Annotation Term="Core.SymbolicName" String="IN"/>
+                            <PropertyValue Property="Value" String="IN"/>
                         </Record>
                         <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="PAYMENT"/>
-                            <PropertyValue Property="Value" String="PAYMENT"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="INTEREST"/>
-                            <PropertyValue Property="Value" String="INTEREST"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="FEE"/>
-                            <PropertyValue Property="Value" String="FEE"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="DISCOUNT"/>
-                            <PropertyValue Property="Value" String="DISCOUNT"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="AMORTIZATION"/>
-                            <PropertyValue Property="Value" String="AMORTIZATION"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="RENEGOTIATION"/>
-                            <PropertyValue Property="Value" String="RENEGOTIATION"/>
-                        </Record>
-                        <Record Type="Validation.AllowedValue">
-                            <Annotation Term="Core.SymbolicName" String="REVERSAL"/>
-                            <PropertyValue Property="Value" String="REVERSAL"/>
+                            <Annotation Term="Core.SymbolicName" String="OUT"/>
+                            <PropertyValue Property="Value" String="OUT"/>
                         </Record>
                     </Collection>
                 </Annotation>
             </Annotations>
-            <Annotations Target="ExpenseManager.LiabilityTransactions/MovementDate">
+            <Annotations Target="ExpenseManager.LiabilityTransactions/Date">
                 <Annotation Term="Common.FieldControl" EnumMember="Common.FieldControlType/Mandatory"/>
             </Annotations>
             <Annotations Target="ExpenseManager.LiabilityTransactions/Amount">

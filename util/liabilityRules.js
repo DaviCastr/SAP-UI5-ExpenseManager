@@ -1,0 +1,2 @@
+sap.ui.define([],function(){"use strict";const t=[{key:"IN",text:"Entrada"},{key:"OUT",text:"Saída"}];const e=[{key:"OPEN",text:"Em aberto"},{key:"PAID",text:"Paga"}];var a={__esModule:true};a.TRANSACTION_TYPE_OPTIONS=t;a.LIABILITY_STATUS_OPTIONS=e;return a});
+//# sourceMappingURL=liabilityRules.js.map

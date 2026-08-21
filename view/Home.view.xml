@@ -972,11 +972,10 @@
                             />
                         </VBox>
                         <Button
-                            text="{i18n>liabilitiesCreateButton}"
                             icon="sap-icon://add"
-                            type="Emphasized"
+                            type="Transparent"
                             press=".onOpenLiabilitiesDialog"
-                            class="sapUiTinyMarginBottom"
+                            tooltip="{i18n>liabilitiesDialogTitle}"
                         />
                     </HBox>
                     <List
@@ -985,11 +984,12 @@
                         class="liabilityList"
                         noDataText="{i18n>liabilitiesNoData}"
                     >
-                        <CustomListItem>
+<CustomListItem>
                             <HBox
                                 width="100%"
                                 alignItems="Center"
                                 justifyContent="SpaceBetween"
+                                wrap="Wrap"
                                 class="liabilityItem"
                             >
                                 <HBox
@@ -998,45 +998,59 @@
                                 >
                                     <VBox>
                                         <HBox alignItems="Center">
-                                            <Text
-                                                text="{Name}"
-                                                class="transactionTitle"
-                                            />
-                                            <ObjectStatus
-                                                text="{ path: 'Status', formatter: 'formatter.liabilityStatusText' }"
-                                                state="{ path: 'Status', formatter: 'formatter.liabilityStatusState' }"
-                                                class="sapUiTinyMarginBegin"
-                                            />
-                                        </HBox>
-                                        <Text
-                                            text="{Creditor}"
-                                            class="transactionDate"
+<Text
+                                            text="{Name}"
+                                            class="transactionTitle"
                                         />
-                                        <HBox
-                                            alignItems="Center"
-                                            class="sapUiTinyMarginTop"
+                                        <ObjectStatus
+                                            text="{ path: 'Status', formatter: 'formatter.liabilityStatusText' }"
+                                            state="{ path: 'Status', formatter: 'formatter.liabilityStatusState' }"
+                                            class="sapUiTinyMarginBegin"
+                                        />
+                                    </HBox>
+                                    <Text
+                                        text="{Description}"
+                                        visible="{= ${Description} !== '' }"
+                                        class="transactionDate"
+                                    />
+                                    <HBox
+                                        alignItems="Center"
+                                        class="sapUiTinyMarginTop"
+                                    >
+                                        <ProgressIndicator
+                                            percentValue="{ path: 'PaymentPercentage', formatter: 'formatter.liabilityProgressValue' }"
+                                            displayValue="{ path: 'PaymentPercentage', formatter: 'formatter.liabilityProgressText' }"
+                                            state="None"
+                                            class="liabilityProgress"
                                         >
-                                            <ProgressIndicator
-                                                percentValue="{ path: 'ProgressPercent', formatter: 'formatter.liabilityProgressValue' }"
-                                                displayValue="{ path: 'ProgressPercent', formatter: 'formatter.liabilityProgressText' }"
-                                                state="None"
-                                                width="8rem"
-                                            />
-                                            <Text
-                                                text="{ path: 'NextDueDate', formatter: 'formatter.formatDate' }"
-                                                class="transactionDate sapUiTinyMarginBegin"
-                                            />
-                                        </HBox>
+                                            <layoutData>
+                                                <FlexItemData
+                                                    minWidth="6rem"
+                                                    growFactor="1"
+                                                />
+                                            </layoutData>
+                                        </ProgressIndicator>
+                                        <Text
+                                            text="{
+                                                parts: [
+                                                    { path: 'i18n>liabilitiesDueDayText' },
+                                                    { path: 'DueDay' }
+                                                ],
+                                                formatter: 'formatter.formatTemplate'
+                                            }"
+                                            class="transactionDate sapUiTinyMarginBegin"
+                                        />
+                                    </HBox>
                                     </VBox>
                                 </HBox>
                                 <VBox
                                     alignItems="End"
-                                    class="sapUiTinyMarginEnd"
+                                    class="liabilityItemActions sapUiTinyMarginEnd"
                                 >
                                     <ObjectNumber
                                         number="{
                                             parts: [{
-                                                path: 'CurrentBalance'
+                                                path: 'OutstandingBalance'
                                             }, {
                                                 path: 'Currency_code'
                                             }],

@@ -14,6 +14,7 @@ import { ODataService } from "../../service/ODataService";
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import { createRejectedChangeGuard } from "../../util/rejectedChanges";
+import { TRANSACTION_TYPE_OPTIONS } from "../../util/liabilityRules";
 import type { NewLiabilityTransaction } from "../../model/UiModel";
 import type Home from "../../controller/Home.controller";
 
@@ -124,14 +125,11 @@ function trackCreate(
  */
 function resetNewTransaction(ui: JSONModel): void {
     ui.setProperty("/newLiabilityTransaction", {
-        type: "PAYMENT",
+        type: "IN",
         description: "",
-        movementDate: new Date().toISOString().slice(0, 10),
-        installment: "1",
-        totalInstallments: "1",
+        date: new Date().toISOString().slice(0, 10),
         amount: "",
-        currency: "BRL",
-        externalReference: ""
+        currency: "BRL"
     });
 }
 
@@ -146,26 +144,34 @@ function resetNewTransaction(ui: JSONModel): void {
 function buildTransactionPayload(form: Partial<NewLiabilityTransaction>): Record<string, unknown> | undefined {
     const type = form.type || "";
     const amount = Number(String(form.amount ?? "").replace(",", "."));
-    const movementDate = form.movementDate || "";
+    const date = form.date || "";
 
-    if (!type || !Number.isFinite(amount) || amount === 0 || !movementDate) {
+    if ((type !== "IN" && type !== "OUT") || !Number.isFinite(amount) || amount <= 0 || !date) {
         return undefined;
     }
-
-    const installment = Number(form.installment);
-    const totalInstallments = Number(form.totalInstallments);
 
     return {
         Type: type,
         Description: (form.description ?? "").trim() || undefined,
-        MovementDate: movementDate,
-        Installment: Number.isInteger(installment) && installment > 0 ? installment : undefined,
-        TotalInstallments: Number.isInteger(totalInstallments) && totalInstallments > 0 ? totalInstallments : undefined,
+        Date: date,
         Amount: amount,
         // eslint-disable-next-line camelcase
-        Currency_code: form.currency || "BRL",
-        ExternalReference: (form.externalReference ?? "").trim() || undefined
+        Currency_code: form.currency || "BRL"
     };
+}
+
+/**
+ * Extracts the person ID from a draft path like
+ * `/Persons(ID='x',IsActiveEntity=false)/Liabilities(ID='y')`. Used as a
+ * fallback when the bound context does not expose `Person_ID` through its
+ * `$select`.
+ *
+ * @param {string} path the binding path
+ * @returns {string} the person ID, or an empty string
+ */
+function personIdFromPath(path: string): string {
+    const match = path.match(/Persons\(ID='([^']+)'/);
+    return match ? decodeURIComponent(match[1]) : "";
 }
 
 // Watches the service model's `messageChange` event while the dialog is open so
@@ -289,7 +295,7 @@ const LiabilityTransactions = {
             (view.getModel("ui") as JSONModel).setProperty("/busy", true);
 
             const liability = context?.getObject() as { ID?: string; Person_ID?: string } | undefined;
-            const personId = liability?.Person_ID;
+            const personId = liability?.Person_ID || personIdFromPath(context?.getPath() || "");
             if (!personId) {
                 showWarning(view, "errorMissingPerson");
                 return;
@@ -300,6 +306,7 @@ const LiabilityTransactions = {
             await odata.prepareDraft("Persons", personId);
             await odata.activateDraft("Persons", personId);
 
+            await (view.getController() as Home).reopenLiabilitiesDialogDraft();
             releaseDraftBinding(dialog);
             dialog.close();
             showToast(view, "liabilityTransactionsSaved");
@@ -323,7 +330,7 @@ const LiabilityTransactions = {
             void (async () => {
                 const context = dialog.getBindingContext() as Context | undefined;
                 const liability = context?.getObject() as { ID?: string; Person_ID?: string } | undefined;
-                const personId = liability?.Person_ID;
+                const personId = liability?.Person_ID || personIdFromPath(context?.getPath() || "");
                 if (!personId) {
                     return;
                 }
@@ -334,6 +341,7 @@ const LiabilityTransactions = {
                     rejectedGuard.suspend();
                     await odata.submitPending();
                     await odata.discardDraft("Persons", personId);
+                    await (view.getController() as Home).reopenLiabilitiesDialogDraft();
                     releaseDraftBinding(dialog);
                     dialog.close();
                     showToast(view, "liabilityTransactionsDiscarded");
@@ -357,6 +365,17 @@ const LiabilityTransactions = {
     },
 
     onDialogAfterOpen: function (this: Dialog): void {
+        const ui = this.getParent()?.getModel("ui") as JSONModel | undefined;
+
+        if (ui) {
+            ui.setProperty("/liabilityTxTypeOptions", TRANSACTION_TYPE_OPTIONS);
+
+            const currentType = ui.getProperty("/newLiabilityTransaction/type") as string;
+            if (!TRANSACTION_TYPE_OPTIONS.some((option) => option.key === currentType)) {
+                ui.setProperty("/newLiabilityTransaction/type", TRANSACTION_TYPE_OPTIONS[0].key);
+            }
+        }
+
         rejectedGuard.attach(this, "liabilityTransactionsEditError", "liabilityTransactionsRejectedChanges");
     },
 
