@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "sap/m/MessageBox", "../../service/ODataService", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges", "../../util/liabilityRules"], function (Dialog, Fragment, CustomListItem, MessageBox, ____service_ODataService, ____util_i18n, ____util_feedback, ____util_rejectedChanges, ____util_liabilityRules) {
+sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "sap/m/MessageBox", "../../service/ODataService", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges", "../../util/draftDialogFlow", "../../util/liabilityRules"], function (Dialog, Fragment, CustomListItem, MessageBox, ____service_ODataService, ____util_i18n, ____util_feedback, ____util_rejectedChanges, ____util_draftDialogFlow, ____util_liabilityRules) {
   "use strict";
 
   const ODataService = ____service_ODataService["ODataService"];
@@ -7,6 +7,9 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
   const createRejectedChangeGuard = ____util_rejectedChanges["createRejectedChangeGuard"];
+  const deleteRowInDialogDraft = ____util_draftDialogFlow["deleteRowInDialogDraft"];
+  const ensureDialogDraft = ____util_draftDialogFlow["ensureDialogDraft"];
+  const waitForDraftListBinding = ____util_draftDialogFlow["waitForDraftListBinding"];
   const TRANSACTION_TYPE_OPTIONS = ____util_liabilityRules["TRANSACTION_TYPE_OPTIONS"];
   /**
    * Finds the movements dialog that contains the given control by walking up the
@@ -158,6 +161,32 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
     return match ? decodeURIComponent(match[1]) : "";
   }
 
+  /**
+   * Reads the ID of the liability the dialog is currently bound to. Captured
+   * before switching the dialog to the draft binding, whose context is a
+   * different object.
+   *
+   * @param {Dialog} dialog the movements dialog
+   * @returns {string} the liability ID, or an empty string
+   */
+  function boundLiabilityId(dialog) {
+    const liability = dialog.getBindingContext()?.getObject();
+    return liability?.ID ?? "";
+  }
+
+  /**
+   * Builds the composition path of the bound liability, appended to the person
+   * draft root when the dialog switches to its draft binding.
+   *
+   * @param {Dialog} dialog the movements dialog
+   * @returns {string} the liability path segment (e.g. "/Liabilities(ID='x')"),
+   * or an empty string when the dialog is not bound
+   */
+  function liabilitySubPath(dialog) {
+    const liabilityId = boundLiabilityId(dialog);
+    return liabilityId ? `/Liabilities(ID='${encodeURIComponent(liabilityId)}')` : "";
+  }
+
   // Watches the service model's `messageChange` event while the dialog is open so
   // rejected backend changes (e.g. field validation) are shown and reverted
   // instead of being silently dropped or re-sent by the next submit.
@@ -169,18 +198,21 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
       if (ui) {
         resetNewTransaction(ui);
         ui.setProperty("/liabilityTransactionEditId", "");
+        ui.setProperty("/managerDialogInDraft", false);
       }
     },
     /**
      * Creates a new LiabilityTransaction row inside the liability's
-     * transactions collection. The row is created inside the person draft (the
-     * dialog is bound to the liability inside the draft path), so it
-     * participates in the same draft as the whole tree. The backend recalculates
-     * the liability balance once the transaction is created.
+     * transactions collection. The dialog opens read-only bound to the active
+     * entity, so the person draft is created (when none is open) and the
+     * dialog rebound to the liability inside the draft before the row is
+     * created, keeping the change in the same draft as the whole tree. The
+     * backend recalculates the liability balance once the transaction is
+     * created.
      *
      * @param {Control} this the pressed add-transaction button
      */
-    onAddTransaction: function () {
+    onAddTransaction: async function () {
       const dialog = findTransactionsDialog(this);
       const view = dialog?.getParent();
       const ui = view?.getModel("ui");
@@ -193,7 +225,25 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
         showWarning(view, "liabilityTransactionsFillFields");
         return;
       }
-      const binding = Fragment.byId("LiabilityTransactions", "liabilityTransactionsList")?.getBinding("items");
+      const liabilityId = boundLiabilityId(dialog);
+      if (!liabilityId) {
+        showWarning(view, "liabilityTransactionsLoadError");
+        return;
+      }
+      if (!(await ensureDialogDraft(view, dialog, "liabilityTransactionsAddError", liabilitySubPath(dialog)))) {
+        return;
+      }
+
+      // Wait until the list binding points at the DRAFT: right after the
+      // switch the previous binding (active collection) is still reachable
+      // and creating through it fails, leaving a stuck transient row.
+      let binding;
+      try {
+        binding = await waitForDraftListBinding(Fragment.byId("LiabilityTransactions", "liabilityTransactionsList"));
+      } catch (error) {
+        handleActionError(view, error, "liabilityTransactionsAddError");
+        return;
+      }
       if (!binding) {
         showWarning(view, "liabilityTransactionsLoadError");
         return;
@@ -207,7 +257,9 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
     },
     /**
      * Toggles the read-only view and the editable form of the transaction row
-     * that owns the pressed button.
+     * that owns the pressed button. Entering edit mode first switches the
+     * dialog to the person draft binding (the dialog opens read-only), so the
+     * two-way bound fields PATCH the draft instead of the active entity.
      *
      * @param {Control} this the pressed edit/finish button
      */
@@ -215,27 +267,47 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
       const item = containingListItem(this);
       const context = item?.getBindingContext();
       const transaction = context?.getObject();
-      const view = findTransactionsDialog(this)?.getParent();
+      const dialog = findTransactionsDialog(this);
+      const view = dialog?.getParent();
       const ui = view?.getModel("ui");
-      if (!ui || !transaction?.ID) {
+      if (!ui || !dialog || !view || !transaction?.ID) {
         return;
       }
       const current = ui.getProperty("/liabilityTransactionEditId");
-      ui.setProperty("/liabilityTransactionEditId", current === transaction.ID ? "" : transaction.ID);
+      if (current === transaction.ID) {
+        ui.setProperty("/liabilityTransactionEditId", "");
+        return;
+      }
+      const liabilityId = boundLiabilityId(dialog);
+      if (!liabilityId) {
+        showWarning(view, "liabilityTransactionsLoadError");
+        return;
+      }
+      void (async () => {
+        if (await ensureDialogDraft(view, dialog, "liabilityTransactionsEditError", liabilitySubPath(dialog))) {
+          ui.setProperty("/liabilityTransactionEditId", transaction.ID);
+        }
+      })();
     },
     onRemoveTransaction: function () {
       const dialog = findTransactionsDialog(this);
       const view = dialog?.getParent();
       const context = this.getBindingContext();
-      if (!dialog || !view || !context) {
+      const transaction = context?.getObject();
+      if (!dialog || !view || !transaction?.ID) {
         return;
       }
+      const liabilityId = boundLiabilityId(dialog);
       confirmAction(view, "liabilityTransactionsRemoveConfirm", "liabilityTransactionsRemoveTitle", () => {
-        try {
-          void context.delete().catch(error => handleActionError(view, error, "liabilityTransactionsRemoveError"));
-        } catch (error) {
-          handleActionError(view, error, "liabilityTransactionsRemoveError");
-        }
+        void deleteRowInDialogDraft({
+          view,
+          dialog,
+          list: Fragment.byId("LiabilityTransactions", "liabilityTransactionsList"),
+          rowId: transaction.ID,
+          errorKey: "liabilityTransactionsRemoveError",
+          missingRowKey: "liabilityTransactionsLoadError",
+          subPath: liabilityId ? `/Liabilities(ID='${encodeURIComponent(liabilityId)}')` : undefined
+        });
       });
     },
     /**
@@ -268,7 +340,9 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
         await odata.submitPending();
         await odata.prepareDraft("Persons", personId);
         await odata.activateDraft("Persons", personId);
-        await view.getController().reopenLiabilitiesDialogDraft();
+        await view.getController().resetManagerDialogToActive("Liabilities", {
+          editIdPaths: ["/liabilityEditId"]
+        });
         releaseDraftBinding(dialog);
         dialog.close();
         showToast(view, "liabilityTransactionsSaved");
@@ -299,7 +373,9 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
             rejectedGuard.suspend();
             await odata.submitPending();
             await odata.discardDraft("Persons", personId);
-            await view.getController().reopenLiabilitiesDialogDraft();
+            await view.getController().resetManagerDialogToActive("Liabilities", {
+              editIdPaths: ["/liabilityEditId"]
+            });
             releaseDraftBinding(dialog);
             dialog.close();
             showToast(view, "liabilityTransactionsDiscarded");

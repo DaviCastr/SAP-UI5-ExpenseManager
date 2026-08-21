@@ -1,4 +1,4 @@
-<core:FragmentDefinition
+﻿<core:FragmentDefinition
     xmlns:core="sap.ui.core"
     xmlns="sap.m"
     xmlns:f="sap.f"
@@ -132,7 +132,7 @@
                                 />
                                 <core:Item
                                     key="USD"
-                                    text="Dólar americano (USD)"
+                                    text="DÃ³lar americano (USD)"
                                 />
                             </Select>
                         </VBox>
@@ -404,7 +404,7 @@
                                                 />
                                                 <core:Item
                                                     key="USD"
-                                                    text="Dólar americano (USD)"
+                                                    text="DÃ³lar americano (USD)"
                                                 />
                                             </Select>
                                         </VBox>
@@ -422,6 +422,7 @@
                 icon="sap-icon://save"
                 type="Emphasized"
                 press="handler.onSaveTransactions"
+                visible="{ui>/managerDialogInDraft}"
             />
             <Button
                 text="{i18n>liabilityTransactionsCancelButton}"
@@ -432,6 +433,7 @@
                 text="{i18n>liabilityTransactionsDiscardButton}"
                 type="Transparent"
                 press="handler.onDiscardTransactions"
+                visible="{ui>/managerDialogInDraft}"
             />
         </buttons>
     </Dialog>

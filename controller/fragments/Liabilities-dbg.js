@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "sap/m/MessageBox", "../../service/ODataService", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, CustomListItem, MessageBox, ____service_ODataService, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
+sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "sap/m/MessageBox", "../../service/ODataService", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges", "../../util/draftDialogFlow"], function (Dialog, Fragment, CustomListItem, MessageBox, ____service_ODataService, ____util_i18n, ____util_feedback, ____util_rejectedChanges, ____util_draftDialogFlow) {
   "use strict";
 
   const ODataService = ____service_ODataService["ODataService"];
@@ -7,6 +7,9 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
   const createRejectedChangeGuard = ____util_rejectedChanges["createRejectedChangeGuard"];
+  const deleteRowInDialogDraft = ____util_draftDialogFlow["deleteRowInDialogDraft"];
+  const ensureDialogDraft = ____util_draftDialogFlow["ensureDialogDraft"];
+  const waitForDraftListBinding = ____util_draftDialogFlow["waitForDraftListBinding"];
   /**
    * Finds the Liabilities dialog that contains the given control by walking up
    * the parent chain (the footer buttons may be nested in an HBox).
@@ -165,17 +168,19 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
       if (ui) {
         resetNewLiability(ui);
         ui.setProperty("/liabilityEditId", "");
+        ui.setProperty("/managerDialogInDraft", false);
       }
     },
     /**
      * Creates a new Liability row inside the selected person's Liabilities
-     * collection. The row is created inside the person draft (the dialog is
-     * bound to the draft path), so it participates in the same draft as the
-     * whole tree.
+     * collection. The dialog opens read-only bound to the active entity, so
+     * the person draft is created (when none is open) and the dialog rebound
+     * before the row is created inside it, keeping the change in the same
+     * draft as the whole tree.
      *
      * @param {Control} this the pressed add-liability button
      */
-    onAddLiability: function () {
+    onAddLiability: async function () {
       const dialog = findLiabilitiesDialog(this);
       const view = dialog?.getParent();
       const ui = view?.getModel("ui");
@@ -188,7 +193,20 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
         showWarning(view, "liabilitiesFillFields");
         return;
       }
-      const binding = Fragment.byId("Liabilities", "liabilitiesList")?.getBinding("items");
+      if (!(await ensureDialogDraft(view, dialog, "liabilitiesAddError"))) {
+        return;
+      }
+
+      // Wait until the list binding points at the DRAFT: right after the
+      // switch the previous binding (active collection) is still reachable
+      // and creating through it fails, leaving a stuck transient row.
+      let binding;
+      try {
+        binding = await waitForDraftListBinding(Fragment.byId("Liabilities", "liabilitiesList"));
+      } catch (error) {
+        handleActionError(view, error, "liabilitiesAddError");
+        return;
+      }
       if (!binding) {
         showWarning(view, "liabilitiesLoadError");
         return;
@@ -204,20 +222,26 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
       const dialog = findLiabilitiesDialog(this);
       const view = dialog?.getParent();
       const context = this.getBindingContext();
-      if (!dialog || !view || !context) {
+      const liability = context?.getObject();
+      if (!dialog || !view || !liability?.ID) {
         return;
       }
       confirmAction(view, "liabilitiesRemoveConfirm", "liabilitiesRemoveTitle", () => {
-        try {
-          void context.delete().catch(error => handleActionError(view, error, "liabilitiesRemoveError"));
-        } catch (error) {
-          handleActionError(view, error, "liabilitiesRemoveError");
-        }
+        void deleteRowInDialogDraft({
+          view,
+          dialog,
+          list: Fragment.byId("Liabilities", "liabilitiesList"),
+          rowId: liability.ID,
+          errorKey: "liabilitiesRemoveError",
+          missingRowKey: "liabilitiesLoadError"
+        });
       });
     },
     /**
      * Toggles the read-only view and the editable form of the liability row
-     * that owns the pressed button.
+     * that owns the pressed button. Entering edit mode first switches the
+     * dialog to the person draft binding (the dialog opens read-only), so the
+     * two-way bound fields PATCH the draft instead of the active entity.
      *
      * @param {Control} this the pressed edit/finish button
      */
@@ -225,13 +249,22 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
       const item = containingListItem(this);
       const context = item?.getBindingContext();
       const liability = context?.getObject();
-      const view = findLiabilitiesDialog(this)?.getParent();
+      const dialog = findLiabilitiesDialog(this);
+      const view = dialog?.getParent();
       const ui = view?.getModel("ui");
-      if (!ui || !liability?.ID) {
+      if (!ui || !dialog || !view || !liability?.ID) {
         return;
       }
       const current = ui.getProperty("/liabilityEditId");
-      ui.setProperty("/liabilityEditId", current === liability.ID ? "" : liability.ID);
+      if (current === liability.ID) {
+        ui.setProperty("/liabilityEditId", "");
+        return;
+      }
+      void (async () => {
+        if (await ensureDialogDraft(view, dialog, "liabilitiesEditError")) {
+          ui.setProperty("/liabilityEditId", liability.ID);
+        }
+      })();
     },
     /**
      * Opens the movements dialog for the liability that owns the pressed

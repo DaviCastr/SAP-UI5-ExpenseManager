@@ -306,14 +306,22 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
      * made there is contained in the same person draft as the rest of the
      * entity tree. Saving activates that draft; discarding drops it.
      */
+    /**
+     * Opens the Liabilities management dialog in read-only mode: the dialog is
+     * bound to the active entity, so nothing is created until the user clicks
+     * edit/add inside it, which switches the dialog to the person draft.
+     */
     onOpenLiabilitiesDialog() {
       this.getUiModel().setProperty("/liabilityEditId", "");
-      void this.openDraftManagerDialog("Liabilities", "liabilitiesOpenError");
+      void this.openDraftManagerDialog("Liabilities", "liabilitiesOpenError", undefined, {
+        readOnlyOpen: true
+      });
     }
 
     /**
-     * Opens the Liabilities management dialog with the clicked debt already
-     * switched into edit mode, so the user goes straight to editing it.
+     * Opens the Liabilities management dialog in read-only mode. The dialog
+     * stays read-only: the person draft is only created when the user clicks
+     * edit or add inside it (see `enterDialogDraftMode`).
      *
      * @param {Event} oEvent the press event of the row's edit button
      */
@@ -323,8 +331,8 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       if (!liability?.ID) {
         return;
       }
-      void this.openDraftManagerDialog("Liabilities", "liabilitiesOpenError", () => {
-        this.getUiModel().setProperty("/liabilityEditId", liability.ID);
+      void this.openDraftManagerDialog("Liabilities", "liabilitiesOpenError", undefined, {
+        readOnlyOpen: true
       });
     }
 
@@ -343,12 +351,10 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     }
 
     /**
-     * Opens the movements dialog of the given liability. Because
-     * LiabilityTransactions are compositions of the liability inside the
-     * person's draft, the dialog is bound to the liability within the person
-     * draft: a draft is opened first when none is open, so adds, edits and
-     * deletions made here are contained in the same draft as the rest of the
-     * entity tree. Saving activates that draft; discarding drops it.
+     * Opens the movements dialog of the given liability in read-only mode: the
+     * dialog is bound to the liability under the active entity, so no draft is
+     * created until the user clicks add/edit/remove inside it, which switches
+     * the dialog to the person draft (see `enterDialogDraftMode`).
      *
      * @param {string} liabilityId the ID of the liability whose movements are shown
      * @returns {Promise<void>} resolves once the dialog is open
@@ -362,9 +368,8 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       const ui = this.getUiModel();
       ui.setProperty("/busy", true);
       try {
-        await this.ensurePersonDraft(personId);
-        const draftPath = this._odata?.draftPath("Persons", personId) ?? this.personPathFor(personId);
-        const path = `${draftPath}/Liabilities(ID='${encodeURIComponent(liabilityId)}')`;
+        const basePath = this.currentPersonPathFor(personId);
+        const path = `${basePath}/Liabilities(ID='${encodeURIComponent(liabilityId)}')`;
         await this.openPreparedDialog("LiabilityTransactions", dialog => {
           dialog.setModel(this.getServiceModel());
           dialog.unbindObject();
@@ -645,6 +650,48 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     }
 
     /**
+     * Builds the OData path of the active (published) entity of the given
+     * person, used by the read-only bindings of the liability dialogs.
+     *
+     * @param {string} id the person id
+     * @returns {string} the active entity path
+     */
+    activePersonPathFor(id) {
+      return `/Persons(ID='${encodeURIComponent(id)}',IsActiveEntity=true)`;
+    }
+
+    /**
+     * Whether an editable draft currently exists for the person. Mirrors the
+     * checks of `ensurePersonDraft` without creating anything.
+     *
+     * @param {string} personId the person to check
+     * @returns {boolean} whether a draft is open
+     */
+    isPersonDraftOpen(personId) {
+      if (this.getUiModel().getProperty("/selectedPersonDraft") === true) {
+        return true;
+      }
+      const person = this.getPersonsFromSource().find(candidate => candidate.ID === personId);
+      return person?.IsActiveEntity === false || person?.hasDraft === true;
+    }
+
+    /**
+     * Absolute path of the person in its CURRENT state: the draft when one is
+     * open, the active entity otherwise. Read-only dialogs bind through this
+     * so entities created inside an unsaved draft stay reachable, mirroring
+     * how the home screen reads person-scoped data (`preferDraft`).
+     *
+     * @param {string} id the person ID
+     * @returns {string} the absolute OData path of the person
+     */
+    currentPersonPathFor(id) {
+      if (this.isPersonDraftOpen(id)) {
+        return this._odata?.draftPath("Persons", id) ?? this.activePersonPathFor(id);
+      }
+      return this.activePersonPathFor(id);
+    }
+
+    /**
      * Ensures an editable draft of the selected person exists and keeps the
      * `/selectedPersonDraft` flag in sync with reality.
      *
@@ -878,18 +925,24 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
 
     /**
      * Opens the Cards, Categories or Liabilities management dialog for the
-     * selected person. Because those entities are compositions of the selected
-     * person, the dialog is bound to the person's (draft) OData context, so
-     * every change made there is contained in the same person draft as the rest
-     * of the entity tree. Saving activates that draft; discarding drops it.
+     * selected person. By default the dialog is bound to the person's draft
+     * (created when none is open), so every change made there is contained in
+     * the same person draft as the rest of the entity tree; saving activates
+     * that draft and discarding drops it.
+     *
+     * With `options.readOnlyOpen` the dialog opens bound to the person's
+     * CURRENT state (the draft when one is open, otherwise the active entity)
+     * and no draft is created: mutating actions inside the dialog must then
+     * call `enterDialogDraftMode` to switch to the draft binding.
      *
      * @param {string} fragmentName the dialog fragment to open
      * @param {string} errorKey i18n key shown when the dialog cannot be opened
      * @param {Function} [onOpened] callback invoked after the dialog is bound
      * and opened (e.g. to expand a specific row into edit mode)
+     * @param {{ readOnlyOpen?: boolean }} [options] read-only open behavior
      * @returns {Promise<void>} resolves once the dialog is open
      */
-    async openDraftManagerDialog(fragmentName, errorKey, onOpened) {
+    async openDraftManagerDialog(fragmentName, errorKey, onOpened, options) {
       const personId = this.getSelectedPersonId();
       if (!personId) {
         this.showErrorMessage("errorMissingPerson");
@@ -898,8 +951,13 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       const ui = this.getUiModel();
       ui.setProperty("/busy", true);
       try {
-        await this.ensurePersonDraft(personId);
-        const path = this._odata?.draftPath("Persons", personId) ?? "";
+        let path;
+        if (options?.readOnlyOpen) {
+          path = this.currentPersonPathFor(personId);
+        } else {
+          await this.ensurePersonDraft(personId);
+          path = this._odata?.draftPath("Persons", personId) ?? "";
+        }
         await this.openPreparedDialog(fragmentName, dialog => {
           dialog.setModel(this.getServiceModel());
           dialog.unbindObject();
@@ -915,19 +973,88 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     }
 
     /**
-     * Re-opens a fresh person draft and rebinds the Liabilities management
-     * dialog to it. Called after the LiabilityTransactions dialog saved or
-     * discarded the shared person draft: that action deletes the draft the
-     * Liabilities dialog was bound to, so a new draft must be opened and the
-     * dialog rebound, otherwise the dialog keeps pointing at a draft path that
-     * no longer exists and further save/discard attempts fail.
+     * Switches a manager dialog (Liabilities, LiabilityTransactions and later
+     * Cards/Categories/Shares) from its read-only binding (active entity) to
+     * the person draft binding, creating the draft first when none is open.
+     * Idempotent: when the dialog already points at the draft, only the ui
+     * flag is refreshed.
      *
-     * @returns {Promise<void>} resolves once the dialog is bound to a fresh draft
+     * @param {Dialog} dialog the manager dialog to switch
+     * @param {string} [subPath] optional composition path appended to the
+     * draft root (e.g. "/Liabilities(ID='x')" for the movements dialog)
+     * @returns {Promise<void>} resolves once the dialog is bound to the draft
      */
-    async reopenLiabilitiesDialogDraft() {
+    async enterDialogDraftMode(dialog, subPath) {
       const personId = this.getSelectedPersonId();
-      const cached = this._dialogs.get("Liabilities");
-      if (!personId || !this._odata || !cached) {
+      const ui = this.getUiModel();
+      if (!personId || !this._odata) {
+        this.showErrorMessage("errorMissingPerson");
+        throw new Error("missing person");
+      }
+      const draftBase = this._odata.draftPath("Persons", personId);
+      if ((dialog.getBindingContext()?.getPath() ?? "").startsWith(draftBase)) {
+        ui.setProperty("/managerDialogInDraft", true);
+        return;
+      }
+      ui.setProperty("/busy", true);
+      try {
+        await this.ensurePersonDraft(personId);
+        const path = `${draftBase}${subPath ?? ""}`;
+        dialog.setModel(this.getServiceModel());
+        dialog.unbindObject();
+        dialog.bindObject(path);
+        ui.setProperty("/managerDialogInDraft", true);
+
+        // Wait until the draft context is actually loaded: returning
+        // earlier let actions run against bindings still switching from
+        // the active entity, so the first add/edit could fail.
+        await this.waitForDialogDraftContext(dialog, draftBase);
+      } finally {
+        ui.setProperty("/busy", false);
+      }
+    }
+
+    /**
+     * Waits until the dialog's binding context points at the given draft root
+     * and its data has been read. `bindObject` resolves asynchronously and
+     * every dependent list binding only switches to the draft after this
+     * context arrives, so mutating actions must not proceed before it.
+     *
+     * @param {Dialog} dialog the manager dialog
+     * @param {string} draftBase absolute path of the person draft root
+     * @returns {Promise<void>} resolves once the draft context is loaded
+     * @throws {Error} when the draft context does not arrive in time
+     */
+    async waitForDialogDraftContext(dialog, draftBase) {
+      const deadline = Date.now() + 15000;
+      for (;;) {
+        const context = dialog.getBindingContext();
+        const path = context?.getPath() ?? "";
+        if (path.startsWith(draftBase) && !!context?.getObject()) {
+          return;
+        }
+        if (Date.now() > deadline) {
+          throw new Error("draft context timeout");
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+
+    /**
+     * Rebinds a manager dialog back to the read-only active entity binding.
+     * Called after another dialog saved or discarded the shared person draft:
+     * that action publishes/drops the draft the dialog was bound to, so the
+     * dialog returns to its read-only mode until the user edits again.
+     *
+     * @param {string} fragmentName cache key of the dialog to rebind
+     * @param {{ editIdPaths?: string[] }} [options] ui model paths of row-edit
+     * flags that must be cleared (e.g. ["/liabilityEditId"])
+     * @returns {Promise<void>} resolves once the dialog is rebound
+     */
+    async resetManagerDialogToActive(fragmentName, options) {
+      const personId = this.getSelectedPersonId();
+      const cached = this._dialogs.get(fragmentName);
+      if (!personId || !cached) {
         return;
       }
       const dialog = await cached;
@@ -935,12 +1062,12 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         return;
       }
       try {
-        await this._odata.enableDraftEdit("Persons", personId);
-        this.getUiModel().setProperty("/selectedPersonDraft", true);
-        const path = this._odata.draftPath("Persons", personId) ?? "";
         dialog.setModel(this.getServiceModel());
         dialog.unbindObject();
-        dialog.bindObject(path);
+        dialog.bindObject(this.activePersonPathFor(personId));
+        const ui = this.getUiModel();
+        (options?.editIdPaths ?? []).forEach(editIdPath => ui.setProperty(editIdPath, ""));
+        ui.setProperty("/managerDialogInDraft", false);
       } catch {
         // best effort; reload() re-syncs the person-scoped sections anyway
       }
