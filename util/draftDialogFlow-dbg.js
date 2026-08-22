@@ -1,6 +1,7 @@
 sap.ui.define(["./feedback"], function (___feedback) {
   "use strict";
 
+  const getBackendErrorMessage = ___feedback["getBackendErrorMessage"];
   const handleActionError = ___feedback["handleActionError"];
   const showWarning = ___feedback["showWarning"];
   /**
@@ -13,6 +14,23 @@ sap.ui.define(["./feedback"], function (___feedback) {
   const DRAFT_PATH_MARKER = "IsActiveEntity=false";
   function isDraftPath(path) {
     return !!path && path.includes(DRAFT_PATH_MARKER);
+  }
+
+  /**
+   * Reports an action failure, except when the error carries a backend message:
+   * every rejected request on the shared service model is already displayed by
+   * the open dialog's rejected-change guard (`messageChange` listener), so
+   * showing it here again would pop the same error twice. Only failures without
+   * a backend message (e.g. binding timeouts) surface through this path.
+   *
+   * @param {XMLView} view the owning view
+   * @param {unknown} error the caught error
+   * @param {string} errorKey i18n key shown when no backend message exists
+   */
+  function reportActionFailure(view, error, errorKey) {
+    if (!getBackendErrorMessage(error)) {
+      handleActionError(view, error, errorKey);
+    }
   }
 
   // Actions that switch the dialog to the draft (add/edit/remove/save) must not
@@ -58,7 +76,7 @@ sap.ui.define(["./feedback"], function (___feedback) {
       await view.getController().enterDialogDraftMode(dialog, subPath);
       return true;
     } catch (error) {
-      handleActionError(view, error, errorKey);
+      reportActionFailure(view, error, errorKey);
       return false;
     }
   }
@@ -161,7 +179,7 @@ sap.ui.define(["./feedback"], function (___feedback) {
       }
       await rowContext.delete();
     } catch (error) {
-      handleActionError(view, error, errorKey);
+      reportActionFailure(view, error, errorKey);
     }
   }
   var __exports = {

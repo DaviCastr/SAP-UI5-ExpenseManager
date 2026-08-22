@@ -4,7 +4,7 @@ import Table from "sap/m/Table";
 import XMLView from "sap/ui/core/mvc/XMLView";
 import type Context from "sap/ui/model/odata/v4/Context";
 import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
-import { handleActionError, showWarning } from "./feedback";
+import { getBackendErrorMessage, handleActionError, showWarning } from "./feedback";
 import type Home from "../controller/Home.controller";
 
 /**
@@ -18,6 +18,23 @@ const DRAFT_PATH_MARKER = "IsActiveEntity=false";
 
 function isDraftPath(path?: string): boolean {
     return !!path && path.includes(DRAFT_PATH_MARKER);
+}
+
+/**
+ * Reports an action failure, except when the error carries a backend message:
+ * every rejected request on the shared service model is already displayed by
+ * the open dialog's rejected-change guard (`messageChange` listener), so
+ * showing it here again would pop the same error twice. Only failures without
+ * a backend message (e.g. binding timeouts) surface through this path.
+ *
+ * @param {XMLView} view the owning view
+ * @param {unknown} error the caught error
+ * @param {string} errorKey i18n key shown when no backend message exists
+ */
+function reportActionFailure(view: XMLView, error: unknown, errorKey: string): void {
+    if (!getBackendErrorMessage(error)) {
+        handleActionError(view, error, errorKey);
+    }
 }
 
 // Actions that switch the dialog to the draft (add/edit/remove/save) must not
@@ -68,7 +85,7 @@ export async function ensureDialogDraft(
         await (view.getController() as Home).enterDialogDraftMode(dialog, subPath);
         return true;
     } catch (error) {
-        handleActionError(view, error, errorKey);
+        reportActionFailure(view, error, errorKey);
         return false;
     }
 }
@@ -186,6 +203,6 @@ export async function deleteRowInDialogDraft(params: {
         }
         await rowContext.delete();
     } catch (error) {
-        handleActionError(view, error, errorKey);
+        reportActionFailure(view, error, errorKey);
     }
 }

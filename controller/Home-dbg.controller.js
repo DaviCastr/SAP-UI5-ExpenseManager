@@ -295,7 +295,9 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       });
     }
     onOpenCategoryManagerDialog() {
-      void this.openDraftManagerDialog("Categories", "categoriesOpenError");
+      void this.openDraftManagerDialog("Categories", "categoriesOpenError", undefined, {
+        readOnlyOpen: true
+      });
     }
     onOpenInvoicesDialog() {
       void this.openInvoicesDialog();

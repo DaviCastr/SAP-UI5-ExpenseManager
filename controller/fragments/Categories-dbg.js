@@ -1,7 +1,11 @@
-sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "../../service/ODataService", "../../util/fileUpload", "../../util/http", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, Avatar, MessageBox, CustomListItem, ____service_ODataService, ____util_fileUpload, ____util_http, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
+sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "../../service/ODataService", "../../util/draftDialogFlow", "../../util/fileUpload", "../../util/http", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, Avatar, MessageBox, CustomListItem, ____service_ODataService, ____util_draftDialogFlow, ____util_fileUpload, ____util_http, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
   "use strict";
 
   const ODataService = ____service_ODataService["ODataService"];
+  const deleteRowInDialogDraft = ____util_draftDialogFlow["deleteRowInDialogDraft"];
+  const ensureDialogDraft = ____util_draftDialogFlow["ensureDialogDraft"];
+  const runExclusiveDialogAction = ____util_draftDialogFlow["runExclusiveDialogAction"];
+  const waitForDraftListBinding = ____util_draftDialogFlow["waitForDraftListBinding"];
   const uploadNow = ____util_fileUpload["uploadNow"];
   const request = ____util_http["request"];
   const getText = ____util_i18n["getText"];
@@ -290,16 +294,19 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
           name: ""
         });
         ui.setProperty("/dialogCategoryImages", {});
+        ui.setProperty("/managerDialogInDraft", false);
       }
     },
     /**
      * Adds a new Category row into the selected person's Categories collection.
-     * The row is created inside the person draft (the dialog is bound to the
-     * draft path), so it participates in the same draft as the whole tree.
+     * The dialog opens read-only bound to the person's current state, so the
+     * person draft is created (when none is open) and the dialog rebound to
+     * the draft before the row is created inside it, keeping the change in
+     * the same draft as the whole tree.
      *
      * @param {Control} this the pressed add-category button
      */
-    onAddCategory: function () {
+    onAddCategory: async function () {
       const dialog = findCategoriesDialog(this);
       const view = dialog?.getParent();
       const ui = view?.getModel("ui");
@@ -311,39 +318,79 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
         showWarning(view, "categoriesFillFields");
         return;
       }
-      const binding = Fragment.byId("Categories", "categoriesList")?.getBinding("items");
-      if (!binding) {
-        showWarning(view, "categoriesLoadError");
+      await runExclusiveDialogAction(dialog, async () => {
+        if (!(await ensureDialogDraft(view, dialog, "categoriesAddError"))) {
+          return;
+        }
+
+        // Wait until the list binding points at the DRAFT: right after the
+        // switch the previous binding (active collection) is still reachable
+        // and creating through it fails, leaving a stuck transient row.
+        let binding;
+        try {
+          binding = await waitForDraftListBinding(Fragment.byId("Categories", "categoriesList"));
+        } catch (error) {
+          handleActionError(view, error, "categoriesAddError");
+          return;
+        }
+        if (!binding) {
+          showWarning(view, "categoriesLoadError");
+          return;
+        }
+        try {
+          const context = binding.create({
+            Name: name
+          });
+          trackCreate(binding, context, () => {
+            ui.setProperty("/newCategory", {
+              name: ""
+            });
+          });
+        } catch (error) {
+          handleActionError(view, error, "categoriesAddError");
+        }
+      });
+    },
+    /**
+     * Enters edit mode: switches the dialog to the person draft binding, which
+     * enables the inline editors of every category row (they stay disabled
+     * while read-only so no change can hit the active entity).
+     *
+     * @param {Control} this the pressed edit button
+     */
+    onToggleCategoriesEdit: async function () {
+      const dialog = findCategoriesDialog(this);
+      const view = dialog?.getParent();
+      if (!dialog || !view) {
         return;
       }
-      try {
-        const context = binding.create({
-          Name: name
-        });
-        trackCreate(binding, context, () => {
-          ui.setProperty("/newCategory", {
-            name: ""
-          });
-        });
-      } catch (error) {
-        handleActionError(view, error, "categoriesAddError");
-      }
+      await runExclusiveDialogAction(dialog, async () => {
+        await ensureDialogDraft(view, dialog, "categoriesEditError");
+      });
     },
     onRemoveCategory: function () {
       const dialog = findCategoriesDialog(this);
       const view = dialog?.getParent();
       const context = this.getBindingContext();
-      if (!dialog || !view || !context) {
+      const category = context?.getObject();
+      if (!dialog || !view || !category?.ID) {
         return;
       }
-      pendingPhotos.delete(context);
-      inflightPhotos.delete(context);
+      if (context) {
+        pendingPhotos.delete(context);
+        inflightPhotos.delete(context);
+      }
       confirmAction(view, "categoriesRemoveConfirm", "categoriesRemoveTitle", () => {
-        try {
-          void context.delete().catch(error => handleActionError(view, error, "categoriesRemoveError"));
-        } catch (error) {
-          handleActionError(view, error, "categoriesRemoveError");
-        }
+        void runExclusiveDialogAction(dialog, async () => {
+          await deleteRowInDialogDraft({
+            view,
+            dialog,
+            list: Fragment.byId("Categories", "categoriesList"),
+            rowId: category.ID,
+            errorKey: "categoriesRemoveError",
+            missingRowKey: "categoriesLoadError"
+          });
+        });
       });
     },
     /**
@@ -416,33 +463,35 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
       if (rejectedGuard.warnIfBlocked()) {
         return;
       }
-      rejectedGuard.suspend();
-      try {
-        view.getModel("ui").setProperty("/busy", true);
-        const person = context?.getObject();
-        if (!person?.ID) {
-          showWarning(view, "errorMissingPerson");
-          return;
+      await runExclusiveDialogAction(dialog, async () => {
+        rejectedGuard.suspend();
+        try {
+          view.getModel("ui").setProperty("/busy", true);
+          const person = context?.getObject();
+          if (!person?.ID) {
+            showWarning(view, "errorMissingPerson");
+            return;
+          }
+          const odata = new ODataService(context?.getModel());
+          await odata.submitPending();
+          await Promise.allSettled(Array.from(inflightPhotos.values()));
+          inflightPhotos.clear();
+          const imageFailed = await uploadPendingPhotos(person.ID);
+          await odata.prepareDraft("Persons", person.ID);
+          await odata.activateDraft("Persons", person.ID);
+          releaseDraftBinding(dialog);
+          dialog.close();
+          showToast(view, "categoriesSaved");
+          if (imageFailed) {
+            showToast(view, "categoriesImageFallback");
+          }
+        } catch (error) {
+          handleActionError(view, error, "categoriesSaveError");
+        } finally {
+          rejectedGuard.resume();
+          view.getModel("ui").setProperty("/busy", false);
         }
-        const odata = new ODataService(context?.getModel());
-        await odata.submitPending();
-        await Promise.allSettled(Array.from(inflightPhotos.values()));
-        inflightPhotos.clear();
-        const imageFailed = await uploadPendingPhotos(person.ID);
-        await odata.prepareDraft("Persons", person.ID);
-        await odata.activateDraft("Persons", person.ID);
-        releaseDraftBinding(dialog);
-        dialog.close();
-        showToast(view, "categoriesSaved");
-        if (imageFailed) {
-          showToast(view, "categoriesImageFallback");
-        }
-      } catch (error) {
-        handleActionError(view, error, "categoriesSaveError");
-      } finally {
-        rejectedGuard.resume();
-        view.getModel("ui").setProperty("/busy", false);
-      }
+      });
     },
     onDiscardCategories: function () {
       const dialog = findCategoriesDialog(this);
@@ -451,7 +500,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
         return;
       }
       confirmAction(view, "categoriesDiscardConfirm", "categoriesDiscardTitle", () => {
-        void (async () => {
+        void runExclusiveDialogAction(dialog, async () => {
           const context = dialog.getBindingContext();
           const person = context?.getObject();
           if (!person?.ID) {
@@ -472,7 +521,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
             rejectedGuard.resume();
             view.getModel("ui").setProperty("/busy", false);
           }
-        })();
+        });
       });
     },
     onCancelCategories: function () {
