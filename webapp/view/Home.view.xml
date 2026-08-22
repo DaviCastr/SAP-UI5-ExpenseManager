@@ -1157,12 +1157,6 @@
                                             tooltip="{i18n>liabilitiesMovementsTooltip}"
                                             press=".onOpenLiabilityTransactions"
                                         />
-                                        <Button
-                                            icon="sap-icon://edit"
-                                            type="Transparent"
-                                            tooltip="{i18n>liabilitiesEditTooltip}"
-                                            press=".onOpenLiabilityEdit"
-                                        />
                                     </HBox>
                                 </VBox>
                             </HBox>
