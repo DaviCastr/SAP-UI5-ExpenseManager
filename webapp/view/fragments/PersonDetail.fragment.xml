@@ -38,11 +38,22 @@
                         class="sapUiMediumMarginEnd"
                     />
                     <VBox>
-                        <Title
-                            text="{Name}"
-                            level="H2"
-                            class="sapUiTinyMarginBottom"
-                        />
+                        <HBox alignItems="Center">
+                            <Title
+                                text="{Name}"
+                                level="H2"
+                                class="sapUiTinyMarginBottom"
+                            />
+                            <!-- Edita sob demanda: cria/usa o rascunho da pessoa -->
+                            <Button
+                                icon="sap-icon://edit"
+                                type="Transparent"
+                                tooltip="{i18n>personEditInsideTooltip}"
+                                press="handler.onTogglePersonEdit"
+                                visible="{=!${ui>/managerDialogInDraft}}"
+                                class="sapUiTinyMarginBegin"
+                            />
+                        </HBox>
                         <Text
                             text="{i18n>personDetailIntro}"
                         />
@@ -61,6 +72,7 @@
                         sendXHR="true"
                         httpRequestMethod="PUT"
                         useMultipart="false"
+                        enabled="{ui>/managerDialogInDraft}"
                         change="handler.onPhotoChanged"
                         width="100%"
                     />
@@ -97,6 +109,7 @@
                                     <f:fields>
                                         <Input
                                             value="{Name}"
+                                            enabled="{ui>/managerDialogInDraft}"
                                             placeholder="{i18n>personNamePlaceholder}"
                                         />
                                     </f:fields>
@@ -106,6 +119,7 @@
                                         <Input
                                             value="{Email}"
                                             type="Email"
+                                            enabled="{ui>/managerDialogInDraft}"
                                             placeholder="{i18n>personEmailPlaceholder}"
                                         />
                                     </f:fields>
@@ -114,6 +128,7 @@
                                     <f:fields>
                                         <Input
                                             value="{Phone}"
+                                            enabled="{ui>/managerDialogInDraft}"
                                             placeholder="{i18n>personPhonePlaceholder}"
                                         />
                                     </f:fields>
@@ -128,6 +143,7 @@
                                     <f:fields>
                                         <Input
                                             value="{Income}"
+                                            enabled="{ui>/managerDialogInDraft}"
                                             placeholder="{i18n>personIncomePlaceholder}"
                                         />
                                     </f:fields>
@@ -136,6 +152,7 @@
                                     <f:fields>
                                         <Input
                                             value="{ExpenseTarget}"
+                                            enabled="{ui>/managerDialogInDraft}"
                                             placeholder="{i18n>personTargetPlaceholder}"
                                         />
                                     </f:fields>
@@ -145,6 +162,7 @@
                                         <Select
                                             id="editPersonCurrency"
                                             selectedKey="{Currency_code}"
+                                            enabled="{ui>/managerDialogInDraft}"
                                         >
                                             <core:Item
                                                 key="BRL"
@@ -223,16 +241,19 @@
         </content>
         
         <buttons>
+            <!-- Salvar/Descartar só existem durante a edição (rascunho aberto) -->
             <Button
                 text="{i18n>personSaveButtonEdit}"
                 icon="sap-icon://accept"
                 type="Emphasized"
+                visible="{ui>/managerDialogInDraft}"
                 press="handler.onSavePerson"
             />
             <Button
                 text="{i18n>personDiscardButton}"
                 icon="sap-icon://delete"
                 type="Reject"
+                visible="{ui>/managerDialogInDraft}"
                 press="handler.onDiscardDraft"
             />
             <!-- Alterado para tipo Transparent para diminuir a poluição visual -->

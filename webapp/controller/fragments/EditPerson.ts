@@ -14,6 +14,7 @@ import { uploadNow } from "../../util/fileUpload";
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import { createRejectedChangeGuard } from "../../util/rejectedChanges";
+import { ensureDialogDraft, runExclusiveDialogAction } from "../../util/draftDialogFlow";
 import type Home from "../../controller/Home.controller";
 
 let personPhoto: File | null = null;
@@ -97,31 +98,116 @@ function flushPendingEdits(dialog: Dialog): void {
  * @returns {Promise<void>} resolves once the draft was discarded
  */
 async function discardDraftAndClose(view: XMLView, dialog: Dialog, id: string): Promise<void> {
-    const ui = view.getModel("ui") as JSONModel;
-    ui.setProperty("/busy", true);
+    // Exclusive so a double click on "Descartar" cannot run the discard twice
+    // (the second run would fail on an already deleted draft).
+    await runExclusiveDialogAction(dialog, async () => {
+        const ui = view.getModel("ui") as JSONModel;
+        ui.setProperty("/busy", true);
 
+        try {
+            const odata = new ODataService(dialog.getModel() as ODataModel);
+            rejectedGuard.suspend();
+            await odata.submitPending();
+            await odata.discardDraft("Persons", id);
+
+            releaseDraftBinding(dialog);
+            dialog.close();
+            showToast(view, "personDraftDiscarded");
+        } catch (error) {
+            handleActionError(view, error, "errorDiscardPersonDraft");
+        } finally {
+            rejectedGuard.resume();
+            ui.setProperty("/busy", false);
+        }
+    });
+}
+
+/**
+ * Flushes pending edits, finishes the photo upload and activates the person's
+ * draft, closing the dialog on success. The draft is kept on failure so the
+ * user can retry or cancel to discard it.
+ *
+ * @param {XMLView} view the owning view
+ * @param {Dialog} dialog the bound edit dialog
+ */
+async function activatePersonDraft(view: XMLView, dialog: Dialog): Promise<void> {
+    const context = dialog.getBindingContext() as Context | undefined;
+
+    if (rejectedGuard.warnIfBlocked()) {
+        return;
+    }
+
+    rejectedGuard.suspend();
     try {
-        const odata = new ODataService(dialog.getModel() as ODataModel);
-        rejectedGuard.suspend();
+
+        (view.getModel("ui") as JSONModel).setProperty("/busy", true);
+
+        if (!context) {
+            showWarning(view, "errorMissingPerson");
+            return;
+        }
+
+        const person = context.getObject() as { ID: string; Name?: string };
+
+        if (!person?.ID || !person.Name) {
+            showWarning(view, "errorFillRequiredFields");
+            return;
+        }
+
+        const odata = new ODataService(context.getModel() as ODataModel);
+
+        // The dialog is bound to the draft entity, so every edited field is
+        // already PATCHed to the draft by the two-way binding. Flush any
+        // still pending change, finish a new photo upload (retrying it once
+        // if the immediate attempt failed), then publish the draft.
         await odata.submitPending();
-        await odata.discardDraft("Persons", id);
+
+        const photoUploaded = inflightUpload
+            ? await inflightUpload
+            : true;
+        if (!photoUploaded && personPhoto) {
+            const uploader = Fragment.byId("PersonDetail", "editPersonFileUploader") as FileUploader;
+            await uploadNow(uploader, odata.getMediaUrl(`Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=false)/Image`));
+        }
+
+        await odata.prepareDraft("Persons", person.ID);
+        await odata.activateDraft("Persons", person.ID);
 
         releaseDraftBinding(dialog);
         dialog.close();
-        showToast(view, "personDraftDiscarded");
+        showToast(view, "personUpdated");
     } catch (error) {
-        handleActionError(view, error, "errorDiscardPersonDraft");
+        // keep the draft so the user can retry or cancel to discard it
+        handleActionError(view, error, "errorUpdatePerson");
     } finally {
         rejectedGuard.resume();
-        ui.setProperty("/busy", false);
+        (view.getModel("ui") as JSONModel).setProperty("/busy", false);
     }
 }
 
 const PersonDetail = {
-    onDialogBeforeOpen: function (): void {
+    onDialogBeforeOpen: function (this: Dialog): void {
         personPhoto = null;
         inflightUpload = null;
         (Fragment.byId("PersonDetail", "editPersonFileUploader") as FileUploader)?.setValue("");
+
+        // The dialog always opens in read-only view mode; editing starts only
+        // through its own edit action.
+        const view = this.getParent() as XMLView | undefined;
+        (view?.getModel("ui") as JSONModel | undefined)?.setProperty("/managerDialogInDraft", false);
+    },
+
+    // Switches the read-only view into an editable session: the first press
+    // creates the person's draft on demand, later presses reuse the open draft.
+    onTogglePersonEdit: function (this: Control): void {
+        const dialog = findPersonDialog(this);
+        const view = dialog?.getParent() as XMLView | undefined;
+
+        if (!dialog || !view) {
+            return;
+        }
+
+        void runExclusiveDialogAction(dialog, () => ensureDialogDraft(view, dialog, "personEditError"));
     },
 
     onPhotoChanged: function (event: Event): void {
@@ -206,7 +292,7 @@ const PersonDetail = {
         }
     },
 
-    onSavePerson: async function (this: Control): Promise<void> {
+    onSavePerson: function (this: Control): void {
         const dialog = findPersonDialog(this);
 
         if (!dialog) {
@@ -214,58 +300,7 @@ const PersonDetail = {
         }
 
         const view = dialog.getParent() as XMLView;
-        const context = dialog.getBindingContext() as Context | undefined;
-
-        if (rejectedGuard.warnIfBlocked()) {
-            return;
-        }
-
-        rejectedGuard.suspend();
-        try {
-
-            (view.getModel("ui") as JSONModel).setProperty("/busy", true);
-
-            if (!context) {
-                showWarning(view, "errorMissingPerson");
-                return;
-            }
-
-            const person = context.getObject() as { ID: string; Name?: string };
-
-            if (!person?.ID || !person.Name) {
-                showWarning(view, "errorFillRequiredFields");
-                return;
-            }
-
-            const odata = new ODataService(context.getModel() as ODataModel);
-
-            // The dialog is bound to the draft entity, so every edited field is
-            // already PATCHed to the draft by the two-way binding. Flush any
-            // still pending change, finish a new photo upload (retrying it once
-            // if the immediate attempt failed), then publish the draft.
-            await odata.submitPending();
-
-            const photoUploaded = inflightUpload
-                ? await inflightUpload
-                : true;
-            if (!photoUploaded && personPhoto) {
-                const uploader = Fragment.byId("PersonDetail", "editPersonFileUploader") as FileUploader;
-                await uploadNow(uploader, odata.getMediaUrl(`Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=false)/Image`));
-            }
-
-            await odata.prepareDraft("Persons", person.ID);
-            await odata.activateDraft("Persons", person.ID);
-
-            releaseDraftBinding(dialog);
-            dialog.close();
-            showToast(view, "personUpdated");
-        } catch (error) {
-            // keep the draft so the user can retry or cancel to discard it
-            handleActionError(view, error, "errorUpdatePerson");
-        } finally {
-            rejectedGuard.resume();
-            (view.getModel("ui") as JSONModel).setProperty("/busy", false);
-        }
+        void runExclusiveDialogAction(dialog, () => activatePersonDraft(view, dialog));
     }
 };
 

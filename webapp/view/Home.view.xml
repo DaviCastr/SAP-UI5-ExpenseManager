@@ -101,7 +101,7 @@
                                     visible="{= !${ui>/personsEmpty} }"
                                 />
                                 <Button
-                                    icon="sap-icon://edit"
+                                    icon="sap-icon://show"
                                     type="Transparent"
                                     tooltip="{i18n>personEditTooltip}"
                                     press=".onOpenPersonDetailDialog"
