@@ -860,10 +860,10 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     }
 
     /**
-     * Opens the PersonDetail edit dialog for the selected person. Editing the
-     * active entity opens a draft first and binds the dialog to it, so the
-     * two-way bound fields PATCH the draft instead of the (read-only) active
-     * entity. Editing a person that already has a draft continues on that draft.
+     * Opens the PersonDetail dialog in read-only mode, bound to the person's
+     * current state (the open draft when one exists, otherwise the active
+     * entity). Editing happens through the dialog's own edit action, which
+     * switches to a draft on demand.
      */
     async openPersonDetailDialog() {
       const personId = this.getSelectedPersonId();
@@ -871,29 +871,20 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         this.showErrorMessage("errorMissingPerson");
         return;
       }
-      const ui = this.getUiModel();
-      ui.setProperty("/busy", true);
-      try {
-        await this.ensurePersonDraft(personId);
+      const path = this.currentPersonPathFor(personId);
 
-        // Show the draft's own photo (when it has one), falling back to the
-        // active entity image otherwise.
-        const person = this.getPersonsFromSource().find(candidate => candidate.ID === personId);
-        if (this._mediaService && person) {
-          void this._mediaService.resolvePersonImage(person, true);
-        }
-        const path = this._odata?.draftPath("Persons", personId) ?? "";
-        await this.openPreparedDialog("PersonDetail", dialog => {
-          dialog.setModel(this.getServiceModel());
-          dialog.unbindObject();
-          dialog.bindObject(path);
-          dialog.open();
-        });
-      } catch (error) {
-        this.handleError(error, "errorUpdatePerson");
-      } finally {
-        ui.setProperty("/busy", false);
+      // Show the person's own photo (when it has one), falling back to the
+      // active entity image otherwise.
+      const person = this.getPersonsFromSource().find(candidate => candidate.ID === personId);
+      if (this._mediaService && person) {
+        void this._mediaService.resolvePersonImage(person, this.isPersonDraftOpen(personId));
       }
+      await this.openPreparedDialog("PersonDetail", dialog => {
+        dialog.setModel(this.getServiceModel());
+        dialog.unbindObject();
+        dialog.bindObject(path);
+        dialog.open();
+      });
     }
 
     /**

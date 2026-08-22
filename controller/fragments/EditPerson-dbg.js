@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../../service/ODataService", "../../util/fileUpload", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, MessageBox, ____service_ODataService, ____util_fileUpload, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
+sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../../service/ODataService", "../../util/fileUpload", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges", "../../util/draftDialogFlow"], function (Dialog, Fragment, MessageBox, ____service_ODataService, ____util_fileUpload, ____util_i18n, ____util_feedback, ____util_rejectedChanges, ____util_draftDialogFlow) {
   "use strict";
 
   const ODataService = ____service_ODataService["ODataService"];
@@ -8,6 +8,8 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
   const createRejectedChangeGuard = ____util_rejectedChanges["createRejectedChangeGuard"];
+  const ensureDialogDraft = ____util_draftDialogFlow["ensureDialogDraft"];
+  const runExclusiveDialogAction = ____util_draftDialogFlow["runExclusiveDialogAction"];
   let personPhoto = null;
 
   // The FileUploader upload started on photo selection. The save flow awaits it
@@ -89,21 +91,76 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
    * @returns {Promise<void>} resolves once the draft was discarded
    */
   async function discardDraftAndClose(view, dialog, id) {
-    const ui = view.getModel("ui");
-    ui.setProperty("/busy", true);
+    // Exclusive so a double click on "Descartar" cannot run the discard twice
+    // (the second run would fail on an already deleted draft).
+    await runExclusiveDialogAction(dialog, async () => {
+      const ui = view.getModel("ui");
+      ui.setProperty("/busy", true);
+      try {
+        const odata = new ODataService(dialog.getModel());
+        rejectedGuard.suspend();
+        await odata.submitPending();
+        await odata.discardDraft("Persons", id);
+        releaseDraftBinding(dialog);
+        dialog.close();
+        showToast(view, "personDraftDiscarded");
+      } catch (error) {
+        handleActionError(view, error, "errorDiscardPersonDraft");
+      } finally {
+        rejectedGuard.resume();
+        ui.setProperty("/busy", false);
+      }
+    });
+  }
+
+  /**
+   * Flushes pending edits, finishes the photo upload and activates the person's
+   * draft, closing the dialog on success. The draft is kept on failure so the
+   * user can retry or cancel to discard it.
+   *
+   * @param {XMLView} view the owning view
+   * @param {Dialog} dialog the bound edit dialog
+   */
+  async function activatePersonDraft(view, dialog) {
+    const context = dialog.getBindingContext();
+    if (rejectedGuard.warnIfBlocked()) {
+      return;
+    }
+    rejectedGuard.suspend();
     try {
-      const odata = new ODataService(dialog.getModel());
-      rejectedGuard.suspend();
+      view.getModel("ui").setProperty("/busy", true);
+      if (!context) {
+        showWarning(view, "errorMissingPerson");
+        return;
+      }
+      const person = context.getObject();
+      if (!person?.ID || !person.Name) {
+        showWarning(view, "errorFillRequiredFields");
+        return;
+      }
+      const odata = new ODataService(context.getModel());
+
+      // The dialog is bound to the draft entity, so every edited field is
+      // already PATCHed to the draft by the two-way binding. Flush any
+      // still pending change, finish a new photo upload (retrying it once
+      // if the immediate attempt failed), then publish the draft.
       await odata.submitPending();
-      await odata.discardDraft("Persons", id);
+      const photoUploaded = inflightUpload ? await inflightUpload : true;
+      if (!photoUploaded && personPhoto) {
+        const uploader = Fragment.byId("PersonDetail", "editPersonFileUploader");
+        await uploadNow(uploader, odata.getMediaUrl(`Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=false)/Image`));
+      }
+      await odata.prepareDraft("Persons", person.ID);
+      await odata.activateDraft("Persons", person.ID);
       releaseDraftBinding(dialog);
       dialog.close();
-      showToast(view, "personDraftDiscarded");
+      showToast(view, "personUpdated");
     } catch (error) {
-      handleActionError(view, error, "errorDiscardPersonDraft");
+      // keep the draft so the user can retry or cancel to discard it
+      handleActionError(view, error, "errorUpdatePerson");
     } finally {
       rejectedGuard.resume();
-      ui.setProperty("/busy", false);
+      view.getModel("ui").setProperty("/busy", false);
     }
   }
   const PersonDetail = {
@@ -111,6 +168,21 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
       personPhoto = null;
       inflightUpload = null;
       Fragment.byId("PersonDetail", "editPersonFileUploader")?.setValue("");
+
+      // The dialog always opens in read-only view mode; editing starts only
+      // through its own edit action.
+      const view = this.getParent();
+      view?.getModel("ui")?.setProperty("/managerDialogInDraft", false);
+    },
+    // Switches the read-only view into an editable session: the first press
+    // creates the person's draft on demand, later presses reuse the open draft.
+    onTogglePersonEdit: function () {
+      const dialog = findPersonDialog(this);
+      const view = dialog?.getParent();
+      if (!dialog || !view) {
+        return;
+      }
+      void runExclusiveDialogAction(dialog, () => ensureDialogDraft(view, dialog, "personEditError"));
     },
     onPhotoChanged: function (event) {
       const parameters = event.getParameters();
@@ -182,52 +254,13 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
         void view.getController().reload();
       }
     },
-    onSavePerson: async function () {
+    onSavePerson: function () {
       const dialog = findPersonDialog(this);
       if (!dialog) {
         return;
       }
       const view = dialog.getParent();
-      const context = dialog.getBindingContext();
-      if (rejectedGuard.warnIfBlocked()) {
-        return;
-      }
-      rejectedGuard.suspend();
-      try {
-        view.getModel("ui").setProperty("/busy", true);
-        if (!context) {
-          showWarning(view, "errorMissingPerson");
-          return;
-        }
-        const person = context.getObject();
-        if (!person?.ID || !person.Name) {
-          showWarning(view, "errorFillRequiredFields");
-          return;
-        }
-        const odata = new ODataService(context.getModel());
-
-        // The dialog is bound to the draft entity, so every edited field is
-        // already PATCHed to the draft by the two-way binding. Flush any
-        // still pending change, finish a new photo upload (retrying it once
-        // if the immediate attempt failed), then publish the draft.
-        await odata.submitPending();
-        const photoUploaded = inflightUpload ? await inflightUpload : true;
-        if (!photoUploaded && personPhoto) {
-          const uploader = Fragment.byId("PersonDetail", "editPersonFileUploader");
-          await uploadNow(uploader, odata.getMediaUrl(`Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=false)/Image`));
-        }
-        await odata.prepareDraft("Persons", person.ID);
-        await odata.activateDraft("Persons", person.ID);
-        releaseDraftBinding(dialog);
-        dialog.close();
-        showToast(view, "personUpdated");
-      } catch (error) {
-        // keep the draft so the user can retry or cancel to discard it
-        handleActionError(view, error, "errorUpdatePerson");
-      } finally {
-        rejectedGuard.resume();
-        view.getModel("ui").setProperty("/busy", false);
-      }
+      void runExclusiveDialogAction(dialog, () => activatePersonDraft(view, dialog));
     }
   };
   return PersonDetail;
