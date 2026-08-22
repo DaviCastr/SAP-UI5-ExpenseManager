@@ -135,33 +135,47 @@
                         </HBox>
                     </HBox>
                     <VBox id="personDetails">
+                        <!-- Card de rascunho: aviso suave com ações de descartar/efetivar -->
                         <HBox
                             visible="{= ${ui>/selectedPersonDraft} &amp;&amp; !${ui>/personsEmpty} }"
                             alignItems="Center"
-                            justifyContent="Center"
+                            justifyContent="SpaceBetween"
+                            wrap="Wrap"
                             width="100%"
                             class="sapUiTinyMarginBottom personDraftBanner"
                         >
-                            <MessageStrip
-                                text="{i18n>personDraftBanner}"
-                                type="Warning"
-                                showIcon="true"
-                                class="sapUiTinyMarginEnd"
-                            />
-                            <Button
-                                text="{i18n>personDiscardButton}"
-                                icon="sap-icon://delete"
-                                type="Reject"
-                                press=".onDiscardPersonDraft"
-                                class="sapUiTinyMarginBegin"
-                            />
-                            <Button
-                                text="{i18n>personSaveDraftButton}"
-                                icon="sap-icon://save"
-                                type="Success"
-                                press=".onSavePersonDraft"
-                                class="sapUiTinyMarginBegin"
-                            />
+                            <HBox alignItems="Center" class="personDraftBannerMain">
+                                <core:Icon
+                                    src="sap-icon://edit-outline"
+                                    class="personDraftBannerIcon"
+                                />
+                                <VBox class="personDraftBannerCopy">
+                                    <ObjectStatus
+                                        text="{i18n>personDraftBadge}"
+                                        state="Warning"
+                                        class="personDraftBadge"
+                                    />
+                                    <Text
+                                        text="{i18n>personDraftBanner}"
+                                        class="personDraftBannerText"
+                                        wrapping="true"
+                                    />
+                                </VBox>
+                            </HBox>
+                            <HBox class="personDraftBannerActions">
+                                <Button
+                                    text="{i18n>personDiscardButton}"
+                                    icon="sap-icon://delete"
+                                    type="Reject"
+                                    press=".onDiscardPersonDraft"
+                                />
+                                <Button
+                                    text="{i18n>personSaveDraftButton}"
+                                    icon="sap-icon://save"
+                                    type="Success"
+                                    press=".onSavePersonDraft"
+                                />
+                            </HBox>
                         </HBox>
                         <HBox
                             class="balanceHero"
