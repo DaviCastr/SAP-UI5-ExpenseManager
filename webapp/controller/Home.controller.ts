@@ -356,7 +356,7 @@ export default class Home extends BaseController {
     }
 
     public onOpenCategoryManagerDialog(): void {
-        void this.openDraftManagerDialog("Categories", "categoriesOpenError");
+        void this.openDraftManagerDialog("Categories", "categoriesOpenError", undefined, { readOnlyOpen: true });
     }
 
     public onOpenInvoicesDialog(): void {

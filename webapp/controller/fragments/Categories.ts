@@ -13,6 +13,12 @@ import type Context from "sap/ui/model/odata/v4/Context";
 import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import { ODataService } from "../../service/ODataService";
+import {
+    deleteRowInDialogDraft,
+    ensureDialogDraft,
+    runExclusiveDialogAction,
+    waitForDraftListBinding
+} from "../../util/draftDialogFlow";
 import { uploadNow } from "../../util/fileUpload";
 import { request } from "../../util/http";
 import { getText } from "../../util/i18n";
@@ -316,17 +322,20 @@ const Categories = {
         if (ui) {
             ui.setProperty("/newCategory", { name: "" });
             ui.setProperty("/dialogCategoryImages", {});
+            ui.setProperty("/managerDialogInDraft", false);
         }
     },
 
     /**
      * Adds a new Category row into the selected person's Categories collection.
-     * The row is created inside the person draft (the dialog is bound to the
-     * draft path), so it participates in the same draft as the whole tree.
+     * The dialog opens read-only bound to the person's current state, so the
+     * person draft is created (when none is open) and the dialog rebound to
+     * the draft before the row is created inside it, keeping the change in
+     * the same draft as the whole tree.
      *
      * @param {Control} this the pressed add-category button
      */
-    onAddCategory: function (this: Control): void {
+    onAddCategory: async function (this: Control): Promise<void> {
         const dialog = findCategoriesDialog(this);
         const view = dialog?.getParent() as XMLView | undefined;
         const ui = view?.getModel("ui") as JSONModel | undefined;
@@ -341,41 +350,85 @@ const Categories = {
             return;
         }
 
-        const binding = (Fragment.byId("Categories", "categoriesList") as List | undefined)
-            ?.getBinding("items") as ODataListBinding | undefined;
-        if (!binding) {
-            showWarning(view, "categoriesLoadError");
+        await runExclusiveDialogAction(dialog, async () => {
+            if (!(await ensureDialogDraft(view, dialog, "categoriesAddError"))) {
+                return;
+            }
+
+            // Wait until the list binding points at the DRAFT: right after the
+            // switch the previous binding (active collection) is still reachable
+            // and creating through it fails, leaving a stuck transient row.
+            let binding: ODataListBinding | undefined;
+            try {
+                binding = await waitForDraftListBinding(
+                    Fragment.byId("Categories", "categoriesList") as List | undefined
+                );
+            } catch (error) {
+                handleActionError(view, error, "categoriesAddError");
+                return;
+            }
+            if (!binding) {
+                showWarning(view, "categoriesLoadError");
+                return;
+            }
+
+            try {
+                const context = binding.create({ Name: name });
+                trackCreate(binding, context, () => {
+                    ui.setProperty("/newCategory", { name: "" });
+                });
+            } catch (error) {
+                handleActionError(view, error, "categoriesAddError");
+            }
+        });
+    },
+
+    /**
+     * Enters edit mode: switches the dialog to the person draft binding, which
+     * enables the inline editors of every category row (they stay disabled
+     * while read-only so no change can hit the active entity).
+     *
+     * @param {Control} this the pressed edit button
+     */
+    onToggleCategoriesEdit: async function (this: Control): Promise<void> {
+        const dialog = findCategoriesDialog(this);
+        const view = dialog?.getParent() as XMLView | undefined;
+
+        if (!dialog || !view) {
             return;
         }
 
-        try {
-            const context = binding.create({ Name: name });
-            trackCreate(binding, context, () => {
-                ui.setProperty("/newCategory", { name: "" });
-            });
-        } catch (error) {
-            handleActionError(view, error, "categoriesAddError");
-        }
+        await runExclusiveDialogAction(dialog, async () => {
+            await ensureDialogDraft(view, dialog, "categoriesEditError");
+        });
     },
 
     onRemoveCategory: function (this: Control): void {
         const dialog = findCategoriesDialog(this);
         const view = dialog?.getParent() as XMLView | undefined;
         const context = this.getBindingContext() as Context | undefined;
+        const category = context?.getObject() as { ID?: string } | undefined;
 
-        if (!dialog || !view || !context) {
+        if (!dialog || !view || !category?.ID) {
             return;
         }
 
-        pendingPhotos.delete(context);
-        inflightPhotos.delete(context);
+        if (context) {
+            pendingPhotos.delete(context);
+            inflightPhotos.delete(context);
+        }
 
         confirmAction(view, "categoriesRemoveConfirm", "categoriesRemoveTitle", () => {
-            try {
-                void context.delete().catch((error) => handleActionError(view, error, "categoriesRemoveError"));
-            } catch (error) {
-                handleActionError(view, error, "categoriesRemoveError");
-            }
+            void runExclusiveDialogAction(dialog, async () => {
+                await deleteRowInDialogDraft({
+                    view,
+                    dialog,
+                    list: Fragment.byId("Categories", "categoriesList") as List | undefined,
+                    rowId: category.ID as string,
+                    errorKey: "categoriesRemoveError",
+                    missingRowKey: "categoriesLoadError"
+                });
+            });
         });
     },
 
@@ -461,36 +514,38 @@ const Categories = {
             return;
         }
 
-        rejectedGuard.suspend();
-        try {
-            (view.getModel("ui") as JSONModel).setProperty("/busy", true);
+        await runExclusiveDialogAction(dialog, async () => {
+            rejectedGuard.suspend();
+            try {
+                (view.getModel("ui") as JSONModel).setProperty("/busy", true);
 
-            const person = context?.getObject() as { ID?: string } | undefined;
-            if (!person?.ID) {
-                showWarning(view, "errorMissingPerson");
-                return;
+                const person = context?.getObject() as { ID?: string } | undefined;
+                if (!person?.ID) {
+                    showWarning(view, "errorMissingPerson");
+                    return;
+                }
+
+                const odata = new ODataService(context?.getModel() as ODataModel);
+                await odata.submitPending();
+                await Promise.allSettled(Array.from(inflightPhotos.values()));
+                inflightPhotos.clear();
+                const imageFailed = await uploadPendingPhotos(person.ID);
+                await odata.prepareDraft("Persons", person.ID);
+                await odata.activateDraft("Persons", person.ID);
+
+                releaseDraftBinding(dialog);
+                dialog.close();
+                showToast(view, "categoriesSaved");
+                if (imageFailed) {
+                    showToast(view, "categoriesImageFallback");
+                }
+            } catch (error) {
+                handleActionError(view, error, "categoriesSaveError");
+            } finally {
+                rejectedGuard.resume();
+                (view.getModel("ui") as JSONModel).setProperty("/busy", false);
             }
-
-            const odata = new ODataService(context?.getModel() as ODataModel);
-            await odata.submitPending();
-            await Promise.allSettled(Array.from(inflightPhotos.values()));
-            inflightPhotos.clear();
-            const imageFailed = await uploadPendingPhotos(person.ID);
-            await odata.prepareDraft("Persons", person.ID);
-            await odata.activateDraft("Persons", person.ID);
-
-            releaseDraftBinding(dialog);
-            dialog.close();
-            showToast(view, "categoriesSaved");
-            if (imageFailed) {
-                showToast(view, "categoriesImageFallback");
-            }
-        } catch (error) {
-            handleActionError(view, error, "categoriesSaveError");
-        } finally {
-            rejectedGuard.resume();
-            (view.getModel("ui") as JSONModel).setProperty("/busy", false);
-        }
+        });
     },
 
     onDiscardCategories: function (this: Control): void {
@@ -502,7 +557,7 @@ const Categories = {
         }
 
         confirmAction(view, "categoriesDiscardConfirm", "categoriesDiscardTitle", () => {
-            void (async () => {
+            void runExclusiveDialogAction(dialog, async () => {
                 const context = dialog.getBindingContext() as Context | undefined;
                 const person = context?.getObject() as { ID?: string } | undefined;
                 if (!person?.ID) {
@@ -524,7 +579,7 @@ const Categories = {
                     rejectedGuard.resume();
                     (view.getModel("ui") as JSONModel).setProperty("/busy", false);
                 }
-            })();
+            });
         });
     },
 

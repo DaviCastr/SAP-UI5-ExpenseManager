@@ -81,6 +81,7 @@
                             />
                             <Input
                                 value="{Name}"
+                                enabled="{ui>/managerDialogInDraft}"
                                 placeholder="{i18n>categoryNamePlaceholder}"
                                 maxLength="20"
                                 class="categoryManagerInput"
@@ -102,7 +103,15 @@
                                 httpRequestMethod="PUT"
                                 useMultipart="false"
                                 change="handler.onCategoryPhotoChanged"
+                                enabled="{ui>/managerDialogInDraft}"
                                 class="categoryManagerPhoto"
+                            />
+                            <Button
+                                icon="sap-icon://edit"
+                                type="Transparent"
+                                tooltip="{i18n>categoriesEditTooltip}"
+                                press="handler.onToggleCategoriesEdit"
+                                visible="{=!${ui>/managerDialogInDraft}}"
                             />
                             <Button
                                 icon="sap-icon://delete"
@@ -121,6 +130,7 @@
                 icon="sap-icon://save"
                 type="Emphasized"
                 press="handler.onSaveCategories"
+                visible="{ui>/managerDialogInDraft}"
             />
             <Button
                 text="{i18n>categoriesCancelButton}"
@@ -131,6 +141,7 @@
                 text="{i18n>categoriesDiscardButton}"
                 type="Transparent"
                 press="handler.onDiscardCategories"
+                visible="{ui>/managerDialogInDraft}"
             />
         </buttons>
     </Dialog>
