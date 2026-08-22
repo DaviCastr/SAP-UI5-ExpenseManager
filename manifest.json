@@ -49,12 +49,12 @@
 	"sap.ui": {
 		"technology": "UI5",
 		"icons": {
-			"icon": "",
-			"favIcon": "",
-			"phone": "",
-			"phone@2": "",
-			"tablet": "",
-			"tablet@2": ""
+			"icon": "img/favicon-32.png",
+			"favIcon": "img/favicon.svg",
+			"phone": "img/apple-touch-icon.png",
+			"phone@2": "img/apple-touch-icon.png",
+			"tablet": "img/apple-touch-icon.png",
+			"tablet@2": "img/apple-touch-icon.png"
 		},
 		"deviceTypes": {
 			"desktop": true,
