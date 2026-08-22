@@ -136,6 +136,7 @@
                                 />
                                 <Input
                                     value="{Name}"
+                                    enabled="{ui>/managerDialogInDraft}"
                                     placeholder="{i18n>cardNamePlaceholder}"
                                     class="cardManagerInput"
                                 >
@@ -156,7 +157,15 @@
                                     httpRequestMethod="PUT"
                                     useMultipart="false"
                                     change="handler.onCardPhotoChanged"
+                                    enabled="{ui>/managerDialogInDraft}"
                                     class="cardManagerPhoto"
+                                />
+                                <Button
+                                    icon="sap-icon://edit"
+                                    type="Transparent"
+                                    tooltip="{i18n>cardsEditTooltip}"
+                                    press="handler.onToggleCardsEdit"
+                                    visible="{=!${ui>/managerDialogInDraft}}"
                                 />
                                 <Button
                                     icon="sap-icon://delete"
@@ -174,6 +183,7 @@
                                     <Label text="{i18n>cardLimitLabel}" />
                                     <Input
                                         value="{ path: 'Limit', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
+                                        enabled="{ui>/managerDialogInDraft}"
                                         width="100%"
                                     >
                                         <layoutData>
@@ -185,6 +195,7 @@
                                     <Label text="{i18n>cardCurrencyLabel}" />
                                     <Select
                                         selectedKey="{Currency_code}"
+                                        enabled="{ui>/managerDialogInDraft}"
                                         forceSelection="false"
                                         width="100%"
                                     >
@@ -199,6 +210,7 @@
                                     <Label text="{i18n>cardsClosingLabel}" />
                                     <Input
                                         value="{ path: 'ClosingDay', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
+                                        enabled="{ui>/managerDialogInDraft}"
                                         width="100%"
                                     >
                                         <layoutData>
@@ -210,6 +222,7 @@
                                     <Label text="{i18n>cardsDueLabel}" />
                                     <Input
                                         value="{ path: 'DueDay', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
+                                        enabled="{ui>/managerDialogInDraft}"
                                         width="100%"
                                     >
                                         <layoutData>
@@ -229,6 +242,7 @@
                 icon="sap-icon://save"
                 type="Emphasized"
                 press="handler.onSaveCards"
+                visible="{ui>/managerDialogInDraft}"
             />
             <Button
                 text="{i18n>cardsCancelButton}"
@@ -239,6 +253,7 @@
                 text="{i18n>cardsDiscardButton}"
                 type="Transparent"
                 press="handler.onDiscardCards"
+                visible="{ui>/managerDialogInDraft}"
             />
         </buttons>
     </Dialog>

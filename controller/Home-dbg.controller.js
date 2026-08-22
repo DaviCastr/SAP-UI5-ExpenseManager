@@ -290,7 +290,9 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       }
     }
     onOpenCardManagerDialog() {
-      void this.openDraftManagerDialog("Cards", "cardsOpenError");
+      void this.openDraftManagerDialog("Cards", "cardsOpenError", undefined, {
+        readOnlyOpen: true
+      });
     }
     onOpenCategoryManagerDialog() {
       void this.openDraftManagerDialog("Categories", "categoriesOpenError");

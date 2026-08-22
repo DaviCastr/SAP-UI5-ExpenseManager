@@ -1,7 +1,11 @@
-sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "../../service/ODataService", "../../util/fileUpload", "../../util/http", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, Avatar, MessageBox, CustomListItem, ____service_ODataService, ____util_fileUpload, ____util_http, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
+sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "../../service/ODataService", "../../util/draftDialogFlow", "../../util/fileUpload", "../../util/http", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, Avatar, MessageBox, CustomListItem, ____service_ODataService, ____util_draftDialogFlow, ____util_fileUpload, ____util_http, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
   "use strict";
 
   const ODataService = ____service_ODataService["ODataService"];
+  const deleteRowInDialogDraft = ____util_draftDialogFlow["deleteRowInDialogDraft"];
+  const ensureDialogDraft = ____util_draftDialogFlow["ensureDialogDraft"];
+  const runExclusiveDialogAction = ____util_draftDialogFlow["runExclusiveDialogAction"];
+  const waitForDraftListBinding = ____util_draftDialogFlow["waitForDraftListBinding"];
   const uploadNow = ____util_fileUpload["uploadNow"];
   const request = ____util_http["request"];
   const getText = ____util_i18n["getText"];
@@ -292,16 +296,19 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
       if (ui) {
         resetNewCard(ui);
         ui.setProperty("/dialogCardImages", {});
+        ui.setProperty("/managerDialogInDraft", false);
       }
     },
     /**
-     * Adds a new Card row into the selected person's Cards collection. The row
-     * is created inside the person draft (the dialog is bound to the draft
-     * path), so it participates in the same draft as the whole tree.
+     * Adds a new Card row into the selected person's Cards collection. The
+     * dialog opens read-only bound to the person's current state, so the
+     * person draft is created (when none is open) and the dialog rebound to
+     * the draft before the row is created inside it, keeping the change in
+     * the same draft as the whole tree.
      *
      * @param {Control} this the pressed add-card button
      */
-    onAddCard: function () {
+    onAddCard: async function () {
       const dialog = findCardsDialog(this);
       const view = dialog?.getParent();
       const ui = view?.getModel("ui");
@@ -317,40 +324,80 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
         showWarning(view, "cardsFillFields");
         return;
       }
-      const binding = Fragment.byId("Cards", "cardsList")?.getBinding("items");
-      if (!binding) {
-        showWarning(view, "cardsLoadError");
+      await runExclusiveDialogAction(dialog, async () => {
+        if (!(await ensureDialogDraft(view, dialog, "cardsAddError"))) {
+          return;
+        }
+
+        // Wait until the list binding points at the DRAFT: right after the
+        // switch the previous binding (active collection) is still reachable
+        // and creating through it fails, leaving a stuck transient row.
+        let binding;
+        try {
+          binding = await waitForDraftListBinding(Fragment.byId("Cards", "cardsList"));
+        } catch (error) {
+          handleActionError(view, error, "cardsAddError");
+          return;
+        }
+        if (!binding) {
+          showWarning(view, "cardsLoadError");
+          return;
+        }
+        try {
+          const context = binding.create({
+            Name: name,
+            Limit: limit,
+            // eslint-disable-next-line camelcase
+            Currency_code: form.currency,
+            ClosingDay: closingDay,
+            DueDay: dueDay
+          });
+          trackCreate(binding, context, () => resetNewCard(ui));
+        } catch (error) {
+          handleActionError(view, error, "cardsAddError");
+        }
+      });
+    },
+    /**
+     * Enters edit mode: switches the dialog to the person draft binding, which
+     * enables the inline editors of every card row (they stay disabled while
+     * read-only so no change can hit the active entity).
+     *
+     * @param {Control} this the pressed edit button
+     */
+    onToggleCardsEdit: async function () {
+      const dialog = findCardsDialog(this);
+      const view = dialog?.getParent();
+      if (!dialog || !view) {
         return;
       }
-      try {
-        const context = binding.create({
-          Name: name,
-          Limit: limit,
-          // eslint-disable-next-line camelcase
-          Currency_code: form.currency,
-          ClosingDay: closingDay,
-          DueDay: dueDay
-        });
-        trackCreate(binding, context, () => resetNewCard(ui));
-      } catch (error) {
-        handleActionError(view, error, "cardsAddError");
-      }
+      await runExclusiveDialogAction(dialog, async () => {
+        await ensureDialogDraft(view, dialog, "cardsEditError");
+      });
     },
     onRemoveCard: function () {
       const dialog = findCardsDialog(this);
       const view = dialog?.getParent();
       const context = this.getBindingContext();
-      if (!dialog || !view || !context) {
+      const card = context?.getObject();
+      if (!dialog || !view || !card?.ID) {
         return;
       }
-      pendingPhotos.delete(context);
-      inflightPhotos.delete(context);
+      if (context) {
+        pendingPhotos.delete(context);
+        inflightPhotos.delete(context);
+      }
       confirmAction(view, "cardsRemoveConfirm", "cardsRemoveTitle", () => {
-        try {
-          void context.delete().catch(error => handleActionError(view, error, "cardsRemoveError"));
-        } catch (error) {
-          handleActionError(view, error, "cardsRemoveError");
-        }
+        void runExclusiveDialogAction(dialog, async () => {
+          await deleteRowInDialogDraft({
+            view,
+            dialog,
+            list: Fragment.byId("Cards", "cardsList"),
+            rowId: card.ID,
+            errorKey: "cardsRemoveError",
+            missingRowKey: "cardsLoadError"
+          });
+        });
       });
     },
     /**
@@ -422,33 +469,35 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
       if (rejectedGuard.warnIfBlocked()) {
         return;
       }
-      rejectedGuard.suspend();
-      try {
-        view.getModel("ui").setProperty("/busy", true);
-        const person = context?.getObject();
-        if (!person?.ID) {
-          showWarning(view, "errorMissingPerson");
-          return;
+      await runExclusiveDialogAction(dialog, async () => {
+        rejectedGuard.suspend();
+        try {
+          view.getModel("ui").setProperty("/busy", true);
+          const person = context?.getObject();
+          if (!person?.ID) {
+            showWarning(view, "errorMissingPerson");
+            return;
+          }
+          const odata = new ODataService(context?.getModel());
+          await odata.submitPending();
+          await Promise.allSettled(Array.from(inflightPhotos.values()));
+          inflightPhotos.clear();
+          const imageFailed = await uploadPendingPhotos(person.ID);
+          await odata.prepareDraft("Persons", person.ID);
+          await odata.activateDraft("Persons", person.ID);
+          releaseDraftBinding(dialog);
+          dialog.close();
+          showToast(view, "cardsSaved");
+          if (imageFailed) {
+            showToast(view, "cardsImageFallback");
+          }
+        } catch (error) {
+          handleActionError(view, error, "cardsSaveError");
+        } finally {
+          rejectedGuard.resume();
+          view.getModel("ui").setProperty("/busy", false);
         }
-        const odata = new ODataService(context?.getModel());
-        await odata.submitPending();
-        await Promise.allSettled(Array.from(inflightPhotos.values()));
-        inflightPhotos.clear();
-        const imageFailed = await uploadPendingPhotos(person.ID);
-        await odata.prepareDraft("Persons", person.ID);
-        await odata.activateDraft("Persons", person.ID);
-        releaseDraftBinding(dialog);
-        dialog.close();
-        showToast(view, "cardsSaved");
-        if (imageFailed) {
-          showToast(view, "cardsImageFallback");
-        }
-      } catch (error) {
-        handleActionError(view, error, "cardsSaveError");
-      } finally {
-        rejectedGuard.resume();
-        view.getModel("ui").setProperty("/busy", false);
-      }
+      });
     },
     onDiscardCards: function () {
       const dialog = findCardsDialog(this);
@@ -457,7 +506,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
         return;
       }
       confirmAction(view, "cardsDiscardConfirm", "cardsDiscardTitle", () => {
-        void (async () => {
+        void runExclusiveDialogAction(dialog, async () => {
           const context = dialog.getBindingContext();
           const person = context?.getObject();
           if (!person?.ID) {
@@ -478,7 +527,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Avatar", "sap/m/Me
             rejectedGuard.resume();
             view.getModel("ui").setProperty("/busy", false);
           }
-        })();
+        });
       });
     },
     onCancelCards: function () {

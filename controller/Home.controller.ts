@@ -352,7 +352,7 @@ export default class Home extends BaseController {
     }
 
     public onOpenCardManagerDialog(): void {
-        void this.openDraftManagerDialog("Cards", "cardsOpenError");
+        void this.openDraftManagerDialog("Cards", "cardsOpenError", undefined, { readOnlyOpen: true });
     }
 
     public onOpenCategoryManagerDialog(): void {

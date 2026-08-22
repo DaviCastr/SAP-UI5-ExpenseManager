@@ -13,6 +13,12 @@ import type Context from "sap/ui/model/odata/v4/Context";
 import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import { ODataService } from "../../service/ODataService";
+import {
+    deleteRowInDialogDraft,
+    ensureDialogDraft,
+    runExclusiveDialogAction,
+    waitForDraftListBinding
+} from "../../util/draftDialogFlow";
 import { uploadNow } from "../../util/fileUpload";
 import { request } from "../../util/http";
 import { getText } from "../../util/i18n";
@@ -313,17 +319,20 @@ const Cards = {
         if (ui) {
             resetNewCard(ui);
             ui.setProperty("/dialogCardImages", {});
+            ui.setProperty("/managerDialogInDraft", false);
         }
     },
 
     /**
-     * Adds a new Card row into the selected person's Cards collection. The row
-     * is created inside the person draft (the dialog is bound to the draft
-     * path), so it participates in the same draft as the whole tree.
+     * Adds a new Card row into the selected person's Cards collection. The
+     * dialog opens read-only bound to the person's current state, so the
+     * person draft is created (when none is open) and the dialog rebound to
+     * the draft before the row is created inside it, keeping the change in
+     * the same draft as the whole tree.
      *
      * @param {Control} this the pressed add-card button
      */
-    onAddCard: function (this: Control): void {
+    onAddCard: async function (this: Control): Promise<void> {
         const dialog = findCardsDialog(this);
         const view = dialog?.getParent() as XMLView | undefined;
         const ui = view?.getModel("ui") as JSONModel | undefined;
@@ -345,46 +354,90 @@ const Cards = {
             return;
         }
 
-        const binding = (Fragment.byId("Cards", "cardsList") as List | undefined)
-            ?.getBinding("items") as ODataListBinding | undefined;
-        if (!binding) {
-            showWarning(view, "cardsLoadError");
+        await runExclusiveDialogAction(dialog, async () => {
+            if (!(await ensureDialogDraft(view, dialog, "cardsAddError"))) {
+                return;
+            }
+
+            // Wait until the list binding points at the DRAFT: right after the
+            // switch the previous binding (active collection) is still reachable
+            // and creating through it fails, leaving a stuck transient row.
+            let binding: ODataListBinding | undefined;
+            try {
+                binding = await waitForDraftListBinding(
+                    Fragment.byId("Cards", "cardsList") as List | undefined
+                );
+            } catch (error) {
+                handleActionError(view, error, "cardsAddError");
+                return;
+            }
+            if (!binding) {
+                showWarning(view, "cardsLoadError");
+                return;
+            }
+
+            try {
+                const context = binding.create({
+                    Name: name,
+                    Limit: limit,
+                    // eslint-disable-next-line camelcase
+                    Currency_code: form.currency,
+                    ClosingDay: closingDay,
+                    DueDay: dueDay
+                });
+                trackCreate(binding, context, () => resetNewCard(ui));
+            } catch (error) {
+                handleActionError(view, error, "cardsAddError");
+            }
+        });
+    },
+
+    /**
+     * Enters edit mode: switches the dialog to the person draft binding, which
+     * enables the inline editors of every card row (they stay disabled while
+     * read-only so no change can hit the active entity).
+     *
+     * @param {Control} this the pressed edit button
+     */
+    onToggleCardsEdit: async function (this: Control): Promise<void> {
+        const dialog = findCardsDialog(this);
+        const view = dialog?.getParent() as XMLView | undefined;
+
+        if (!dialog || !view) {
             return;
         }
 
-        try {
-            const context = binding.create({
-                Name: name,
-                Limit: limit,
-                // eslint-disable-next-line camelcase
-                Currency_code: form.currency,
-                ClosingDay: closingDay,
-                DueDay: dueDay
-            });
-            trackCreate(binding, context, () => resetNewCard(ui));
-        } catch (error) {
-            handleActionError(view, error, "cardsAddError");
-        }
+        await runExclusiveDialogAction(dialog, async () => {
+            await ensureDialogDraft(view, dialog, "cardsEditError");
+        });
     },
 
     onRemoveCard: function (this: Control): void {
         const dialog = findCardsDialog(this);
         const view = dialog?.getParent() as XMLView | undefined;
         const context = this.getBindingContext() as Context | undefined;
+        const card = context?.getObject() as { ID?: string } | undefined;
 
-        if (!dialog || !view || !context) {
+        if (!dialog || !view || !card?.ID) {
             return;
         }
 
-        pendingPhotos.delete(context);
-        inflightPhotos.delete(context);
+        if (context) {
+            pendingPhotos.delete(context);
+            inflightPhotos.delete(context);
+        }
 
         confirmAction(view, "cardsRemoveConfirm", "cardsRemoveTitle", () => {
-            try {
-                void context.delete().catch((error) => handleActionError(view, error, "cardsRemoveError"));
-            } catch (error) {
-                handleActionError(view, error, "cardsRemoveError");
-            }
+            void runExclusiveDialogAction(dialog, async () => {
+                await deleteRowInDialogDraft({
+                    view,
+                    dialog,
+                    list: Fragment.byId("Cards", "cardsList") as List | undefined,
+                    rowId: card.ID as string,
+                    errorKey: "cardsRemoveError",
+                    missingRowKey: "cardsLoadError"
+                });
+            });
         });
     },
 
@@ -469,36 +522,38 @@ const Cards = {
             return;
         }
 
-        rejectedGuard.suspend();
-        try {
-            (view.getModel("ui") as JSONModel).setProperty("/busy", true);
+        await runExclusiveDialogAction(dialog, async () => {
+            rejectedGuard.suspend();
+            try {
+                (view.getModel("ui") as JSONModel).setProperty("/busy", true);
 
-            const person = context?.getObject() as { ID?: string } | undefined;
-            if (!person?.ID) {
-                showWarning(view, "errorMissingPerson");
-                return;
+                const person = context?.getObject() as { ID?: string } | undefined;
+                if (!person?.ID) {
+                    showWarning(view, "errorMissingPerson");
+                    return;
+                }
+
+                const odata = new ODataService(context?.getModel() as ODataModel);
+                await odata.submitPending();
+                await Promise.allSettled(Array.from(inflightPhotos.values()));
+                inflightPhotos.clear();
+                const imageFailed = await uploadPendingPhotos(person.ID);
+                await odata.prepareDraft("Persons", person.ID);
+                await odata.activateDraft("Persons", person.ID);
+
+                releaseDraftBinding(dialog);
+                dialog.close();
+                showToast(view, "cardsSaved");
+                if (imageFailed) {
+                    showToast(view, "cardsImageFallback");
+                }
+            } catch (error) {
+                handleActionError(view, error, "cardsSaveError");
+            } finally {
+                rejectedGuard.resume();
+                (view.getModel("ui") as JSONModel).setProperty("/busy", false);
             }
-
-            const odata = new ODataService(context?.getModel() as ODataModel);
-            await odata.submitPending();
-            await Promise.allSettled(Array.from(inflightPhotos.values()));
-            inflightPhotos.clear();
-            const imageFailed = await uploadPendingPhotos(person.ID);
-            await odata.prepareDraft("Persons", person.ID);
-            await odata.activateDraft("Persons", person.ID);
-
-            releaseDraftBinding(dialog);
-            dialog.close();
-            showToast(view, "cardsSaved");
-            if (imageFailed) {
-                showToast(view, "cardsImageFallback");
-            }
-        } catch (error) {
-            handleActionError(view, error, "cardsSaveError");
-        } finally {
-            rejectedGuard.resume();
-            (view.getModel("ui") as JSONModel).setProperty("/busy", false);
-        }
+        });
     },
 
     onDiscardCards: function (this: Control): void {
@@ -510,7 +565,7 @@ const Cards = {
         }
 
         confirmAction(view, "cardsDiscardConfirm", "cardsDiscardTitle", () => {
-            void (async () => {
+            void runExclusiveDialogAction(dialog, async () => {
                 const context = dialog.getBindingContext() as Context | undefined;
                 const person = context?.getObject() as { ID?: string } | undefined;
                 if (!person?.ID) {
@@ -532,7 +587,7 @@ const Cards = {
                     rejectedGuard.resume();
                     (view.getModel("ui") as JSONModel).setProperty("/busy", false);
                 }
-            })();
+            });
         });
     },
 
