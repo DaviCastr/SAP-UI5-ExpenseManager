@@ -1,12 +1,14 @@
 sap.ui.define(["sap/ui/model/json/JSONModel", "../util/liabilityRules"], function (JSONModel, ___util_liabilityRules) {
   "use strict";
 
-  const LIABILITY_STATUS_OPTIONS = ___util_liabilityRules["LIABILITY_STATUS_OPTIONS"];
   const TRANSACTION_TYPE_OPTIONS = ___util_liabilityRules["TRANSACTION_TYPE_OPTIONS"];
   class UiModel extends JSONModel {
     constructor() {
       const now = new Date();
+      const today = new Date().toISOString().slice(0, 10);
       const data = {
+        busy: false,
+        managerDialogInDraft: false,
         period: {
           year: now.getFullYear(),
           month: now.getMonth() + 1
@@ -31,6 +33,7 @@ sap.ui.define(["sap/ui/model/json/JSONModel", "../util/liabilityRules"], functio
           }))
         },
         monthLabel: "",
+        personsEmpty: false,
         selectedPerson: {
           ID: "",
           Name: ""
@@ -38,11 +41,6 @@ sap.ui.define(["sap/ui/model/json/JSONModel", "../util/liabilityRules"], functio
         selectedPersonId: "",
         selectedPersonImage: "",
         selectedPersonDraft: false,
-        personsEmpty: false,
-        busy: false,
-        transactions: [],
-        categories: [],
-        categoryDetail: null,
         summary: {
           available: "",
           expenses: "",
@@ -52,12 +50,30 @@ sap.ui.define(["sap/ui/model/json/JSONModel", "../util/liabilityRules"], functio
           trendText: "",
           trendIcon: "sap-icon://trend-up"
         },
+        transactions: [],
+        categories: [],
+        categoryDetail: null,
+        cardImages: {},
         newExpense: {
           description: "",
           amount: "",
           installments: 1,
           fixedExpense: false,
-          transactionDate: new Date().toISOString().slice(0, 10)
+          transactionDate: today
+        },
+        transactionCategory: {
+          selectedIdentifier: "",
+          currentCategoryId: "",
+          currentCategoryName: "",
+          selectedCategoryId: "",
+          affectedText: "",
+          categoryImages: {}
+        },
+        deleteTransactions: {
+          selectedIdentifier: "",
+          count: 0,
+          countText: "",
+          selectAll: false
         },
         newPerson: {
           name: "",
@@ -74,32 +90,16 @@ sap.ui.define(["sap/ui/model/json/JSONModel", "../util/liabilityRules"], functio
           closingDay: "3",
           dueDay: "10"
         },
+        dialogCardImages: {},
         newCategory: {
           name: ""
         },
+        dialogCategoryImages: {},
         newShare: {
           shareUser: "",
           entity: "1",
           permission: "1"
         },
-        newLiability: {
-          name: "",
-          description: "",
-          totalAmount: "",
-          currency: "BRL",
-          dueDay: String(new Date().getDate())
-        },
-        liabilityEditId: "",
-        newLiabilityTransaction: {
-          type: "IN",
-          description: "",
-          date: new Date().toISOString().slice(0, 10),
-          amount: "",
-          currency: "BRL"
-        },
-        liabilityTransactionEditId: "",
-        liabilityStatusOptions: LIABILITY_STATUS_OPTIONS,
-        liabilityTxTypeOptions: TRANSACTION_TYPE_OPTIONS,
         entityOptions: [{
           key: "1",
           text: "Persons"
@@ -150,6 +150,23 @@ sap.ui.define(["sap/ui/model/json/JSONModel", "../util/liabilityRules"], functio
           key: "4",
           text: "Deleter"
         }],
+        newLiability: {
+          name: "",
+          description: "",
+          totalAmount: "",
+          currency: "BRL",
+          dueDay: String(new Date().getDate())
+        },
+        liabilityEditId: "",
+        newLiabilityTransaction: {
+          type: "IN",
+          description: "",
+          date: today,
+          amount: "",
+          currency: "BRL"
+        },
+        liabilityTransactionEditId: "",
+        liabilityTxTypeOptions: TRANSACTION_TYPE_OPTIONS,
         simulation: {
           month: "",
           year: ""
@@ -170,20 +187,6 @@ sap.ui.define(["sap/ui/model/json/JSONModel", "../util/liabilityRules"], functio
           loaded: false,
           header: {},
           transactionImages: {}
-        },
-        transactionCategory: {
-          selectedIdentifier: "",
-          currentCategoryId: "",
-          currentCategoryName: "",
-          selectedCategoryId: "",
-          affectedText: "",
-          categoryImages: {}
-        },
-        deleteTransactions: {
-          selectedIdentifier: "",
-          count: 0,
-          countText: "",
-          selectAll: false
         }
       };
       super(data);
