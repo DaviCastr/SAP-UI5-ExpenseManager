@@ -204,7 +204,7 @@
                 />
             <Button
                 text="{i18n>sharesDiscardButton}"
-                type="Transparent"
+                type="Reject"
                 press="handler.onDiscardShares"
                 visible="{ui>/managerDialogInDraft}"
             />

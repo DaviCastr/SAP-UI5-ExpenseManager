@@ -251,7 +251,7 @@
             />
             <Button
                 text="{i18n>cardsDiscardButton}"
-                type="Transparent"
+                type="Reject"
                 press="handler.onDiscardCards"
                 visible="{ui>/managerDialogInDraft}"
             />

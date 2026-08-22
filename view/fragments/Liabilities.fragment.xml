@@ -526,7 +526,7 @@
             />
             <Button
                 text="{i18n>liabilitiesDiscardButton}"
-                type="Transparent"
+                type="Reject"
                 press="handler.onDiscardLiabilities"
                 visible="{ui>/managerDialogInDraft}"
             />
