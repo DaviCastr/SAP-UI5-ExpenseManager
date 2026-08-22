@@ -11,6 +11,12 @@ import type Context from "sap/ui/model/odata/v4/Context";
 import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import { ODataService } from "../../service/ODataService";
+import {
+    deleteRowInDialogDraft,
+    ensureDialogDraft,
+    runExclusiveDialogAction,
+    waitForDraftListBinding
+} from "../../util/draftDialogFlow";
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
 import { createRejectedChangeGuard } from "../../util/rejectedChanges";
@@ -51,17 +57,6 @@ function containingTable(control: Control): Table | undefined {
         current = current.getParent() as Control | undefined;
     }
     return undefined;
-}
-
-/**
- * Returns the OData list binding that manages the Entities table of the given
- * Share (the glance on the toolbar "add entity" button).
- *
- * @param {Table} table the nested Entities table
- * @returns {ODataListBinding | undefined} the items binding, or `undefined`
- */
-function entityListBinding(table: Table): ODataListBinding | undefined {
-    return table.getBinding("items") as ODataListBinding | undefined;
 }
 
 /**
@@ -138,21 +133,26 @@ const Shares = {
     onDialogBeforeOpen: function (): void {
         const view = Fragment.byId("Shares", "sharesDialog")?.getParent() as XMLView | undefined;
         const ui = view?.getModel("ui") as JSONModel | undefined;
-        ui?.setProperty("/newShare", {
-            shareUser: "",
-            entity: "1",
-            permission: "1"
-        });
+        if (ui) {
+            ui.setProperty("/newShare", {
+                shareUser: "",
+                entity: "1",
+                permission: "1"
+            });
+            ui.setProperty("/managerDialogInDraft", false);
+        }
     },
 
     /**
      * Creates a new Share row in the selected person's Shares collection.
-     * The row is created inside the person draft (the dialog is bound to the
-     * draft path), so it participates in the same draft as the whole tree.
+     * The dialog opens read-only bound to the person's current state, so the
+     * person draft is created (when none is open) and the dialog rebound to
+     * the draft before the row is created inside it, keeping the change in
+     * the same draft as the whole tree.
      *
      * @param {Control} this the pressed add-share button
      */
-    onAddShare: function (this: Control): void {
+    onAddShare: async function (this: Control): Promise<void> {
         const dialog = findSharesDialog(this);
         const view = dialog?.getParent() as XMLView | undefined;
         const ui = view?.getModel("ui") as JSONModel | undefined;
@@ -167,50 +167,94 @@ const Shares = {
             return;
         }
 
-        const sharesList = Fragment.byId("Shares", "sharesList") as List | undefined;
-        const binding = sharesList?.getBinding("items") as ODataListBinding | undefined;
-        if (!binding) {
-            showWarning(view, "sharesLoadError");
+        await runExclusiveDialogAction(dialog, async () => {
+            if (!(await ensureDialogDraft(view, dialog, "sharesAddShareError"))) {
+                return;
+            }
+
+            // Wait until the list binding points at the DRAFT: right after the
+            // switch the previous binding (active collection) is still reachable
+            // and creating through it fails, leaving a stuck transient row.
+            let binding: ODataListBinding | undefined;
+            try {
+                binding = await waitForDraftListBinding(
+                    Fragment.byId("Shares", "sharesList") as List | undefined
+                );
+            } catch (error) {
+                handleActionError(view, error, "sharesAddShareError");
+                return;
+            }
+            if (!binding) {
+                showWarning(view, "sharesLoadError");
+                return;
+            }
+
+            try {
+                const context = binding.create({
+                    User: user.trim()
+                });
+                trackCreate(binding, context, () => {
+                    ui.setProperty("/newShare/shareUser", "");
+                });
+            } catch (error) {
+                handleActionError(view, error, "sharesAddShareError");
+            }
+        });
+    },
+
+    /**
+     * Enters edit mode: switches the dialog to the person draft binding, which
+     * enables the inline editors of every share row (they stay disabled while
+     * read-only so no change can hit the active entity).
+     *
+     * @param {Control} this the pressed edit button
+     */
+    onToggleSharesEdit: async function (this: Control): Promise<void> {
+        const dialog = findSharesDialog(this);
+        const view = dialog?.getParent() as XMLView | undefined;
+
+        if (!dialog || !view) {
             return;
         }
 
-        try {
-            const context = binding.create({
-                User: user.trim()
-            });
-            trackCreate(binding, context, () => {
-                ui.setProperty("/newShare/shareUser", "");
-            });
-        } catch (error) {
-            handleActionError(view, error, "sharesAddShareError");
-        }
+        await runExclusiveDialogAction(dialog, async () => {
+            await ensureDialogDraft(view, dialog, "sharesEditError");
+        });
     },
 
     onRemoveShare: function (this: Control): void {
         const dialog = findSharesDialog(this);
         const view = dialog?.getParent() as XMLView | undefined;
         const context = this.getBindingContext() as Context | undefined;
+        const share = context?.getObject() as { ID?: string } | undefined;
 
-        if (!dialog || !view || !context) {
+        if (!dialog || !view || !share?.ID) {
             return;
         }
 
         confirmAction(view, "sharesRemoveShareConfirm", "sharesRemoveShareTitle", () => {
-            try {
-                void context.delete().catch((error) => handleActionError(view, error, "sharesRemoveShareError"));
-            } catch (error) {
-                handleActionError(view, error, "sharesRemoveShareError");
-            }
+            void runExclusiveDialogAction(dialog, async () => {
+                await deleteRowInDialogDraft({
+                    view,
+                    dialog,
+                    list: Fragment.byId("Shares", "sharesList") as List | undefined,
+                    rowId: share.ID as string,
+                    errorKey: "sharesRemoveShareError",
+                    missingRowKey: "sharesLoadError"
+                });
+            });
         });
     },
 
     /**
      * Creates a new Entity row inside the Entities collection of the Share that
-     * owns the pressed toolbar button.
+     * owns the pressed toolbar button. Switches the dialog to the person draft
+     * first (read-first flow) and waits until the table binding points at the
+     * draft before creating.
      *
      * @param {Control} this the pressed add-entity button
      */
-    onAddEntity: function (this: Control): void {
+    onAddEntity: async function (this: Control): Promise<void> {
         const dialog = findSharesDialog(this);
         const view = dialog?.getParent() as XMLView | undefined;
         const ui = view?.getModel("ui") as JSONModel | undefined;
@@ -220,38 +264,61 @@ const Shares = {
         }
 
         const table = containingTable(this);
-        const binding = table ? entityListBinding(table) : undefined;
-        if (!binding) {
+        if (!table) {
             showWarning(view, "sharesLoadError");
             return;
         }
 
-        try {
-            const context = binding.create({
-                Entity: Number(ui.getProperty("/newShare/entity") ?? 1),
-                Permission: Number(ui.getProperty("/newShare/permission") ?? 1)
-            });
-            trackCreate(binding, context);
-        } catch (error) {
-            handleActionError(view, error, "sharesAddEntityError");
-        }
+        await runExclusiveDialogAction(dialog, async () => {
+            if (!(await ensureDialogDraft(view, dialog, "sharesAddEntityError"))) {
+                return;
+            }
+
+            let binding: ODataListBinding | undefined;
+            try {
+                binding = await waitForDraftListBinding(table);
+            } catch (error) {
+                handleActionError(view, error, "sharesAddEntityError");
+                return;
+            }
+            if (!binding) {
+                showWarning(view, "sharesLoadError");
+                return;
+            }
+
+            try {
+                const context = binding.create({
+                    Entity: Number(ui.getProperty("/newShare/entity") ?? 1),
+                    Permission: Number(ui.getProperty("/newShare/permission") ?? 1)
+                });
+                trackCreate(binding, context);
+            } catch (error) {
+                handleActionError(view, error, "sharesAddEntityError");
+            }
+        });
     },
 
     onRemoveEntity: function (this: Control): void {
         const dialog = findSharesDialog(this);
         const view = dialog?.getParent() as XMLView | undefined;
         const context = this.getBindingContext() as Context | undefined;
+        const entity = context?.getObject() as { ID?: string } | undefined;
 
-        if (!dialog || !view || !context) {
+        if (!dialog || !view || !entity?.ID) {
             return;
         }
 
         confirmAction(view, "sharesRemoveEntityConfirm", "sharesRemoveEntityTitle", () => {
-            try {
-                void context.delete().catch((error) => handleActionError(view, error, "sharesRemoveEntityError"));
-            } catch (error) {
-                handleActionError(view, error, "sharesRemoveEntityError");
-            }
+            void runExclusiveDialogAction(dialog, async () => {
+                await deleteRowInDialogDraft({
+                    view,
+                    dialog,
+                    list: containingTable(this),
+                    rowId: entity.ID as string,
+                    errorKey: "sharesRemoveEntityError",
+                    missingRowKey: "sharesLoadError"
+                });
+            });
         });
     },
 
@@ -276,30 +343,32 @@ const Shares = {
             return;
         }
 
-        rejectedGuard.suspend();
-        try {
-            (view.getModel("ui") as JSONModel).setProperty("/busy", true);
+        await runExclusiveDialogAction(dialog, async () => {
+            rejectedGuard.suspend();
+            try {
+                (view.getModel("ui") as JSONModel).setProperty("/busy", true);
 
-            const person = context?.getObject() as { ID?: string } | undefined;
-            if (!person?.ID) {
-                showWarning(view, "errorMissingPerson");
-                return;
+                const person = context?.getObject() as { ID?: string } | undefined;
+                if (!person?.ID) {
+                    showWarning(view, "errorMissingPerson");
+                    return;
+                }
+
+                const odata = new ODataService(context?.getModel() as ODataModel);
+                await odata.submitPending();
+                await odata.prepareDraft("Persons", person.ID);
+                await odata.activateDraft("Persons", person.ID);
+
+                releaseDraftBinding(dialog);
+                dialog.close();
+                showToast(view, "sharesSaved");
+            } catch (error) {
+                handleActionError(view, error, "sharesSaveError");
+            } finally {
+                rejectedGuard.resume();
+                (view.getModel("ui") as JSONModel).setProperty("/busy", false);
             }
-
-            const odata = new ODataService(context?.getModel() as ODataModel);
-            await odata.submitPending();
-            await odata.prepareDraft("Persons", person.ID);
-            await odata.activateDraft("Persons", person.ID);
-
-            releaseDraftBinding(dialog);
-            dialog.close();
-            showToast(view, "sharesSaved");
-        } catch (error) {
-            handleActionError(view, error, "sharesSaveError");
-        } finally {
-            rejectedGuard.resume();
-            (view.getModel("ui") as JSONModel).setProperty("/busy", false);
-        }
+        });
     },
 
     onDiscardShares: function (this: Control): void {
@@ -311,7 +380,7 @@ const Shares = {
         }
 
         confirmAction(view, "sharesDiscardConfirm", "sharesDiscardTitle", () => {
-            void (async () => {
+            void runExclusiveDialogAction(dialog, async () => {
                 const context = dialog.getBindingContext() as Context | undefined;
                 const person = context?.getObject() as { ID?: string } | undefined;
                 if (!person?.ID) {
@@ -333,7 +402,7 @@ const Shares = {
                     rejectedGuard.resume();
                     (view.getModel("ui") as JSONModel).setProperty("/busy", false);
                 }
-            })();
+            });
         });
     },
 
