@@ -72,7 +72,7 @@ sap.ui.define(["./feedback"], function (___feedback) {
    * targets the wrong collection and leaves a stuck transient row behind.
    * Polls until the binding's header context belongs to the draft.
    *
-   * @param {List} list the dialog list
+   * @param {List | Table} list the dialog list (or nested entities table)
    * @param {number} [timeoutMs] how long to wait for the draft binding
    * @returns {Promise<ODataListBinding | undefined>} the draft binding, or
    * `undefined` when the list has no items binding
@@ -129,7 +129,7 @@ sap.ui.define(["./feedback"], function (___feedback) {
    * @param {object} params the deletion parameters
    * @param {XMLView} params.view the owning view
    * @param {Dialog} params.dialog the manager dialog
-   * @param {List} [params.list] the dialog list holding the row
+   * @param {List | Table} [params.list] the dialog list holding the row
    * @param {string} params.rowId the ID of the row to delete
    * @param {string} params.errorKey i18n key shown when the deletion fails
    * @param {string} params.missingRowKey i18n key shown when the row context

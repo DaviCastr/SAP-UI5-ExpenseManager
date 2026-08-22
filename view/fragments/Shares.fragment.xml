@@ -71,6 +71,7 @@
                                     <f:Avatar src="sap-icon://person-placeholder" displaySize="XS" class="sapUiTinyMarginEnd" />
                                     <Input
                                         value="{User}"
+                                        enabled="{ui>/managerDialogInDraft}"
                                         placeholder="{i18n>sharesUserPlaceholder}"
                                         width="100%"
                                     >
@@ -79,6 +80,13 @@
                                         </layoutData>
                                     </Input>
                                     <ToolbarSpacer />
+                                    <Button
+                                        icon="sap-icon://edit"
+                                        type="Transparent"
+                                        tooltip="{i18n>sharesEditTooltip}"
+                                        press="handler.onToggleSharesEdit"
+                                        visible="{=!${ui>/managerDialogInDraft}}"
+                                    />
                                     <Button
                                         icon="sap-icon://delete"
                                         type="Transparent"
@@ -149,6 +157,7 @@
                                             <cells>
                                                 <Select
                                                     selectedKey="{Entity}"
+                                                    enabled="{ui>/managerDialogInDraft}"
                                                     items="{ui>/entityOptions}"
                                                     width="100%"
                                                     forceSelection="false"
@@ -157,6 +166,7 @@
                                                 </Select>
                                                 <Select
                                                     selectedKey="{Permission}"
+                                                    enabled="{ui>/managerDialogInDraft}"
                                                     items="{ui>/permissionOptions}"
                                                     width="100%"
                                                     forceSelection="false"
@@ -185,6 +195,7 @@
                     icon="sap-icon://save"
                     type="Emphasized"
                     press="handler.onSaveShares"
+                    visible="{ui>/managerDialogInDraft}"
                 />
                 <Button
                     text="{i18n>sharesCancelButton}"
@@ -195,6 +206,7 @@
                 text="{i18n>sharesDiscardButton}"
                 type="Transparent"
                 press="handler.onDiscardShares"
+                visible="{ui>/managerDialogInDraft}"
             />
         </buttons>
     </Dialog>

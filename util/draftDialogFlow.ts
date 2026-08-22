@@ -1,5 +1,6 @@
 import Dialog from "sap/m/Dialog";
 import List from "sap/m/List";
+import Table from "sap/m/Table";
 import XMLView from "sap/ui/core/mvc/XMLView";
 import type Context from "sap/ui/model/odata/v4/Context";
 import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
@@ -81,14 +82,14 @@ export async function ensureDialogDraft(
  * targets the wrong collection and leaves a stuck transient row behind.
  * Polls until the binding's header context belongs to the draft.
  *
- * @param {List} list the dialog list
+ * @param {List | Table} list the dialog list (or nested entities table)
  * @param {number} [timeoutMs] how long to wait for the draft binding
  * @returns {Promise<ODataListBinding | undefined>} the draft binding, or
  * `undefined` when the list has no items binding
  * @throws {Error} when the binding does not point at the draft in time
  */
 export async function waitForDraftListBinding(
-    list: List | undefined,
+    list: List | Table | undefined,
     timeoutMs = 15000
 ): Promise<ODataListBinding | undefined> {
     const deadline = Date.now() + timeoutMs;
@@ -151,7 +152,7 @@ export async function findRowContextAfterLoad(
  * @param {object} params the deletion parameters
  * @param {XMLView} params.view the owning view
  * @param {Dialog} params.dialog the manager dialog
- * @param {List} [params.list] the dialog list holding the row
+ * @param {List | Table} [params.list] the dialog list holding the row
  * @param {string} params.rowId the ID of the row to delete
  * @param {string} params.errorKey i18n key shown when the deletion fails
  * @param {string} params.missingRowKey i18n key shown when the row context
@@ -164,7 +165,7 @@ export async function findRowContextAfterLoad(
 export async function deleteRowInDialogDraft(params: {
     view: XMLView;
     dialog: Dialog;
-    list?: List;
+    list?: List | Table;
     rowId: string;
     errorKey: string;
     missingRowKey: string;

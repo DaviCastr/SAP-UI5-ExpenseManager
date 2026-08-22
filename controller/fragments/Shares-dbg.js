@@ -1,7 +1,11 @@
-sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/MessageBox", "../../service/ODataService", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, Table, MessageBox, ____service_ODataService, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
+sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/MessageBox", "../../service/ODataService", "../../util/draftDialogFlow", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, Table, MessageBox, ____service_ODataService, ____util_draftDialogFlow, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
   "use strict";
 
   const ODataService = ____service_ODataService["ODataService"];
+  const deleteRowInDialogDraft = ____util_draftDialogFlow["deleteRowInDialogDraft"];
+  const ensureDialogDraft = ____util_draftDialogFlow["ensureDialogDraft"];
+  const runExclusiveDialogAction = ____util_draftDialogFlow["runExclusiveDialogAction"];
+  const waitForDraftListBinding = ____util_draftDialogFlow["waitForDraftListBinding"];
   const getText = ____util_i18n["getText"];
   const handleActionError = ____util_feedback["handleActionError"];
   const showToast = ____util_feedback["showToast"];
@@ -42,17 +46,6 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
       current = current.getParent();
     }
     return undefined;
-  }
-
-  /**
-   * Returns the OData list binding that manages the Entities table of the given
-   * Share (the glance on the toolbar "add entity" button).
-   *
-   * @param {Table} table the nested Entities table
-   * @returns {ODataListBinding | undefined} the items binding, or `undefined`
-   */
-  function entityListBinding(table) {
-    return table.getBinding("items");
   }
 
   /**
@@ -123,20 +116,25 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
     onDialogBeforeOpen: function () {
       const view = Fragment.byId("Shares", "sharesDialog")?.getParent();
       const ui = view?.getModel("ui");
-      ui?.setProperty("/newShare", {
-        shareUser: "",
-        entity: "1",
-        permission: "1"
-      });
+      if (ui) {
+        ui.setProperty("/newShare", {
+          shareUser: "",
+          entity: "1",
+          permission: "1"
+        });
+        ui.setProperty("/managerDialogInDraft", false);
+      }
     },
     /**
      * Creates a new Share row in the selected person's Shares collection.
-     * The row is created inside the person draft (the dialog is bound to the
-     * draft path), so it participates in the same draft as the whole tree.
+     * The dialog opens read-only bound to the person's current state, so the
+     * person draft is created (when none is open) and the dialog rebound to
+     * the draft before the row is created inside it, keeping the change in
+     * the same draft as the whole tree.
      *
      * @param {Control} this the pressed add-share button
      */
-    onAddShare: function () {
+    onAddShare: async function () {
       const dialog = findSharesDialog(this);
       const view = dialog?.getParent();
       const ui = view?.getModel("ui");
@@ -148,45 +146,84 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
         showWarning(view, "sharesUserRequired");
         return;
       }
-      const sharesList = Fragment.byId("Shares", "sharesList");
-      const binding = sharesList?.getBinding("items");
-      if (!binding) {
-        showWarning(view, "sharesLoadError");
+      await runExclusiveDialogAction(dialog, async () => {
+        if (!(await ensureDialogDraft(view, dialog, "sharesAddShareError"))) {
+          return;
+        }
+
+        // Wait until the list binding points at the DRAFT: right after the
+        // switch the previous binding (active collection) is still reachable
+        // and creating through it fails, leaving a stuck transient row.
+        let binding;
+        try {
+          binding = await waitForDraftListBinding(Fragment.byId("Shares", "sharesList"));
+        } catch (error) {
+          handleActionError(view, error, "sharesAddShareError");
+          return;
+        }
+        if (!binding) {
+          showWarning(view, "sharesLoadError");
+          return;
+        }
+        try {
+          const context = binding.create({
+            User: user.trim()
+          });
+          trackCreate(binding, context, () => {
+            ui.setProperty("/newShare/shareUser", "");
+          });
+        } catch (error) {
+          handleActionError(view, error, "sharesAddShareError");
+        }
+      });
+    },
+    /**
+     * Enters edit mode: switches the dialog to the person draft binding, which
+     * enables the inline editors of every share row (they stay disabled while
+     * read-only so no change can hit the active entity).
+     *
+     * @param {Control} this the pressed edit button
+     */
+    onToggleSharesEdit: async function () {
+      const dialog = findSharesDialog(this);
+      const view = dialog?.getParent();
+      if (!dialog || !view) {
         return;
       }
-      try {
-        const context = binding.create({
-          User: user.trim()
-        });
-        trackCreate(binding, context, () => {
-          ui.setProperty("/newShare/shareUser", "");
-        });
-      } catch (error) {
-        handleActionError(view, error, "sharesAddShareError");
-      }
+      await runExclusiveDialogAction(dialog, async () => {
+        await ensureDialogDraft(view, dialog, "sharesEditError");
+      });
     },
     onRemoveShare: function () {
       const dialog = findSharesDialog(this);
       const view = dialog?.getParent();
       const context = this.getBindingContext();
-      if (!dialog || !view || !context) {
+      const share = context?.getObject();
+      if (!dialog || !view || !share?.ID) {
         return;
       }
       confirmAction(view, "sharesRemoveShareConfirm", "sharesRemoveShareTitle", () => {
-        try {
-          void context.delete().catch(error => handleActionError(view, error, "sharesRemoveShareError"));
-        } catch (error) {
-          handleActionError(view, error, "sharesRemoveShareError");
-        }
+        void runExclusiveDialogAction(dialog, async () => {
+          await deleteRowInDialogDraft({
+            view,
+            dialog,
+            list: Fragment.byId("Shares", "sharesList"),
+            rowId: share.ID,
+            errorKey: "sharesRemoveShareError",
+            missingRowKey: "sharesLoadError"
+          });
+        });
       });
     },
     /**
      * Creates a new Entity row inside the Entities collection of the Share that
-     * owns the pressed toolbar button.
+     * owns the pressed toolbar button. Switches the dialog to the person draft
+     * first (read-first flow) and waits until the table binding points at the
+     * draft before creating.
      *
      * @param {Control} this the pressed add-entity button
      */
-    onAddEntity: function () {
+    onAddEntity: async function () {
       const dialog = findSharesDialog(this);
       const view = dialog?.getParent();
       const ui = view?.getModel("ui");
@@ -194,34 +231,55 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
         return;
       }
       const table = containingTable(this);
-      const binding = table ? entityListBinding(table) : undefined;
-      if (!binding) {
+      if (!table) {
         showWarning(view, "sharesLoadError");
         return;
       }
-      try {
-        const context = binding.create({
-          Entity: Number(ui.getProperty("/newShare/entity") ?? 1),
-          Permission: Number(ui.getProperty("/newShare/permission") ?? 1)
-        });
-        trackCreate(binding, context);
-      } catch (error) {
-        handleActionError(view, error, "sharesAddEntityError");
-      }
+      await runExclusiveDialogAction(dialog, async () => {
+        if (!(await ensureDialogDraft(view, dialog, "sharesAddEntityError"))) {
+          return;
+        }
+        let binding;
+        try {
+          binding = await waitForDraftListBinding(table);
+        } catch (error) {
+          handleActionError(view, error, "sharesAddEntityError");
+          return;
+        }
+        if (!binding) {
+          showWarning(view, "sharesLoadError");
+          return;
+        }
+        try {
+          const context = binding.create({
+            Entity: Number(ui.getProperty("/newShare/entity") ?? 1),
+            Permission: Number(ui.getProperty("/newShare/permission") ?? 1)
+          });
+          trackCreate(binding, context);
+        } catch (error) {
+          handleActionError(view, error, "sharesAddEntityError");
+        }
+      });
     },
     onRemoveEntity: function () {
       const dialog = findSharesDialog(this);
       const view = dialog?.getParent();
       const context = this.getBindingContext();
-      if (!dialog || !view || !context) {
+      const entity = context?.getObject();
+      if (!dialog || !view || !entity?.ID) {
         return;
       }
       confirmAction(view, "sharesRemoveEntityConfirm", "sharesRemoveEntityTitle", () => {
-        try {
-          void context.delete().catch(error => handleActionError(view, error, "sharesRemoveEntityError"));
-        } catch (error) {
-          handleActionError(view, error, "sharesRemoveEntityError");
-        }
+        void runExclusiveDialogAction(dialog, async () => {
+          await deleteRowInDialogDraft({
+            view,
+            dialog,
+            list: containingTable(this),
+            rowId: entity.ID,
+            errorKey: "sharesRemoveEntityError",
+            missingRowKey: "sharesLoadError"
+          });
+        });
       });
     },
     /**
@@ -241,27 +299,29 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
       if (rejectedGuard.warnIfBlocked()) {
         return;
       }
-      rejectedGuard.suspend();
-      try {
-        view.getModel("ui").setProperty("/busy", true);
-        const person = context?.getObject();
-        if (!person?.ID) {
-          showWarning(view, "errorMissingPerson");
-          return;
+      await runExclusiveDialogAction(dialog, async () => {
+        rejectedGuard.suspend();
+        try {
+          view.getModel("ui").setProperty("/busy", true);
+          const person = context?.getObject();
+          if (!person?.ID) {
+            showWarning(view, "errorMissingPerson");
+            return;
+          }
+          const odata = new ODataService(context?.getModel());
+          await odata.submitPending();
+          await odata.prepareDraft("Persons", person.ID);
+          await odata.activateDraft("Persons", person.ID);
+          releaseDraftBinding(dialog);
+          dialog.close();
+          showToast(view, "sharesSaved");
+        } catch (error) {
+          handleActionError(view, error, "sharesSaveError");
+        } finally {
+          rejectedGuard.resume();
+          view.getModel("ui").setProperty("/busy", false);
         }
-        const odata = new ODataService(context?.getModel());
-        await odata.submitPending();
-        await odata.prepareDraft("Persons", person.ID);
-        await odata.activateDraft("Persons", person.ID);
-        releaseDraftBinding(dialog);
-        dialog.close();
-        showToast(view, "sharesSaved");
-      } catch (error) {
-        handleActionError(view, error, "sharesSaveError");
-      } finally {
-        rejectedGuard.resume();
-        view.getModel("ui").setProperty("/busy", false);
-      }
+      });
     },
     onDiscardShares: function () {
       const dialog = findSharesDialog(this);
@@ -270,7 +330,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
         return;
       }
       confirmAction(view, "sharesDiscardConfirm", "sharesDiscardTitle", () => {
-        void (async () => {
+        void runExclusiveDialogAction(dialog, async () => {
           const context = dialog.getBindingContext();
           const person = context?.getObject();
           if (!person?.ID) {
@@ -291,7 +351,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
             rejectedGuard.resume();
             view.getModel("ui").setProperty("/busy", false);
           }
-        })();
+        });
       });
     },
     onCancelShares: function () {

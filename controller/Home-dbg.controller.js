@@ -893,34 +893,18 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     }
 
     /**
-     * Opens the Shares management dialog for the selected person. Because
-     * Shares/Entities are compositions of the selected person, the dialog is
-     * bound to the person's (draft) OData context, so every change made there is
-     * contained in the same person draft as the rest of the entity tree. Saving
-     * activates that draft; discarding drops it.
+     * Opens the Shares management dialog in read-only mode: the dialog is
+     * bound to the person's CURRENT state (the draft when one is open,
+     * otherwise the active entity) and no draft is created until the user
+     * adds/edits/removes inside it, which switches the dialog to the person
+     * draft binding (see `enterDialogDraftMode`). Shares/Entities are
+     * compositions of the selected person, so every change made there is
+     * contained in the same person draft as the rest of the entity tree.
      */
     async onOpenSharesDialog() {
-      const personId = this.getSelectedPersonId();
-      if (!personId) {
-        this.showErrorMessage("errorMissingPerson");
-        return;
-      }
-      const ui = this.getUiModel();
-      ui.setProperty("/busy", true);
-      try {
-        await this.ensurePersonDraft(personId);
-        const path = this._odata?.draftPath("Persons", personId) ?? "";
-        await this.openPreparedDialog("Shares", dialog => {
-          dialog.setModel(this.getServiceModel());
-          dialog.unbindObject();
-          dialog.bindObject(path);
-          dialog.open();
-        });
-      } catch (error) {
-        this.handleError(error, "sharesOpenError");
-      } finally {
-        ui.setProperty("/busy", false);
-      }
+      await this.openDraftManagerDialog("Shares", "sharesOpenError", undefined, {
+        readOnlyOpen: true
+      });
     }
 
     /**
