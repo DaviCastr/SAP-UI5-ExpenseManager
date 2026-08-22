@@ -120,26 +120,38 @@
     }
 }
 
+/* Banner de rascunho da pessoa selecionada: card âmbar no idioma visual do app */
+.personDraftBanner { gap: .75rem; padding: .85rem 1.1rem; border-radius: 1rem; background: linear-gradient(120deg, #fffaf0, #fdf3dd); border: 1px solid #f3dfa4; box-shadow: 0 4px 16px rgba(19, 48, 48, .05); }
+.personDraftBannerMain { min-width: 0; flex: 1 1 auto; gap: .85rem; }
+.personDraftBannerIcon { font-size: 1.15rem !important; color: #8f6400; background: #fdf1cf; border-radius: .65rem; padding: .6rem; flex-shrink: 0; }
+.personDraftBannerCopy { gap: .2rem; min-width: 0; }
+.personDraftBadge .sapMObjStatusText { display: inline-flex; align-items: center; gap: .38rem; padding: .16rem .7rem; border-radius: 1rem; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: #fdf1cf; border: 1px solid #f3dfa4; color: #8f6400; width: fit-content; }
+.personDraftBadge .sapMObjStatusText::before { content: ""; width: .4rem; height: .4rem; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.personDraftBannerText { color: var(--ink); font-size: .9rem; max-width: 34rem; }
+.personDraftBannerActions { gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
+.personDraftBannerActions .sapMBtnInner { border-radius: .65rem; }
+
 @media (max-width: 768px) {
     .personDraftBanner {
         width: 100% !important;
-        display: flex !important;
-        flex-direction: column !important; 
-        align-items: center !important;    
-        justify-content: center !important;
+        justify-content: center;
         text-align: center;
     }
 
-    .personDraftBanner .sapMMsgStrip {
-        margin-right: 0 !important;
-        margin-bottom: 0.5rem !important;
-        width: 100% !important;
-        box-sizing: border-box;
+    .personDraftBannerMain {
+        width: 100%;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
     }
 
-    .personDraftBanner button {
-        margin: 0 auto !important;
-        display: block !important;
+    .personDraftBannerText {
+        max-width: none;
+    }
+
+    .personDraftBannerActions {
+        width: 100%;
+        justify-content: center;
     }
 }
 
