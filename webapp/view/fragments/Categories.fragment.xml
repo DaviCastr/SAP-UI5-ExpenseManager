@@ -139,7 +139,7 @@
             />
             <Button
                 text="{i18n>categoriesDiscardButton}"
-                type="Transparent"
+                type="Reject"
                 press="handler.onDiscardCategories"
                 visible="{ui>/managerDialogInDraft}"
             />
