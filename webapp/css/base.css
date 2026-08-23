@@ -107,3 +107,10 @@ span.sapMBtnInner.sapMBtnEmphasized.sapMBtnActive,
 .sapUiBody .sapMBtn.sapMBtnActive .sapMBtnInner.sapMBtnTransparent bdi,
 .sapUiBody .sapMBtn.sapMBtnActive .sapMBtnInner.sapMBtnDefault bdi,
 .sapUiBody .sapMBtn.sapMBtnActive .sapMBtnInner.sapMBtnGhost bdi { color: var(--teal-900) !important; }
+
+/* Avatares: fotos com fundo transparente revelavam o azul do tema.
+   O controle (UI5 1.150) renderiza um único span.sapFAvatar com a classe
+   sapFAvatarColorPlaceholder (azul claro) — não existe .sapMAvatar no DOM. */
+.sapFAvatar { background-color: var(--white) !important; }
+
+:is(.personAvatar, .categoryItemAvatar, .categoryDetailAvatar, .categoryManagerAvatar, .cardManagerAvatar, .invoiceCardAvatar, .invoiceTxAvatar, .invoiceCategoryAvatar) .sapFAvatar { background-color: var(--teal-050) !important; }
