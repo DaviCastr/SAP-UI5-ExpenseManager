@@ -64,6 +64,32 @@ export async function runExclusiveDialogAction<T>(dialog: Dialog, action: () => 
     }
 }
 
+// Page-level actions (no dialog involved) follow the same rule: while one is
+// still processing, further invocations are ignored. Keyed by a string instead
+// of a dialog instance.
+const runningActions = new Set<string>();
+
+/**
+ * Runs an exclusive page-level action: while one invocation of the given key
+ * is still processing, further invocations are ignored.
+ *
+ * @param {string} key identifier of the exclusive action (e.g. "sendInvoices")
+ * @param {Function} action the action to run
+ * @returns {Promise<T | undefined>} the action result, or `undefined` when
+ * another invocation was already running
+ */
+export async function runExclusiveAction<T>(key: string, action: () => Promise<T>): Promise<T | undefined> {
+    if (runningActions.has(key)) {
+        return undefined;
+    }
+    runningActions.add(key);
+    try {
+        return await action();
+    } finally {
+        runningActions.delete(key);
+    }
+}
+
 /**
  * Switches the dialog to the person draft binding (creating the draft when
  * none is open) and reports failures through the given i18n error key.

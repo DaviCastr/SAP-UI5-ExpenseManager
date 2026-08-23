@@ -27,6 +27,7 @@ import {
 } from "../util/expenseApi";
 import { isSessionExpiredError, isBackendUnavailableError } from "../util/http";
 import { getBackendErrorMessage } from "../util/feedback";
+import { runExclusiveAction } from "../util/draftDialogFlow";
 import type { UiPerson } from "../model/UiModel";
 
 interface CardRow {
@@ -121,34 +122,34 @@ export default class Home extends BaseController {
     }
 
     public async onSendInvoices(): Promise<void> {
-        const period = this.currentPeriod();
+        await runExclusiveAction("sendInvoices", async () => {
+            const period = this.currentPeriod();
 
-        if (!this._invoiceService) {
-            return;
-        }
-
-        const ui = this.getUiModel();
-        ui.setProperty("/busy", true);
-
-        try {
-            const result = await this._invoiceService.sendInvoices(period);
-            if (result.success) {
-                MessageToast.show(
-                    result.data || this.getText("sendInvoicesSuccess")
-                );
-            } else {
-                MessageBox.error(result.data || this.getText("sendInvoicesNoData"));
+            if (!this._invoiceService) {
+                return;
             }
-        } catch (error) {
-            if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
-                const detail = getBackendErrorMessage(error);
-                MessageBox.error(
-                    detail ? `${this.getText("sendInvoicesError")}\n\n${detail}` : this.getText("sendInvoicesError")
-                );
+
+            const ui = this.getUiModel();
+            ui.setProperty("/busy", true);
+
+            try {
+                const sent = await this._invoiceService.sendInvoices(period);
+                if (sent) {
+                    MessageToast.show(this.getText("sendInvoicesSuccess"));
+                } else {
+                    MessageBox.error(this.getText("sendInvoicesNoData"));
+                }
+            } catch (error) {
+                if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
+                    const detail = getBackendErrorMessage(error);
+                    MessageBox.error(
+                        detail ? `${this.getText("sendInvoicesError")}\n\n${detail}` : this.getText("sendInvoicesError")
+                    );
+                }
+            } finally {
+                ui.setProperty("/busy", false);
             }
-        } finally {
-            ui.setProperty("/busy", false);
-        }
+        });
     }
 
     /**
