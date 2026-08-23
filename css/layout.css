@@ -7,7 +7,7 @@
 .brandTitle { color: var(--ink); font-weight: 700; }
 .topActions, .heroActions { gap: .5rem; align-items: center; }
 .personLabel { color: var(--muted); font-size: .8rem; }
-.personAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); border: 1px solid #d8f7ed; }
+.personAvatar .sapFAvatar { background: var(--teal-050) !important; color: var(--teal-700); border: 1px solid #d8f7ed; }
 .personSelect { background: var(--white); border-radius: .7rem; }
 .personSelect .sapMSltInner { border-radius: .7rem; border-color: var(--line-soft); background: var(--white); color: var(--ink); }
 .iconAction .sapMBtnInner, .linkAction .sapMBtnInner { border-radius: .7rem; }

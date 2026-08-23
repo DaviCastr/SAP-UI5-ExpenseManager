@@ -77,7 +77,7 @@
 
 .categoryItem { padding: .7rem .5rem; }
 .categoryItemMain { gap: .85rem; }
-.categoryItemAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.categoryItemAvatar .sapFAvatar { background: var(--teal-050); color: var(--teal-700); }
 .categoryProgress { margin-top: .3rem; flex-shrink: 1; }
 .categoryProgress .sapMPIBar { background: var(--teal-700); border-radius: .5rem; height: 10px; }
 .categoryPercent { font-size: .74rem; font-weight: 700; color: var(--teal-700); background: var(--teal-050); border: 1px solid #d3f1e4; padding: .14rem .55rem; border-radius: 1rem; flex-shrink: 0; white-space: nowrap; line-height: 1.4; }
@@ -89,7 +89,7 @@
 .creditCardFoot { color: var(--muted); font-size: .78rem; }
 
 .categoryDetailHeader { gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #eef3f3; }
-.categoryDetailAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.categoryDetailAvatar .sapFAvatar { background: var(--teal-050); color: var(--teal-700); }
 .categoryDetailTotal .sapMObjectNumberText { font-size: 1.35rem; font-weight: 700; color: var(--ink); margin-left: auto; }
 .categoryInvoiceList { gap: .5rem; padding: .35rem 0; }
 .categoryInvoiceItem { padding: .5rem 0; }
@@ -125,7 +125,7 @@
 .categoryManagerCard { border-radius: .8rem; border: 1px solid var(--line); background: var(--white); box-shadow: 0 2px 8px rgba(19, 48, 48, .05); padding: .4rem .6rem; }
 .categoryManagerRow { gap: .55rem; }
 .categoryManagerCard .sapMInput .sapMInputBaseInner { height: 2rem; }
-.categoryManagerAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.categoryManagerAvatar .sapFAvatar { background: var(--teal-050); color: var(--teal-700); }
 .categoryManagerPhoto .sapUiUnifiedFileUploader { width: auto; }
 
 /* Gerenciador de cartões */
@@ -137,7 +137,7 @@
 .cardManagerBody { gap: .1rem; }
 .cardManagerFields { gap: .1rem; }
 .cardManagerCard .sapMInput .sapMInputBaseInner { height: 2rem; }
-.cardManagerAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.cardManagerAvatar .sapFAvatar { background: var(--teal-050); color: var(--teal-700); }
 .cardManagerPhoto .sapUiUnifiedFileUploader { width: auto; }
 
 .responsiveTopActions {
@@ -230,7 +230,7 @@
     max-height: 14rem;
     overflow-y: auto;
 }
-.invoiceCardAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.invoiceCardAvatar .sapFAvatar { background: var(--teal-050); color: var(--teal-700); }
 .invoiceCardName { font-weight: 700; color: var(--ink); }
 .invoiceCardLabel { color: var(--muted); font-size: .78rem; }
 .invoicePeriodBar { gap: .75rem; }
@@ -243,13 +243,13 @@
 .invoiceNotSentIcon { color: #d98e3d; }
 .invoiceTransactionList { background: transparent; max-height: 20rem; overflow-y: auto; }
 .invoiceTransactionItem { gap: .75rem; }
-.invoiceTxAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.invoiceTxAvatar .sapFAvatar { background: var(--teal-050); color: var(--teal-700); }
 .invoiceTxCategory { color: var(--muted); font-size: .75rem; }
 .invoiceTxActions { gap: .25rem; margin-left: .5rem; }
 .invoiceAffectedText { color: var(--muted); font-size: .85rem; margin-top: .4rem; }
 .invoiceAffectedCount { font-weight: 700; color: var(--teal-700); font-size: .85rem; margin-top: .3rem; }
 .invoiceAffectedList { background: transparent; max-height: 10rem; overflow-y: auto; margin-top: .3rem; }
-.invoiceCategoryAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
+.invoiceCategoryAvatar .sapFAvatar { background: var(--teal-050); color: var(--teal-700); }
 .deleteTxItem { gap: .75rem; }
 
 .liabilityList { background: transparent; max-height: 26rem; overflow-y: auto; }
@@ -317,6 +317,63 @@
 .categoryList::-webkit-scrollbar-track,
 .cardList::-webkit-scrollbar-track,
 .liabilityList::-webkit-scrollbar-track { background: transparent; }
+
+/* ==========================================================================
+   Diálogos (fragments): consistência visual das listas com o dashboard
+   ========================================================================== */
+
+/* Anel de foco arredondado em todas as linhas das listas dos diálogos */
+.categoryManagerList .sapMLIB,
+.cardManagerList .sapMLIB,
+.shareList .sapMLIB,
+.invoiceCardList .sapMLIB,
+.invoiceTransactionList .sapMLIB,
+.invoiceAffectedList .sapMLIB,
+.categoryInvoiceList .sapMLIB { border-radius: .6rem; }
+
+/* Divisórias suaves apenas onde as linhas são "planas"
+   (as listas de gerenciadores já usam cards internos) */
+.shareList .sapMLIB:not(:last-child),
+.invoiceCardList .sapMLIB:not(:last-child),
+.invoiceTransactionList .sapMLIB:not(:last-child),
+.invoiceAffectedList .sapMLIB:not(:last-child),
+.categoryInvoiceList .sapMLIB:not(:last-child) { border-bottom: 1px solid #edf3f2; }
+
+.shareList .sapMLIB:hover,
+.invoiceCardList .sapMLIB:hover,
+.invoiceTransactionList .sapMLIB:hover,
+.invoiceAffectedList .sapMLIB:hover,
+.categoryInvoiceList .sapMLIB:hover { background-color: #f2faf7; }
+
+/* Scrollbar discreta nas listas roláveis dos diálogos */
+.categoryManagerList::-webkit-scrollbar,
+.cardManagerList::-webkit-scrollbar,
+.shareList::-webkit-scrollbar,
+.invoiceCardList::-webkit-scrollbar,
+.invoiceTransactionList::-webkit-scrollbar,
+.invoiceAffectedList::-webkit-scrollbar,
+.categoryInvoiceList::-webkit-scrollbar { width: .45rem; }
+.categoryManagerList::-webkit-scrollbar-thumb,
+.cardManagerList::-webkit-scrollbar-thumb,
+.shareList::-webkit-scrollbar-thumb,
+.invoiceCardList::-webkit-scrollbar-thumb,
+.invoiceTransactionList::-webkit-scrollbar-thumb,
+.invoiceAffectedList::-webkit-scrollbar-thumb,
+.categoryInvoiceList::-webkit-scrollbar-thumb { background: #cfe6e0; border-radius: 1rem; }
+.categoryManagerList::-webkit-scrollbar-thumb:hover,
+.cardManagerList::-webkit-scrollbar-thumb:hover,
+.shareList::-webkit-scrollbar-thumb:hover,
+.invoiceCardList::-webkit-scrollbar-thumb:hover,
+.invoiceTransactionList::-webkit-scrollbar-thumb:hover,
+.invoiceAffectedList::-webkit-scrollbar-thumb:hover,
+.categoryInvoiceList::-webkit-scrollbar-thumb:hover { background: #b3d9d0; }
+.categoryManagerList::-webkit-scrollbar-track,
+.cardManagerList::-webkit-scrollbar-track,
+.shareList::-webkit-scrollbar-track,
+.invoiceCardList::-webkit-scrollbar-track,
+.invoiceTransactionList::-webkit-scrollbar-track,
+.invoiceAffectedList::-webkit-scrollbar-track,
+.categoryInvoiceList::-webkit-scrollbar-track { background: transparent; }
 
 @media (max-width: 600px) {
     .dialogFormField,
