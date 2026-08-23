@@ -3,7 +3,7 @@
 .financeShell { max-width: 76rem; margin: 0 auto; padding: 1.5rem 2rem 3rem; gap: 1.25rem; }
 .topBar { min-height: 3.5rem; }
 .brandGroup { gap: .75rem; }
-.brandMark { color: var(--teal-700); font-size: 2rem; background: #d8f7ed; border-radius: .85rem; padding: .55rem; }
+.brandLogo { border-radius: .75rem; box-shadow: 0 4px 14px rgba(7, 61, 58, .18); }
 .brandTitle { color: var(--ink); font-weight: 700; }
 .topActions, .heroActions { gap: .5rem; align-items: center; }
 .personLabel { color: var(--muted); font-size: .8rem; }

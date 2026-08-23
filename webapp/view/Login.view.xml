@@ -19,10 +19,12 @@
                     justifyContent="Center"
                 >
                     <HBox alignItems="Center" class="loginHeroBrand sapUiMediumMarginBottom">
-                        <core:Icon
-                            src="sap-icon://wallet"
-                            size="1.9rem"
-                            class="loginHeroIcon sapUiSmallMarginEnd"
+                        <Image
+                            src="img/logo.svg"
+                            width="2.6rem"
+                            height="2.6rem"
+                            decorative="true"
+                            class="loginHeroLogo sapUiSmallMarginEnd"
                         />
                         <Title
                             text="{i18n>brandTitle}"
@@ -84,10 +86,12 @@
                         alignItems="Center"
                     >
                         <HBox alignItems="Center" class="loginBrand sapUiMediumMarginBottom">
-                            <core:Icon
-                                src="sap-icon://wallet"
-                                size="2rem"
-                                class="loginBrandIcon sapUiSmallMarginEnd"
+                            <Image
+                                src="img/logo.svg"
+                                width="2.4rem"
+                                height="2.4rem"
+                                decorative="true"
+                                class="loginBrandLogo sapUiSmallMarginEnd"
                             />
                             <Title
                                 text="{i18n>brandTitle}"
