@@ -1,46 +1,212 @@
-.loginPage, .loginPage .sapMPageBgStandard { background: linear-gradient(135deg, #062e2c 0%, #0b5d52 55%, #12856e 100%); }
-.loginShell { width: 100%; min-height: 100vh; align-items: center; justify-content: center; padding: 1.5rem; box-sizing: border-box; }
-.loginCard { max-width: 26rem; width: 100%; background: var(--white); border-radius: 1.6rem; padding: 2.5rem 2.2rem; box-shadow: 0 30px 60px rgba(3, 32, 30, .35); gap: 1rem; box-sizing: border-box; }
-.loginBrand { gap: .7rem; }
-.loginBrandIcon { color: var(--teal-700); font-size: 1.8rem; background: #d8f7ed; border-radius: .9rem; padding: .6rem; }
-.loginBrandTitle { color: var(--ink); font-weight: 700; }
-.loginHeadline { color: var(--ink); line-height: 1.2; }
-.loginSubtitle { color: #5b6f70; }
-.loginPrimary { width: 100%; margin-top: .35rem; }
-.loginPrimary .sapMBtnInner { border-radius: .9rem; background: var(--teal-800); border-color: var(--teal-800); height: 3rem; }
-.loginPrimary .sapMBtnInner:active, .loginPrimary .sapMBtnInner:hover { background: #0a6b5c; border-color: #0a6b5c; }
-.loginPrimary .sapMBtnContent { font-weight: 600; letter-spacing: .01rem; }
-.loginPrimary { 
-    width: 100%; 
-    margin-top: 0.35rem; 
+.loginPage,
+.loginPage .sapMPageBgStandard {
+    background: linear-gradient(135deg, #062e2c 0%, #0b5d52 55%, #12856e 100%);
 }
 
-.loginPrimary .sapMBtnInner { 
-    height: 3rem;
-    border-radius: 0.9rem; 
-    background: var(--teal-800); 
-    border-color: var(--teal-800); 
-    
-    display: flex; 
-    align-items: center; 
+.loginShell {
+    width: 100%;
+    min-height: 100vh;
+    align-items: stretch;
+}
+
+/* ---------- Painel do card (sempre visível) ---------- */
+
+.loginAside {
+    width: 100%;
     justify-content: center;
-    
-    text-shadow: none; 
-    
-    transition: all 0.2s ease-in-out; 
+    align-items: center;
+    padding: 1.5rem 1.25rem;
+    box-sizing: border-box;
+}
+
+.loginCard {
+    width: 100%;
+    max-width: 24rem;
+    background: var(--white);
+    border-radius: 1.6rem;
+    padding: 2.4rem 2.2rem;
+    gap: .95rem;
+    box-shadow: 0 30px 60px rgba(3, 32, 30, .35);
+    box-sizing: border-box;
+}
+
+.loginBrand { gap: .7rem; }
+
+.loginBrandIcon {
+    color: var(--teal-700);
+    font-size: 1.8rem;
+    background: #d8f7ed;
+    border-radius: .9rem;
+    padding: .6rem;
+}
+
+.loginBrandTitle { color: var(--ink); font-weight: 700; }
+
+.loginHeadline { color: var(--ink); line-height: 1.2; }
+
+.loginSubtitle { color: var(--muted); line-height: 1.55; }
+
+.loginPrimary {
+    width: 100%;
+    margin-top: .35rem;
+}
+
+.loginPrimary .sapMBtnInner {
+    height: 3rem;
+    border-radius: .9rem;
+    background: var(--teal-800);
+    border-color: var(--teal-800);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    text-shadow: none;
+
+    transition: all 0.2s ease-in-out;
 }
 
 .loginPrimary:hover .sapMBtnInner,
 .loginPrimary .sapMBtnInner:active,
-.loginPrimary .sapMBtnInner.sapMBtnActive { 
-    background: #0a6b5c; 
-    border-color: #0a6b5c; 
+.loginPrimary .sapMBtnInner.sapMBtnActive {
+    background: #0a6b5c;
+    border-color: #0a6b5c;
 }
 
 .loginPrimary .sapMBtnContent,
-.loginPrimary .sapMBtnIcon { 
-    font-weight: 600; 
+.loginPrimary .sapMBtnIcon {
+    font-weight: 600;
     letter-spacing: 0.01rem;
-    color: #ffffff; 
+    color: #ffffff;
 }
-.loginNote { color: #9aabab; font-size: .78rem; text-align: center; margin-top: .35rem; }
+
+.loginNote {
+    color: #9aabab;
+    font-size: .78rem;
+    line-height: 1.45;
+    text-align: center;
+    margin-top: .35rem;
+}
+
+/* ---------- Hero (apenas desktop) ---------- */
+
+.loginHero {
+    display: none;
+    position: relative;
+    overflow: hidden;
+    padding: clamp(3rem, 6vw, 6rem);
+    box-sizing: border-box;
+    background: linear-gradient(150deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 50%);
+}
+
+@media (min-width: 960px) {
+
+    .loginHero {
+        display: flex;
+        width: 47%;
+        min-height: 100vh;
+    }
+
+    .loginHero::before,
+    .loginHero::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    .loginHero::before {
+        width: 22rem;
+        height: 22rem;
+        top: -7rem;
+        right: -7rem;
+        border: 1.5px solid rgba(255, 255, 255, .16);
+    }
+
+    .loginHero::after {
+        width: 17rem;
+        height: 17rem;
+        bottom: -6rem;
+        left: -6rem;
+        border: 1.5px solid rgba(255, 255, 255, .10);
+    }
+
+    .loginAside {
+        width: 53%;
+        background: var(--surface);
+        border-radius: 2.75rem 0 0 2.75rem;
+        box-shadow: -30px 0 60px rgba(3, 32, 30, .22);
+    }
+
+    .loginCard {
+        border: 1px solid var(--line);
+        box-shadow: 0 20px 44px rgba(19, 48, 48, .12);
+    }
+}
+
+.loginHeroBrand {
+    gap: .8rem;
+    position: relative;
+    z-index: 1;
+}
+
+.loginHeroIcon {
+    color: var(--white);
+    font-size: 1.9rem;
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: .95rem;
+    padding: .65rem;
+}
+
+.loginHeroTitle {
+    color: var(--white);
+    font-weight: 700;
+    letter-spacing: .01em;
+}
+
+.loginHeroHeadline {
+    color: var(--white);
+    font-size: clamp(1.85rem, 2.5vw, 2.5rem) !important;
+    line-height: 1.15;
+    max-width: 30rem;
+    position: relative;
+    z-index: 1;
+}
+
+.loginHeroSubtitle {
+    color: rgba(255, 255, 255, .78);
+    line-height: 1.55;
+    max-width: 27rem;
+    position: relative;
+    z-index: 1;
+}
+
+.loginFeatures {
+    gap: 0;
+    position: relative;
+    z-index: 1;
+    margin-top: 1.6rem;
+}
+
+.loginFeatureItem {
+    gap: .9rem;
+    align-items: center;
+}
+
+.loginFeatureIcon {
+    color: var(--white);
+    font-size: 1.05rem;
+    background: rgba(255, 255, 255, .12);
+    border-radius: .75rem;
+    padding: .58rem;
+    width: 2.4rem;
+    flex-shrink: 0;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.loginFeatureText {
+    color: rgba(255, 255, 255, .88);
+    font-size: .95rem;
+}

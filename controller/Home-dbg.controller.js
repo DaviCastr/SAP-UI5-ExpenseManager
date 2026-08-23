@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox", "./BaseController", "../auth/AuthenticationService", "../service/ODataService", "../service/InvoiceService", "../service/PeriodService", "../service/MediaService", "../service/DashboardRenderer", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/http", "../util/feedback"], function (MessageToast, Fragment, MessageBox, ___BaseController, ___auth_AuthenticationService, ___service_ODataService, ___service_InvoiceService, ___service_PeriodService, ___service_MediaService, ___service_DashboardRenderer, Filter, FilterOperator, ___util_expenseApi, ___util_http, ___util_feedback) {
+sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox", "./BaseController", "../auth/AuthenticationService", "../service/ODataService", "../service/InvoiceService", "../service/PeriodService", "../service/MediaService", "../service/DashboardRenderer", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/http", "../util/feedback", "../util/draftDialogFlow"], function (MessageToast, Fragment, MessageBox, ___BaseController, ___auth_AuthenticationService, ___service_ODataService, ___service_InvoiceService, ___service_PeriodService, ___service_MediaService, ___service_DashboardRenderer, Filter, FilterOperator, ___util_expenseApi, ___util_http, ___util_feedback, ___util_draftDialogFlow) {
   "use strict";
 
   const BaseController = ___BaseController["BaseController"];
@@ -14,6 +14,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
   const isSessionExpiredError = ___util_http["isSessionExpiredError"];
   const isBackendUnavailableError = ___util_http["isBackendUnavailableError"];
   const getBackendErrorMessage = ___util_feedback["getBackendErrorMessage"];
+  const runExclusiveAction = ___util_draftDialogFlow["runExclusiveAction"];
   /**
    * Orchestrates the Home dashboard. Loading, selection and image/media state
    * is delegated to focused services (PeriodService, MediaService,
@@ -82,27 +83,29 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       this.applyPeriodData();
     }
     async onSendInvoices() {
-      const period = this.currentPeriod();
-      if (!this._invoiceService) {
-        return;
-      }
-      const ui = this.getUiModel();
-      ui.setProperty("/busy", true);
-      try {
-        const result = await this._invoiceService.sendInvoices(period);
-        if (result.success) {
-          MessageToast.show(result.data || this.getText("sendInvoicesSuccess"));
-        } else {
-          MessageBox.error(result.data || this.getText("sendInvoicesNoData"));
+      await runExclusiveAction("sendInvoices", async () => {
+        const period = this.currentPeriod();
+        if (!this._invoiceService) {
+          return;
         }
-      } catch (error) {
-        if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
-          const detail = getBackendErrorMessage(error);
-          MessageBox.error(detail ? `${this.getText("sendInvoicesError")}\n\n${detail}` : this.getText("sendInvoicesError"));
+        const ui = this.getUiModel();
+        ui.setProperty("/busy", true);
+        try {
+          const sent = await this._invoiceService.sendInvoices(period);
+          if (sent) {
+            MessageToast.show(this.getText("sendInvoicesSuccess"));
+          } else {
+            MessageBox.error(this.getText("sendInvoicesNoData"));
+          }
+        } catch (error) {
+          if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
+            const detail = getBackendErrorMessage(error);
+            MessageBox.error(detail ? `${this.getText("sendInvoicesError")}\n\n${detail}` : this.getText("sendInvoicesError"));
+          }
+        } finally {
+          ui.setProperty("/busy", false);
         }
-      } finally {
-        ui.setProperty("/busy", false);
-      }
+      });
     }
 
     /**

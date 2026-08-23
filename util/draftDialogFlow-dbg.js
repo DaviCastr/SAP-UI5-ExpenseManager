@@ -60,6 +60,32 @@ sap.ui.define(["./feedback"], function (___feedback) {
     }
   }
 
+  // Page-level actions (no dialog involved) follow the same rule: while one is
+  // still processing, further invocations are ignored. Keyed by a string instead
+  // of a dialog instance.
+  const runningActions = new Set();
+
+  /**
+   * Runs an exclusive page-level action: while one invocation of the given key
+   * is still processing, further invocations are ignored.
+   *
+   * @param {string} key identifier of the exclusive action (e.g. "sendInvoices")
+   * @param {Function} action the action to run
+   * @returns {Promise<T | undefined>} the action result, or `undefined` when
+   * another invocation was already running
+   */
+  async function runExclusiveAction(key, action) {
+    if (runningActions.has(key)) {
+      return undefined;
+    }
+    runningActions.add(key);
+    try {
+      return await action();
+    } finally {
+      runningActions.delete(key);
+    }
+  }
+
   /**
    * Switches the dialog to the person draft binding (creating the draft when
    * none is open) and reports failures through the given i18n error key.
@@ -186,6 +212,7 @@ sap.ui.define(["./feedback"], function (___feedback) {
     __esModule: true
   };
   __exports.runExclusiveDialogAction = runExclusiveDialogAction;
+  __exports.runExclusiveAction = runExclusiveAction;
   __exports.ensureDialogDraft = ensureDialogDraft;
   __exports.waitForDraftListBinding = waitForDraftListBinding;
   __exports.findRowContextAfterLoad = findRowContextAfterLoad;

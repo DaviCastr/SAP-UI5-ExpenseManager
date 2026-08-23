@@ -81,11 +81,6 @@ export interface InvoiceQueryResult {
     Transactions?: InvoiceQueryTransaction[];
 }
 
-export interface SendInvoicesResult {
-    success: boolean;
-    data?: string;
-}
-
 export interface IdentifierTransaction {
     ID: string;
     Identifier: string;
@@ -126,13 +121,14 @@ export class InvoiceService {
 
     /**
      * Sends the full invoice of the given year/month through the unbound
-     * SendInvoices CAP action.
+     * SendInvoices CAP action. The backend resolves with a plain boolean
+     * (true when the invoices were processed); failures reject.
      *
      * @param {Period} period the year/month whose invoices are sent
-     * @returns {Promise<SendInvoicesResult>} the action result (success flag and any message)
+     * @returns {Promise<boolean>} whether the send succeeded
      */
-    public async sendInvoices(period: Period): Promise<SendInvoicesResult> {
-        return this.odata.requestFunction<SendInvoicesResult>("/SendInvoices", {
+    public async sendInvoices(period: Period): Promise<boolean> {
+        return this.odata.requestFunction<boolean>("/SendInvoices", {
             Year: period.year,
             Month: period.month
         });

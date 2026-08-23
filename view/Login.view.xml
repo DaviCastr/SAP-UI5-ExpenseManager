@@ -6,68 +6,129 @@
 >
     <Page id="loginPage" showHeader="false" backgroundDesign="List" class="loginPage">
         <content>
-            <FlexBox
+            <HBox
                 id="loginShell"
                 class="loginShell"
                 height="100%"
-                justifyContent="Center"
-                alignItems="Center"
+                alignItems="Stretch"
+                wrap="NoWrap"
             >
-                <VBox 
-                    id="loginCard" 
-                    class="loginCard sapUiResponsiveContentPadding sapUiResponsiveMargin"
-                    alignItems="Center"
-                    backgroundDesign="Solid"
+                <VBox
+                    class="loginHero"
+                    alignItems="Start"
+                    justifyContent="Center"
                 >
-                    <layoutData>
-                        <FlexItemData maxWidth="26rem" growFactor="1" />
-                    </layoutData>
-
-                    <HBox alignItems="Center" class="loginBrand sapUiMediumMarginBottom">
-                        <core:Icon 
-                            src="sap-icon://wallet" 
-                            size="2rem" 
-                            class="loginBrandIcon sapUiSmallMarginEnd" 
+                    <HBox alignItems="Center" class="loginHeroBrand sapUiMediumMarginBottom">
+                        <core:Icon
+                            src="sap-icon://wallet"
+                            size="1.9rem"
+                            class="loginHeroIcon sapUiSmallMarginEnd"
                         />
-                        <Title 
-                            text="{i18n>brandTitle}" 
-                            level="H2" 
-                            titleStyle="H2" 
-                            class="loginBrandTitle" 
+                        <Title
+                            text="{i18n>brandTitle}"
+                            level="H2"
+                            titleStyle="H2"
+                            class="loginHeroTitle"
                         />
                     </HBox>
 
-                    <Title 
-                        text="{i18n>loginHeadline}" 
-                        level="H1" 
-                        titleStyle="H3" 
-                        textAlign="Center"
-                        class="loginHeadline sapUiTinyMarginBottom" 
-                    />
-                    
-                    <Text 
-                        text="{i18n>loginSubtitle}" 
-                        textAlign="Center"
-                        class="loginSubtitle sapUiLargeMarginBottom" 
+                    <Title
+                        text="{i18n>loginHeadline}"
+                        level="H1"
+                        titleStyle="H1"
+                        wrap="true"
+                        class="loginHeroHeadline sapUiTinyMarginBottom"
                     />
 
-                    <Button
-                        id="loginButton"
-                        text="{i18n>loginButton}"
-                        icon="sap-icon://log"
-                        press=".onLogin"
-                        type="Emphasized"
-                        width="100%"
-                        class="loginPrimary sapUiMediumMarginBottom"
+                    <Text
+                        text="{i18n>loginSubtitle}"
+                        class="loginHeroSubtitle sapUiMediumMarginBottom"
                     />
 
-                    <Text 
-                        text="{i18n>loginNote}" 
-                        textAlign="Center"
-                        class="loginNote sapUiTinyMarginBottom" 
-                    />
+                    <VBox class="loginFeatures">
+                        <HBox alignItems="Center" class="loginFeatureItem">
+                            <core:Icon
+                                src="sap-icon://credit-card"
+                                class="loginFeatureIcon sapUiSmallMarginEnd"
+                            />
+                            <Text text="{i18n>loginFeatureCards}" class="loginFeatureText" />
+                        </HBox>
+
+                        <HBox alignItems="Center" class="loginFeatureItem sapUiTinyMarginTop">
+                            <core:Icon
+                                src="sap-icon://information"
+                                class="loginFeatureIcon sapUiSmallMarginEnd"
+                            />
+                            <Text text="{i18n>loginFeatureGoals}" class="loginFeatureText" />
+                        </HBox>
+
+                        <HBox alignItems="Center" class="loginFeatureItem sapUiTinyMarginTop">
+                            <core:Icon
+                                src="sap-icon://money-bills"
+                                class="loginFeatureIcon sapUiSmallMarginEnd"
+                            />
+                            <Text text="{i18n>loginFeatureDebts}" class="loginFeatureText" />
+                        </HBox>
+                    </VBox>
                 </VBox>
-            </FlexBox>
+
+                <FlexBox
+                    class="loginAside"
+                    height="100%"
+                    justifyContent="Center"
+                    alignItems="Center"
+                >
+                    <VBox
+                        id="loginCard"
+                        class="loginCard"
+                        alignItems="Center"
+                    >
+                        <HBox alignItems="Center" class="loginBrand sapUiMediumMarginBottom">
+                            <core:Icon
+                                src="sap-icon://wallet"
+                                size="2rem"
+                                class="loginBrandIcon sapUiSmallMarginEnd"
+                            />
+                            <Title
+                                text="{i18n>brandTitle}"
+                                level="H2"
+                                titleStyle="H2"
+                                class="loginBrandTitle"
+                            />
+                        </HBox>
+
+                        <Title
+                            text="{i18n>loginHeadline}"
+                            level="H1"
+                            titleStyle="H3"
+                            textAlign="Center"
+                            class="loginHeadline sapUiTinyMarginBottom"
+                        />
+
+                        <Text
+                            text="{i18n>loginSubtitle}"
+                            textAlign="Center"
+                            class="loginSubtitle sapUiLargeMarginBottom"
+                        />
+
+                        <Button
+                            id="loginButton"
+                            text="{i18n>loginButton}"
+                            icon="sap-icon://log"
+                            press=".onLogin"
+                            type="Emphasized"
+                            width="100%"
+                            class="loginPrimary sapUiMediumMarginBottom"
+                        />
+
+                        <Text
+                            text="{i18n>loginNote}"
+                            textAlign="Center"
+                            class="loginNote sapUiTinyMarginBottom"
+                        />
+                    </VBox>
+                </FlexBox>
+            </HBox>
         </content>
     </Page>
 </mvc:View>

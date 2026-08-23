@@ -19,10 +19,11 @@ sap.ui.define(["./ODataService", "sap/ui/model/Filter", "sap/ui/model/FilterOper
 
     /**
      * Sends the full invoice of the given year/month through the unbound
-     * SendInvoices CAP action.
+     * SendInvoices CAP action. The backend resolves with a plain boolean
+     * (true when the invoices were processed); failures reject.
      *
      * @param {Period} period the year/month whose invoices are sent
-     * @returns {Promise<SendInvoicesResult>} the action result (success flag and any message)
+     * @returns {Promise<boolean>} whether the send succeeded
      */
     async sendInvoices(period) {
       return this.odata.requestFunction("/SendInvoices", {
