@@ -38,22 +38,11 @@
                         class="sapUiMediumMarginEnd"
                     />
                     <VBox>
-                        <HBox alignItems="Center">
-                            <Title
-                                text="{Name}"
-                                level="H2"
-                                class="sapUiTinyMarginBottom"
-                            />
-                            <!-- Edita sob demanda: cria/usa o rascunho da pessoa -->
-                            <Button
-                                icon="sap-icon://edit"
-                                type="Transparent"
-                                tooltip="{i18n>personEditInsideTooltip}"
-                                press="handler.onTogglePersonEdit"
-                                visible="{=!${ui>/managerDialogInDraft}}"
-                                class="sapUiTinyMarginBegin"
-                            />
-                        </HBox>
+                        <Title
+                            text="{Name}"
+                            level="H2"
+                            class="sapUiTinyMarginBottom"
+                        />
                         <Text
                             text="{i18n>personDetailIntro}"
                         />
@@ -255,6 +244,15 @@
                 type="Reject"
                 visible="{ui>/managerDialogInDraft}"
                 press="handler.onDiscardDraft"
+            />
+            <!-- Edita sob demanda: cria/usa o rascunho da pessoa (só fora da edição) -->
+            <Button
+                text="{i18n>personEditInsideButton}"
+                icon="sap-icon://edit"
+                type="Emphasized"
+                tooltip="{i18n>personEditInsideTooltip}"
+                visible="{=!${ui>/managerDialogInDraft}}"
+                press="handler.onTogglePersonEdit"
             />
             <!-- Alterado para tipo Transparent para diminuir a poluição visual -->
             <Button
