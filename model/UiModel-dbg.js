@@ -13,6 +13,16 @@ sap.ui.define(["sap/ui/model/json/JSONModel", "../util/liabilityRules"], functio
           year: now.getFullYear(),
           month: now.getMonth() + 1
         },
+        periodTotals: {
+          TotalExpenses: 0,
+          MonthExpenses: 0,
+          MonthExpensesToPay: 0,
+          MonthExpensesClosed: 0,
+          MonthExpensesPayed: 0,
+          MonthCriticallity: 0,
+          CriticallityToPay: 0,
+          CurrencyCode: ""
+        },
         periodSelector: {
           year: String(now.getFullYear()),
           month: String(now.getMonth() + 1),

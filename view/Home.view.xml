@@ -282,9 +282,9 @@
                                         <ProgressIndicator
                                             percentValue="{
                                                 parts: [{
-                                                    path: 'TotalExpensesMonth'
+                                                    path: 'ui>/periodTotals/MonthExpenses'
                                                 }, {
-                                                    path: 'TotalExpenses'
+                                                    path: 'ui>/periodTotals/TotalExpenses'
                                                 }],
                                                 formatter: 'formatter.expensePeriodProgress'
                                             }"
@@ -302,9 +302,9 @@
                                         <Text
                                             text="{
                                                 parts: [{
-                                                    path: 'TotalExpensesMonth'
+                                                    path: 'ui>/periodTotals/MonthExpenses'
                                                 }, {
-                                                    path: 'TotalExpenses'
+                                                    path: 'ui>/periodTotals/TotalExpenses'
                                                 }],
                                                 formatter: 'formatter.expensePeriodProgressText'
                                             }"
@@ -498,7 +498,7 @@
                         <ObjectNumber
                             number="{ui>/summary/expenses}"
                             state="{
-                                path: 'MonthCriticallity',
+                                path: 'ui>/periodTotals/MonthCriticallity',
                                 formatter: 'formatter.criticalityState'
                             }"
                             class="metricNumber"
@@ -569,9 +569,9 @@
                         <ObjectNumber
                             number="{
                                 parts: [{
-                                    path: 'TotalExpensesPayed'
+                                    path: 'ui>/periodTotals/MonthExpensesPayed'
                                 }, {
-                                    path: 'Currency_code'
+                                    path: 'ui>/periodTotals/CurrencyCode'
                                 }],
                                 formatter: 'formatter.formatCardAmount'
                             }"
@@ -596,14 +596,14 @@
                         <ObjectNumber
                             number="{
                                 parts: [{
-                                    path: 'TotalExpensesToPay'
+                                    path: 'ui>/periodTotals/MonthExpensesToPay'
                                 }, {
-                                    path: 'Currency_code'
+                                    path: 'ui>/periodTotals/CurrencyCode'
                                 }],
                                 formatter: 'formatter.formatCardAmount'
                             }"
                             state="{
-                                path: 'CriticallityToPay',
+                                path: 'ui>/periodTotals/CriticallityToPay',
                                 formatter: 'formatter.criticalityState'
                             }"
                             class="metricNumber"
@@ -627,9 +627,9 @@
                         <ObjectNumber
                             number="{
                                 parts: [{
-                                    path: 'TotalExpensesClosed'
+                                    path: 'ui>/periodTotals/MonthExpensesClosed'
                                 }, {
-                                    path: 'Currency_code'
+                                    path: 'ui>/periodTotals/CurrencyCode'
                                 }],
                                 formatter: 'formatter.formatCardAmount'
                             }"
@@ -654,9 +654,9 @@
                         <ObjectNumber
                             number="{
                                 parts: [{
-                                    path: 'TotalExpenses'
+                                    path: 'ui>/periodTotals/TotalExpenses'
                                 }, {
-                                    path: 'Currency_code'
+                                    path: 'ui>/periodTotals/CurrencyCode'
                                 }],
                                 formatter: 'formatter.formatCardAmount'
                             }"

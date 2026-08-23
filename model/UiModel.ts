@@ -101,6 +101,17 @@ export interface IUiState {
 
     period: UiPeriod;
 
+    periodTotals: {
+        TotalExpenses: number;
+        MonthExpenses: number;
+        MonthExpensesToPay: number;
+        MonthExpensesClosed: number;
+        MonthExpensesPayed: number;
+        MonthCriticallity: number;
+        CriticallityToPay: number;
+        CurrencyCode: string;
+    };
+
     periodSelector: {
         year: string;
         month: string;
@@ -213,6 +224,17 @@ export default class UiModel extends JSONModel {
             period: {
                 year: now.getFullYear(),
                 month: now.getMonth() + 1
+            },
+
+            periodTotals: {
+                TotalExpenses: 0,
+                MonthExpenses: 0,
+                MonthExpensesToPay: 0,
+                MonthExpensesClosed: 0,
+                MonthExpensesPayed: 0,
+                MonthCriticallity: 0,
+                CriticallityToPay: 0,
+                CurrencyCode: ""
             },
 
             periodSelector: {
