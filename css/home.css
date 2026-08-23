@@ -9,10 +9,25 @@
 .primaryAction .sapMBtnContent { font-weight: 700; }
 .commonAction .sapMBtnInner, .actionButton .sapMBtnInner { border-radius: .7rem; }
 .secondaryAction .sapMBtnInner,
-.secondaryAction.sapMBtnInner.sapMBtnTransparent,
-.secondaryAction.sapMBtnInner.sapMBtnTransparent .sapUiIcon { color: var(--white) !important; border-color: rgba(255,255,255,.5) !important; border-radius: .65rem; }
-.secondaryAction.sapMBtnInner.sapMBtnTransparent:hover,
-.secondaryAction.sapMBtnInner.sapMBtnTransparent:hover .sapUiIcon { color: #d7f7ea !important; }
+.secondaryAction.sapMBtnInner.sapMBtnTransparent { color: var(--white) !important; border-color: rgba(255,255,255,.35) !important; border-radius: .65rem; background-color: rgba(255,255,255,.10) !important; }
+.secondaryAction .sapMBtnInner .sapUiIcon,
+.secondaryAction.sapMBtnInner.sapMBtnTransparent .sapUiIcon { color: var(--white) !important; border-radius: .65rem; background-color: transparent !important; }
+/* Sobre o gradiente do hero, mantém o texto branco no hover/clique
+   (regras mais específicas que os estados globais de base.css; a classe
+   custom fica na raiz .sapMBtn, por isso o padrão descendente).
+   O fundo translúcido pertence apenas ao pill do botão — o ícone nunca
+   recebe background próprio para não formar "quadradinho" destacado. */
+.sapUiBody .sapMBtn.secondaryAction:hover .sapMBtnInner,
+.sapUiBody .sapMBtn.secondaryAction .sapMBtnInner:hover { color: var(--white) !important; background-color: rgba(255,255,255,.18) !important; }
+.sapUiBody .sapMBtn.secondaryAction:hover .sapMBtnContent,
+.sapUiBody .sapMBtn.secondaryAction:hover .sapMBtnInner bdi,
+.sapUiBody .sapMBtn.secondaryAction .sapMBtnInner:hover bdi { color: var(--white) !important; }
+.sapUiBody .sapMBtn.secondaryAction:hover .sapMBtnInner .sapUiIcon,
+.sapUiBody .sapMBtn.secondaryAction .sapMBtnInner:hover .sapUiIcon { color: var(--white) !important; background-color: transparent !important; }
+.sapUiBody .sapMBtn.secondaryAction:active .sapMBtnInner,
+.sapUiBody .sapMBtn.sapMBtnActive.secondaryAction .sapMBtnInner { color: var(--white) !important; background-color: rgba(255,255,255,.26) !important; }
+.sapUiBody .sapMBtn.secondaryAction:active .sapMBtnInner bdi,
+.sapUiBody .sapMBtn.sapMBtnActive.secondaryAction .sapMBtnInner bdi { color: var(--white) !important; }
 .balanceCard { min-width: 16rem; justify-content: center; padding: 1.6rem 1.6rem; background: rgba(0,0,0,.13); border: 1px solid rgba(255,255,255,.16); border-radius: 1rem; }
 .balanceNumber { margin: .5rem 0; }
 .balanceNumber .sapMObjectNumberText { font-size: 2.2rem; line-height: 1.25; }
@@ -22,31 +37,52 @@
 .heroProgress .sapMPIBar { background: #a7f4d7; border-radius: .5rem; height: 10px; }
 .heroProgressPercent { font-size: .82rem; font-weight: 700; color: #a7f4d7; min-width: 2.8rem; text-align: end; }
 
-.metricCard { flex: 1 1 12rem; min-width: 0; padding: 1.15rem; border-radius: 1rem; background: var(--white); box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid var(--line); }
+.metricCard { flex: 1 1 12rem; min-width: 0; padding: 1.15rem; border-radius: 1rem; background: var(--white); box-shadow: 0 4px 16px rgba(19, 48, 48, .06); border: 1px solid var(--line); border-top: 3px solid var(--line); transition: transform .18s ease, box-shadow .18s ease; }
+.metricCard:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(19, 48, 48, .12); }
 .metricCard .sapUiIcon { padding: .5rem; border-radius: .6rem; }
+.incomeMetric { border-top-color: #34c98e; }
+.expenseMetric { border-top-color: #f0a35e; }
+.saveMetric { border-top-color: #7ba3ec; }
+.targetMetric { border-top-color: #b08ae8; }
+.paidMetric { border-top-color: #2fa98a; }
+.payMetric { border-top-color: #e8737f; }
+.closedMetric { border-top-color: #8aa5bd; }
+.totalMetric { border-top-color: #e0a63f; }
 .incomeMetric .sapUiIcon { background: #d9f8ec; color: var(--teal-700); }
 .expenseMetric .sapUiIcon { background: #fff0e5; color: #d98e3d; }
 .saveMetric .sapUiIcon { background: #e6eefb; color: #3d6ad9; }
 .targetMetric .sapUiIcon { background: #efe8fd; color: #7a3dd9; }
-.totalMetric .sapUiIcon { background: #fdeef1; color: #c63d5a; }
+.paidMetric .sapUiIcon { background: #dcf7ea; color: #1a8f68; }
+.payMetric .sapUiIcon { background: #fdeef1; color: #c63d5a; }
+.closedMetric .sapUiIcon { background: #eef3f8; color: #55708a; }
+.totalMetric .sapUiIcon { background: #fdf3dd; color: #a8720a; }
 .metricCard .sapMObjectNumberText { font-size: 1.35rem; font-weight: 700;  }
 
 .transactionList, .cardList, .categoryList { background: transparent; max-height: 26rem; overflow-y: auto; }
-.transactionItem { padding: .7rem 0; }
+/* Divisórias suaves entre as linhas de cada lista do painel */
+.transactionList .sapMLIB:not(:last-child),
+.categoryList .sapMLIB:not(:last-child) { border-bottom: 1px solid #edf3f2; }
+
+/* Cantos arredondados nas linhas: o anel de foco do clique acompanha o raio
+   (nas dívidas já é arredondado por causa do estilo de mini-card) */
+.transactionList .sapMLIB,
+.categoryList .sapMLIB,
+.cardList .sapMLIB { border-radius: .6rem; }
+
+.transactionItem { padding: .75rem .5rem; }
 .transactionIcon { background: var(--teal-050); color: var(--teal-700); border-radius: .7rem; padding: .6rem; margin-right: .8rem; }
 .transactionTitle { font-weight: 600; color: var(--ink); }
 .transactionCardIcon { font-size: .8rem; color: var(--muted); }
 .transactionAmount .sapMObjectNumberText { font-weight: 700; color: var(--ink); }
 
-.categoryItem { padding: .55rem 0; }
+.categoryItem { padding: .7rem .5rem; }
 .categoryItemMain { gap: .85rem; }
 .categoryItemAvatar .sapMAvatar { background: var(--teal-050); color: var(--teal-700); }
-.categoryProgress { margin-top: .3rem; }
-/* .categoryProgress.sapMPI { background: var(--teal-050); border-radius: .5rem; height: .45rem; overflow: hidden; } */
-.categoryProgress .sapMPIBar { background: var(--teal-700); border-radius: .5rem; height: 10px; } */
-/* /* .categoryPercent { font-size: .78rem; font-weight: 700; color: var(--teal-700); } */
+.categoryProgress { margin-top: .3rem; flex-shrink: 1; }
+.categoryProgress .sapMPIBar { background: var(--teal-700); border-radius: .5rem; height: 10px; }
+.categoryPercent { font-size: .74rem; font-weight: 700; color: var(--teal-700); background: var(--teal-050); border: 1px solid #d3f1e4; padding: .14rem .55rem; border-radius: 1rem; flex-shrink: 0; white-space: nowrap; line-height: 1.4; }
 
-.creditCardItem { padding: .6rem 0; }
+.creditCardItem { gap: .3rem; padding: .75rem .5rem; }
 .creditCardName { font-weight: 700; color: var(--ink); }
 .creditCardLabel { color: var(--muted); font-size: .75rem; }
 .creditCardValue .sapMObjectNumberText { font-size: 1.2rem; font-weight: 700; color: var(--ink); }
@@ -217,7 +253,10 @@
 .deleteTxItem { gap: .75rem; }
 
 .liabilityList { background: transparent; max-height: 26rem; overflow-y: auto; }
-.liabilityItem { padding: .7rem 0; gap: .75rem; }
+/* Cada dívida como um cartão independente */
+.liabilityList .sapMLIB { background: var(--white); border: 1px solid var(--line); border-radius: .9rem; margin-bottom: .6rem; box-shadow: 0 2px 10px rgba(19, 48, 48, .05); overflow: hidden; transition: box-shadow .18s ease, transform .18s ease; }
+.liabilityList .sapMLIB:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(19, 48, 48, .1); }
+.liabilityItem { padding: .8rem .5rem; gap: .75rem; }
 .liabilityItemMain { min-width: 0; flex: 1 1 auto; }
 .liabilityItemMain > .sapMVBox { min-width: 0; }
 .liabilityItemActions { min-width: 0; }
@@ -247,6 +286,9 @@
 /* Layout do dashboard: linha 1 (movimentações + categorias) mais alta */
 .transactionsPanel .transactionList,
 .categoriesPanel .categoryList { max-height: 32rem; }
+
+/* Cabeçalhos dos painéis: divisor sutil para separar título do conteúdo */
+.sectionHeader { padding-bottom: .65rem; border-bottom: 1px solid var(--line); }
 
 /* Interação: destaque suave ao passar o mouse nos itens */
 .transactionItem,

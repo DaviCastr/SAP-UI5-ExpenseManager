@@ -10,6 +10,29 @@
     --line: #e7eeee;
     --line-soft: #d5e3e1;
     --white: #ffffff;
+
+    /* Substitui o azul padrão do tema pelos tons da marca */
+    --sapContent_FocusColor: var(--teal-700);
+    --sapContent_BusyColor: var(--teal-700);
+    --sapButton_Hover_Background: #edf7f2;
+    --sapButton_Hover_BorderColor: var(--line-soft);
+    --sapButton_Hover_TextColor: var(--teal-800);
+    --sapButton_Active_Background: #d9f2e8;
+    --sapButton_Active_BorderColor: var(--teal-700);
+    --sapButton_Active_TextColor: var(--teal-900);
+    --sapButton_Transparent_Hover_Background: var(--teal-050);
+    --sapButton_Transparent_Hover_BorderColor: #bfe8d8;
+    --sapButton_Transparent_Hover_TextColor: var(--teal-800);
+    --sapButton_Transparent_Active_Background: #d9f2e8;
+    --sapButton_Transparent_Active_BorderColor: var(--teal-700);
+    --sapButton_Transparent_Active_TextColor: var(--teal-900);
+    /* Botões Transparent usam a família "Lite" no tema Horizon */
+    --sapButton_Lite_Hover_Background: var(--teal-050);
+    --sapButton_Lite_Hover_BorderColor: #bfe8d8;
+    --sapButton_Lite_Hover_TextColor: var(--teal-800);
+    --sapButton_Lite_Active_Background: #d9f2e8;
+    --sapButton_Lite_Active_BorderColor: var(--teal-700);
+    --sapList_Hover_Background: #f2faf7;
 }
 
 html, body, .sapUiBody { background: var(--surface); font-family: "72", "Segoe UI", sans-serif; }
@@ -52,3 +75,35 @@ span.sapMBtnInner.sapMBtnEmphasized.sapMBtnActive,
     border-color: var(--teal-900) !important;
     color: var(--white) !important;
 }
+
+/* Texto dos botões (Transparent/Default/Ghost/Back): segue sempre a paleta da
+   marca em hover/clique. Regras diretas no span de conteúdo vencem o tema,
+   que pinta o texto com variáveis próprias e anula a cor herdada do botão. */
+.sapUiBody .sapMBtnInner.sapMBtnTransparent .sapMBtnContent,
+.sapUiBody .sapMBtnInner.sapMBtnDefault .sapMBtnContent,
+.sapUiBody .sapMBtnInner.sapMBtnGhost .sapMBtnContent,
+.sapUiBody .sapMBtnBack .sapMBtnContent { color: inherit; }
+
+.sapUiBody .sapMBtnInner.sapMBtnTransparent:hover .sapMBtnContent,
+.sapUiBody .sapMBtnInner.sapMBtnDefault:hover .sapMBtnContent,
+.sapUiBody .sapMBtnInner.sapMBtnGhost:hover .sapMBtnContent,
+.sapUiBody .sapMBtnBack:hover .sapMBtnContent,
+.sapUiBody .sapMBtnInner.sapMBtnTransparent:hover bdi,
+.sapUiBody .sapMBtnInner.sapMBtnDefault:hover bdi,
+.sapUiBody .sapMBtnInner.sapMBtnGhost:hover bdi,
+.sapUiBody .sapMBtnBack:hover bdi { color: var(--teal-700) !important; }
+
+.sapUiBody .sapMBtnInner.sapMBtnTransparent:active .sapMBtnContent,
+.sapUiBody .sapMBtnInner.sapMBtnDefault:active .sapMBtnContent,
+.sapUiBody .sapMBtnInner.sapMBtnGhost:active .sapMBtnContent,
+.sapUiBody .sapMBtnBack:active .sapMBtnContent,
+.sapUiBody .sapMBtn.sapMBtnActive .sapMBtnInner.sapMBtnTransparent .sapMBtnContent,
+.sapUiBody .sapMBtn.sapMBtnActive .sapMBtnInner.sapMBtnDefault .sapMBtnContent,
+.sapUiBody .sapMBtn.sapMBtnActive .sapMBtnInner.sapMBtnGhost .sapMBtnContent,
+.sapUiBody .sapMBtnInner.sapMBtnTransparent:active bdi,
+.sapUiBody .sapMBtnInner.sapMBtnDefault:active bdi,
+.sapUiBody .sapMBtnInner.sapMBtnGhost:active bdi,
+.sapUiBody .sapMBtnBack:active bdi,
+.sapUiBody .sapMBtn.sapMBtnActive .sapMBtnInner.sapMBtnTransparent bdi,
+.sapUiBody .sapMBtn.sapMBtnActive .sapMBtnInner.sapMBtnDefault bdi,
+.sapUiBody .sapMBtn.sapMBtnActive .sapMBtnInner.sapMBtnGhost bdi { color: var(--teal-900) !important; }

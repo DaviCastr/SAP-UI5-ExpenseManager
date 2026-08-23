@@ -101,6 +101,7 @@
                             text="{i18n>loginHeadline}"
                             level="H1"
                             titleStyle="H3"
+                            wrap="true"
                             textAlign="Center"
                             class="loginHeadline sapUiTinyMarginBottom"
                         />

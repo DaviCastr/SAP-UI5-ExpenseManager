@@ -42,7 +42,7 @@
 
 .loginBrandTitle { color: var(--ink); font-weight: 700; }
 
-.loginHeadline { color: var(--ink); line-height: 1.2; }
+.loginHeadline { color: var(--ink); line-height: 1.2; white-space: normal; overflow: visible; text-overflow: clip; }
 
 .loginSubtitle { color: var(--muted); line-height: 1.55; }
 
@@ -170,6 +170,9 @@
     font-size: clamp(1.85rem, 2.5vw, 2.5rem) !important;
     line-height: 1.15;
     max-width: 30rem;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
     position: relative;
     z-index: 1;
 }
