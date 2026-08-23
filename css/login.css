@@ -32,12 +32,9 @@
 
 .loginBrand { gap: .7rem; }
 
-.loginBrandIcon {
-    color: var(--teal-700);
-    font-size: 1.8rem;
-    background: #d8f7ed;
-    border-radius: .9rem;
-    padding: .6rem;
+.loginBrandLogo {
+    border-radius: .75rem;
+    box-shadow: 0 4px 14px rgba(7, 61, 58, .18);
 }
 
 .loginBrandTitle { color: var(--ink); font-weight: 700; }
@@ -150,13 +147,9 @@
     z-index: 1;
 }
 
-.loginHeroIcon {
-    color: var(--white);
-    font-size: 1.9rem;
-    background: rgba(255, 255, 255, .12);
-    border: 1px solid rgba(255, 255, 255, .22);
-    border-radius: .95rem;
-    padding: .65rem;
+.loginHeroLogo {
+    border-radius: .8rem;
+    box-shadow: 0 6px 18px rgba(7, 61, 58, .35);
 }
 
 .loginHeroTitle {

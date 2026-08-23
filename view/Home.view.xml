@@ -27,9 +27,12 @@
                             alignItems="Center"
                             class="brandGroup"
                         >
-                            <core:Icon
-                                src="sap-icon://wallet"
-                                class="brandMark"
+                            <Image
+                                src="img/logo.svg"
+                                width="2.4rem"
+                                height="2.4rem"
+                                decorative="true"
+                                class="brandLogo sapUiSmallMarginEnd"
                             />
                             <VBox>
                                 <Title
