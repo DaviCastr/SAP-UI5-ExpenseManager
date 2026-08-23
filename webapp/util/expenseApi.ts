@@ -44,6 +44,13 @@ export interface CompleteInvoiceReturnProperties {
     Description: string;
     Currency: { code: string };
     TotalAmount: number;
+    TotalExpenses?: number;
+    MonthExpenses?: number;
+    MonthExpensesToPay?: number;
+    MonthExpensesClosed?: number;
+    MonthExpensesPayed?: number;
+    MonthCriticallity?: number;
+    CriticallityToPay?: number;
     KPIs: {
         TotalTransactions: number;
         TotalCards: number;

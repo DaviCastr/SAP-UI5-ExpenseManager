@@ -75,6 +75,16 @@ export class DashboardRenderer {
             trendText: this.text("trendCalculating"),
             trendIcon: "sap-icon://trend-up"
         });
+        this.ui.setProperty("/periodTotals", {
+            TotalExpenses: Number(invoice.TotalExpenses) || 0,
+            MonthExpenses: Number(invoice.MonthExpenses) || 0,
+            MonthExpensesToPay: Number(invoice.MonthExpensesToPay) || 0,
+            MonthExpensesClosed: Number(invoice.MonthExpensesClosed) || 0,
+            MonthExpensesPayed: Number(invoice.MonthExpensesPayed) || 0,
+            MonthCriticallity: invoice.MonthCriticallity || 0,
+            CriticallityToPay: invoice.CriticallityToPay || 0,
+            CurrencyCode: currency
+        });
         this.ui.setProperty("/transactions", transactions);
 
         const categories = this.buildCategoryBreakdown(transactions, expenses, currency);

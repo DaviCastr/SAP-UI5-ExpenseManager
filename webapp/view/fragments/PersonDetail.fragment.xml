@@ -185,8 +185,8 @@
                                     <f:fields>
                                         <ObjectNumber
                                             number="{
-                                                parts: [ { path: 'TotalExpenses' }, { path: 'Currency_code' } ],
-                                            formatter: 'formatter.formatCardAmount'
+                                                parts: [ { path: 'ui>/periodTotals/TotalExpenses' }, { path: 'ui>/periodTotals/CurrencyCode' } ],
+                                                formatter: 'formatter.formatCardAmount'
                                             }"
                                         />
                                     </f:fields>
@@ -195,10 +195,10 @@
                                     <f:fields>
                                         <ObjectNumber
                                             number="{
-                                                parts: [ { path: 'TotalExpensesMonth' }, { path: 'Currency_code' } ],
+                                                parts: [ { path: 'ui>/periodTotals/MonthExpenses' }, { path: 'ui>/periodTotals/CurrencyCode' } ],
                                                 formatter: 'formatter.formatCardAmount'
                                             }"
-                                            state="{ path: 'MonthCriticallity', formatter: 'formatter.criticalityState' }"
+                                            state="{ path: 'ui>/periodTotals/MonthCriticallity', formatter: 'formatter.criticalityState' }"
                                         />
                                     </f:fields>
                                 </f:FormElement>
@@ -206,7 +206,7 @@
                                     <f:fields>
                                         <ObjectNumber
                                             number="{
-                                                parts: [ { path: 'TotalExpensesClosed' }, { path: 'Currency_code' } ],
+                                                parts: [ { path: 'ui>/periodTotals/MonthExpensesClosed' }, { path: 'ui>/periodTotals/CurrencyCode' } ],
                                                 formatter: 'formatter.formatCardAmount'
                                             }"
                                         />
@@ -216,7 +216,7 @@
                                     <f:fields>
                                         <ObjectNumber
                                             number="{
-                                                parts: [ { path: 'TotalExpensesPayed' }, { path: 'Currency_code' } ],
+                                                parts: [ { path: 'ui>/periodTotals/MonthExpensesPayed' }, { path: 'ui>/periodTotals/CurrencyCode' } ],
                                                 formatter: 'formatter.formatCardAmount'
                                             }"
                                         />
@@ -226,10 +226,10 @@
                                     <f:fields>
                                         <ObjectNumber
                                             number="{
-                                                parts: [ { path: 'TotalExpensesToPay' }, { path: 'Currency_code' } ],
+                                                parts: [ { path: 'ui>/periodTotals/MonthExpensesToPay' }, { path: 'ui>/periodTotals/CurrencyCode' } ],
                                                 formatter: 'formatter.formatCardAmount'
                                             }"
-                                            state="{ path: 'CriticallityToPay', formatter: 'formatter.criticalityState' }"
+                                            state="{ path: 'ui>/periodTotals/CriticallityToPay', formatter: 'formatter.criticalityState' }"
                                         />
                                     </f:fields>
                                 </f:FormElement>
