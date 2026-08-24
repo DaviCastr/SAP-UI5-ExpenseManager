@@ -104,6 +104,8 @@ export interface IUiState {
     periodTotals: {
         TotalExpenses: number;
         MonthExpenses: number;
+        MonthLiabilitiesExpenses: number;
+        MonthTotalExpenses: number;
         MonthExpensesToPay: number;
         MonthExpensesClosed: number;
         MonthExpensesPayed: number;
@@ -229,6 +231,8 @@ export default class UiModel extends JSONModel {
             periodTotals: {
                 TotalExpenses: 0,
                 MonthExpenses: 0,
+                MonthLiabilitiesExpenses: 0,
+                MonthTotalExpenses: 0,
                 MonthExpensesToPay: 0,
                 MonthExpensesClosed: 0,
                 MonthExpensesPayed: 0,

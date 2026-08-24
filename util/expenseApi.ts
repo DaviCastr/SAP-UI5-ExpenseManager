@@ -46,6 +46,8 @@ export interface CompleteInvoiceReturnProperties {
     TotalAmount: number;
     TotalExpenses?: number;
     MonthExpenses?: number;
+    MonthLiabilitiesExpenses?: number;
+    MonthTotalExpenses?: number;
     MonthExpensesToPay?: number;
     MonthExpensesClosed?: number;
     MonthExpensesPayed?: number;

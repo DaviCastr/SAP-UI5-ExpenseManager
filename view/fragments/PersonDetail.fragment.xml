@@ -191,6 +191,26 @@
                                         />
                                     </f:fields>
                                 </f:FormElement>
+                                <f:FormElement label="{i18n>personTotalLiabilitiesMonthLabel}">
+                                    <f:fields>
+                                        <ObjectNumber
+                                            number="{
+                                                parts: [ { path: 'ui>/periodTotals/MonthLiabilitiesExpenses' }, { path: 'ui>/periodTotals/CurrencyCode' } ],
+                                                formatter: 'formatter.formatCardAmount'
+                                            }"
+                                        />
+                                    </f:fields>
+                                </f:FormElement>
+                                <f:FormElement label="{i18n>personTotalMonthCombinedLabel}">
+                                    <f:fields>
+                                        <ObjectNumber
+                                            number="{
+                                                parts: [ { path: 'ui>/periodTotals/MonthTotalExpenses' }, { path: 'ui>/periodTotals/CurrencyCode' } ],
+                                                formatter: 'formatter.formatCardAmount'
+                                            }"
+                                        />
+                                    </f:fields>
+                                </f:FormElement>
                                 <f:FormElement label="{i18n>personTotalExpensesClosedLabel}">
                                     <f:fields>
                                         <ObjectNumber

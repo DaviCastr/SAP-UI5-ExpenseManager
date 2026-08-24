@@ -78,6 +78,8 @@ export class DashboardRenderer {
         this.ui.setProperty("/periodTotals", {
             TotalExpenses: Number(invoice.TotalExpenses) || 0,
             MonthExpenses: Number(invoice.MonthExpenses) || 0,
+            MonthLiabilitiesExpenses: Number(invoice.MonthLiabilitiesExpenses) || 0,
+            MonthTotalExpenses: Number(invoice.MonthTotalExpenses) || 0,
             MonthExpensesToPay: Number(invoice.MonthExpensesToPay) || 0,
             MonthExpensesClosed: Number(invoice.MonthExpensesClosed) || 0,
             MonthExpensesPayed: Number(invoice.MonthExpensesPayed) || 0,

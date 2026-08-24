@@ -48,6 +48,7 @@
 .payMetric { border-top-color: #e8737f; }
 .closedMetric { border-top-color: #8aa5bd; }
 .totalMetric { border-top-color: #e0a63f; }
+.liabilitiesMetric { border-top-color: #b07fd4; }
 .incomeMetric .sapUiIcon { background: #d9f8ec; color: var(--teal-700); }
 .expenseMetric .sapUiIcon { background: #fff0e5; color: #d98e3d; }
 .saveMetric .sapUiIcon { background: #e6eefb; color: #3d6ad9; }
@@ -56,6 +57,7 @@
 .payMetric .sapUiIcon { background: #fdeef1; color: #c63d5a; }
 .closedMetric .sapUiIcon { background: #eef3f8; color: #55708a; }
 .totalMetric .sapUiIcon { background: #fdf3dd; color: #a8720a; }
+.liabilitiesMetric .sapUiIcon { background: #f4e9fb; color: #8e44ad; }
 .metricCard .sapMObjectNumberText { font-size: 1.35rem; font-weight: 700;  }
 
 .transactionList, .cardList, .categoryList { background: transparent; max-height: 26rem; overflow-y: auto; }

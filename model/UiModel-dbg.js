@@ -16,6 +16,8 @@ sap.ui.define(["sap/ui/model/json/JSONModel", "../util/liabilityRules"], functio
         periodTotals: {
           TotalExpenses: 0,
           MonthExpenses: 0,
+          MonthLiabilitiesExpenses: 0,
+          MonthTotalExpenses: 0,
           MonthExpensesToPay: 0,
           MonthExpensesClosed: 0,
           MonthExpensesPayed: 0,
