@@ -643,6 +643,33 @@
                             class="metricHint"
                         />
                     </VBox>
+                    <VBox class="metricCard liabilitiesMetric">
+                        <HBox
+                            justifyContent="SpaceBetween"
+                            alignItems="Start"
+                        >
+                            <Text
+                                text="{i18n>metricLiabilitiesLabel}"
+                                class="metricLabel"
+                            />
+                            <core:Icon src="sap-icon://payment" />
+                        </HBox>
+                        <ObjectNumber
+                            number="{
+                                parts: [{
+                                    path: 'ui>/periodTotals/MonthLiabilitiesExpenses'
+                                }, {
+                                    path: 'ui>/periodTotals/CurrencyCode'
+                                }],
+                                formatter: 'formatter.formatCardAmount'
+                            }"
+                            class="metricNumber"
+                        />
+                        <Text
+                            text="{i18n>metricLiabilitiesHint}"
+                            class="metricHint"
+                        />
+                    </VBox>
                     <VBox class="metricCard totalMetric">
                         <HBox
                             justifyContent="SpaceBetween"

@@ -484,6 +484,8 @@
                 <Property Name="CurrencyCode" Type="Edm.String"/>
                 <Property Name="TotalExpenses" Type="Edm.Decimal" Scale="variable"/>
                 <Property Name="MonthExpenses" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="MonthLiabilitiesExpenses" Type="Edm.Decimal" Scale="variable"/>
+                <Property Name="MonthTotalExpenses" Type="Edm.Decimal" Scale="variable"/>
                 <Property Name="MonthExpensesToPay" Type="Edm.Decimal" Scale="variable"/>
                 <Property Name="MonthExpensesClosed" Type="Edm.Decimal" Scale="variable"/>
                 <Property Name="MonthExpensesPayed" Type="Edm.Decimal" Scale="variable"/>
