@@ -133,7 +133,10 @@ export default class Home extends BaseController {
             ui.setProperty("/busy", true);
 
             try {
-                const sent = await this._invoiceService.sendInvoices(period);
+                const personId =
+                    (ui.getProperty("/selectedPersonId") as string) || "";
+                const sent =
+                    await this._invoiceService.sendInvoices(personId, period);
                 if (sent) {
                     MessageToast.show(this.getText("sendInvoicesSuccess"));
                 } else {
