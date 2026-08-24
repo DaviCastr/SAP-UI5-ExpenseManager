@@ -117,24 +117,6 @@
                                 width="100%"
                             />
                         </VBox>
-                        <VBox class="dialogFormField sapUiTinyMarginEnd sapUiTinyMarginBottom">
-                            <layoutData>
-                                <FlexItemData
-                                    minWidth="10rem"
-                                    growFactor="1"
-                                />
-                            </layoutData>
-                            <Label
-                                text="{i18n>liabilitiesDescriptionLabel}"
-                                labelFor="newLiabilityDescription"
-                            />
-                            <Input
-                                id="newLiabilityDescription"
-                                value="{ui>/newLiability/description}"
-                                placeholder="{i18n>liabilitiesDescriptionPlaceholder}"
-                                width="100%"
-                            />
-                        </VBox>
                         <Button
                             text="{i18n>liabilitiesAddLabel}"
                             icon="sap-icon://add"
@@ -143,6 +125,18 @@
                             class="dialogFormAction sapUiTinyMarginBottom"
                         />
                     </HBox>
+                    <VBox class="dialogFormField sapUiTinyMarginTop">
+                        <Label
+                            text="{i18n>liabilitiesDescriptionLabel}"
+                            labelFor="newLiabilityDescription"
+                        />
+                        <Input
+                            id="newLiabilityDescription"
+                            value="{ui>/newLiability/description}"
+                            placeholder="{i18n>liabilitiesDescriptionPlaceholder}"
+                            width="100%"
+                        />
+                    </VBox>
                 </VBox>
 
                 <List

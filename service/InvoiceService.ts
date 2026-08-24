@@ -122,15 +122,17 @@ export class InvoiceService {
     }
 
     /**
-     * Sends the full invoice of the given year/month through the unbound
-     * SendInvoices CAP action. The backend resolves with a plain boolean
-     * (true when the invoices were processed); failures reject.
+     * Sends the full invoice of the given person/year/month through the
+     * unbound SendInvoices CAP action. The backend resolves with a plain
+     * boolean (true when the invoices were processed); failures reject.
      *
+     * @param {string} personId the person whose invoices are sent
      * @param {Period} period the year/month whose invoices are sent
      * @returns {Promise<boolean>} whether the send succeeded
      */
-    public async sendInvoices(period: Period): Promise<boolean> {
+    public async sendInvoices(personId: string, period: Period): Promise<boolean> {
         return this.odata.requestFunction<boolean>("/SendInvoices", {
+            PersonId: personId,
             Year: period.year,
             Month: period.month
         });

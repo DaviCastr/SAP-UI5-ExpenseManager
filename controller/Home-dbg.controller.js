@@ -91,7 +91,8 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         const ui = this.getUiModel();
         ui.setProperty("/busy", true);
         try {
-          const sent = await this._invoiceService.sendInvoices(period);
+          const personId = ui.getProperty("/selectedPersonId") || "";
+          const sent = await this._invoiceService.sendInvoices(personId, period);
           if (sent) {
             MessageToast.show(this.getText("sendInvoicesSuccess"));
           } else {
