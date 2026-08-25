@@ -54,7 +54,7 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/backupApi", "../../util/feedb
       try {
         const guid = await requestExportBackup();
         const blob = await fetchBackupStream(guid);
-        downloadBlob(blob, `meu-fluxo-backup-${new Date().toISOString().slice(0, 10)}.zip`);
+        downloadBlob(blob, `Expense-Manager-${new Date().toISOString().slice(0, 10)}.zip`);
         await deleteBackupRow(guid);
         showToast(view, "backupExported");
       } catch (error) {
