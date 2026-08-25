@@ -33,14 +33,10 @@ sap.ui.define(["./BaseController", "../auth/AuthenticationService", "../util/Env
     }
 
     /**
-     * Surfaces backend unavailability on the Login page. Only meaningful in
-     * the GitHub Pages demo environment, where the login depends on a live
-     * backend.
+     * Surfaces backend unavailability on the Login page.
      */
     showBackendUnavailable() {
-      if (Environment.current() === EnvironmentType.GITHUB) {
-        this.showErrorMessage("backendUnavailableLogin");
-      }
+      this.showErrorMessage("backendUnavailableLogin");
     }
     showToastMessage(messageKey) {
       MessageToast.show(this.getText(messageKey));

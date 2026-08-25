@@ -127,7 +127,8 @@ export class DashboardRenderer {
             this.ui.setProperty("/summary/trendText", trendText);
             this.ui.setProperty("/summary/trendIcon", trendingUp ? "sap-icon://trend-down" : "sap-icon://trend-up");
         } catch {
-            // trend stays on the "calculating" placeholder when comparison fails
+            this.ui.setProperty("/summary/trendText", this.text("trendUnavailable"));
+            this.ui.setProperty("/summary/trendIcon", "sap-icon://compare");
         }
     }
 

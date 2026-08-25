@@ -74,9 +74,9 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/MessageBox", "../.
    */
   function flushPendingEdits(dialog) {
     try {
-      void dialog.getModel().submitBatch("$auto");
-    } catch {
-      // best effort; the draft keeps whatever already reached the backend
+      void dialog.getModel().submitBatch("$auto").catch(error => console.warn("[flushPendingEdits]", error));
+    } catch (error) {
+      console.warn("[flushPendingEdits]", error);
     }
   }
 

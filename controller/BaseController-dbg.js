@@ -1,9 +1,10 @@
-sap.ui.define(["sap/ui/core/mvc/Controller", "sap/ui/core/UIComponent", "sap/m/MessageBox", "../auth/storage/SessionStorage", "../util/http"], function (Controller, UIComponent, MessageBox, ___auth_storage_SessionStorage, ___util_http) {
+sap.ui.define(["sap/ui/core/mvc/Controller", "sap/ui/core/UIComponent", "sap/m/MessageBox", "../auth/storage/SessionStorage", "../util/http", "../util/feedback"], function (Controller, UIComponent, MessageBox, ___auth_storage_SessionStorage, ___util_http, ___util_feedback) {
   "use strict";
 
   const SessionStorage = ___auth_storage_SessionStorage["SessionStorage"];
   const isSessionExpiredError = ___util_http["isSessionExpiredError"];
   const isBackendUnavailableError = ___util_http["isBackendUnavailableError"];
+  const getBackendErrorMessage = ___util_feedback["getBackendErrorMessage"];
   /**
    * Common behaviour for every application controller: model access, navigation
    * and a single, centralized way of turning failures into user feedback.
@@ -100,6 +101,17 @@ sap.ui.define(["sap/ui/core/mvc/Controller", "sap/ui/core/UIComponent", "sap/m/M
       }
       this.showErrorMessage(messageKey);
       return true;
+    }
+    handleLoadError(error, backendKey) {
+      if (isSessionExpiredError(error)) {
+        return;
+      }
+      if (isBackendUnavailableError(error)) {
+        this.showBackendError(backendKey);
+        return;
+      }
+      const detail = getBackendErrorMessage(error);
+      MessageBox.error(detail ? `${this.getText("unexpectedError")}\n\n${detail}` : this.getText("unexpectedError"));
     }
 
     /**

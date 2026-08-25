@@ -334,6 +334,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
           const context = dialog.getBindingContext();
           const person = context?.getObject();
           if (!person?.ID) {
+            showWarning(view, "errorMissingPerson");
             return;
           }
           try {

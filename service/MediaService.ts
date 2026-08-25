@@ -1,6 +1,6 @@
 import JSONModel from "sap/ui/model/json/JSONModel";
 import { ODataService } from "./ODataService";
-import { buildHeaders, getOdataServiceUrl } from "../util/http";
+import { request } from "../util/http";
 
 export interface TransactionMediaSource {
     Category?: { ID: string; Name: string; ImagePath?: string };
@@ -140,8 +140,9 @@ public async resolveCardImages(cards: CardMediaSource[], preferDraft = false): P
 
         for (const isActiveEntity of states) {
             try {
-                const url = `${getOdataServiceUrl()}Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=${isActiveEntity})/Image`;
-                const response = await fetch(url, { headers: buildHeaders({}) });
+                const response = await request(
+                    `Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=${isActiveEntity})/Image`
+                );
 
                 if (!response.ok) {
                     continue;

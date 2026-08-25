@@ -438,6 +438,7 @@ const LiabilityTransactions = {
                 const liability = context?.getObject() as { ID?: string; Person_ID?: string } | undefined;
                 const personId = liability?.Person_ID || personIdFromPath(context?.getPath() || "");
                 if (!personId) {
+                    showWarning(view, "errorMissingPerson");
                     return;
                 }
 

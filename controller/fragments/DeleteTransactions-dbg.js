@@ -67,9 +67,9 @@ sap.ui.define(["sap/m/MessageBox", "sap/ui/core/Fragment", "sap/ui/model/Filter"
     const ui = uiOf(view);
     ui.setProperty("/busy", true);
     try {
-      const published = await deleteTransactionsViaBatch(view.getModel(), personId, targets);
-      if (!published) {
-        showWarning(view, "deleteTransactionsError");
+      const result = await deleteTransactionsViaBatch(view.getModel(), personId, targets);
+      if (result.Failed > 0) {
+        showWarning(view, "deleteTransactionsPartial", [String(result.Deleted), String(result.Failed)]);
         return;
       }
       showToast(view, "deleteTransactionsDeleted", [String(targets.length)]);

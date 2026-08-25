@@ -38,19 +38,22 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../service/OD
         showWarning(view, "errorFillRequiredFields");
         return;
       }
+      const income = Number(person.income.replace(",", "."));
+      const target = Number(person.target.replace(",", "."));
+      if (!Number.isFinite(income) || !Number.isFinite(target)) {
+        showWarning(view, "invalidNumberValue");
+        return;
+      }
       uiModel.setProperty("/busy", true);
       try {
-        // POST on a draft-enabled entity set creates the person as a draft,
-        // so the photo must go to the draft row (IsActiveEntity=false)
-        // before the draft is published to the active entity.
         const created = await createEntity("Persons", {
           Name: person.name,
           Email: person.email,
           Phone: person.phone,
-          Income: Number(person.income.replace(",", ".")),
+          Income: income,
           // eslint-disable-next-line camelcase
           Currency_code: person.currency,
-          ExpenseTarget: Number(person.target.replace(",", ".")),
+          ExpenseTarget: target,
           ImageType: personPhoto?.type || ""
         });
         const odata = new ODataService(view.getModel());

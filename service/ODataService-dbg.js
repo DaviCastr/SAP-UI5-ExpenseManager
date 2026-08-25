@@ -10,8 +10,6 @@ sap.ui.define(["../util/http"], function (___util_http) {
    * @returns {unknown} the unwrapped payload (or the original value when not an envelope)
    */
   function unwrapControllerResult(value) {
-    // eslint-disable-next-line no-console
-    console.log("[unwrapControllerResult] value:", value);
     if (value && typeof value === "object" && "data" in value && "status" in value) {
       return value.data;
     }

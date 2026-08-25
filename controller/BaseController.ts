@@ -9,6 +9,7 @@ import type JSONModel from "sap/ui/model/json/JSONModel";
 import MessageBox from "sap/m/MessageBox";
 import { SessionStorage } from "../auth/storage/SessionStorage";
 import { isSessionExpiredError, isBackendUnavailableError } from "../util/http";
+import { getBackendErrorMessage } from "../util/feedback";
 
 type ServiceModelHost = UIComponent & {
     ensureServiceModel?: () => Promise<ODataModel | null>;
@@ -120,6 +121,18 @@ export abstract class BaseController extends Controller {
         }
         this.showErrorMessage(messageKey);
         return true;
+    }
+
+    protected handleLoadError(error: unknown, backendKey: string): void {
+        if (isSessionExpiredError(error)) {
+            return;
+        }
+        if (isBackendUnavailableError(error)) {
+            this.showBackendError(backendKey);
+            return;
+        }
+        const detail = getBackendErrorMessage(error);
+        MessageBox.error(detail ? `${this.getText("unexpectedError")}\n\n${detail}` : this.getText("unexpectedError"));
     }
 
     /**

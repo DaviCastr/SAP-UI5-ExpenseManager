@@ -1,4 +1,4 @@
-sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "sap/m/MessageBox", "./model/models", "./model/UiModel", "./auth/AuthenticationService", "./auth/providers/AuthenticatedProviderFactory", "./auth/providers/XsuaaAuthHelper", "./auth/storage/SessionStorage", "./util/Environment"], function (BaseComponent, ODataModel, MessageBox, ___model_models, __UiModel, ___auth_AuthenticationService, ___auth_providers_AuthenticatedProviderFactory, ___auth_providers_XsuaaAuthHelper, ___auth_storage_SessionStorage, __Environment) {
+sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "sap/m/MessageBox", "./model/models", "./model/UiModel", "./auth/AuthenticationService", "./auth/providers/AuthenticatedProviderFactory", "./auth/providers/XsuaaAuthHelper", "./auth/storage/SessionStorage", "./util/Environment", "./util/http", "./util/feedback"], function (BaseComponent, ODataModel, MessageBox, ___model_models, __UiModel, ___auth_AuthenticationService, ___auth_providers_AuthenticatedProviderFactory, ___auth_providers_XsuaaAuthHelper, ___auth_storage_SessionStorage, __Environment, ___util_http, ___util_feedback) {
   "use strict";
 
   function _interopRequireDefault(obj) {
@@ -12,6 +12,9 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
   const SessionStorage = ___auth_storage_SessionStorage["SessionStorage"];
   const Environment = _interopRequireDefault(__Environment);
   const EnvironmentType = __Environment["EnvironmentType"];
+  const isSessionExpiredError = ___util_http["isSessionExpiredError"];
+  const isBackendUnavailableError = ___util_http["isBackendUnavailableError"];
+  const getBackendErrorMessage = ___util_feedback["getBackendErrorMessage"];
   /**
    * @namespace apps.dflc.expensemanager
    */
@@ -20,6 +23,8 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
       BaseComponent.prototype.constructor.apply(this, arguments);
       this._sessionExpiredShown = false;
       this._serviceModelPromise = null;
+      this._modelToken = "";
+      this._unexpectedErrorShown = false;
     },
     metadata: {
       manifest: "json",
@@ -27,7 +32,12 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
     },
     init: async function _init() {
       BaseComponent.prototype.init.call(this);
-      await XsuaaAuthHelper.loadRuntimeConfig();
+      try {
+        await XsuaaAuthHelper.loadRuntimeConfig();
+      } catch (error) {
+        console.error("[init] runtime-config.json", error);
+      }
+      this.registerGlobalErrorHandlers();
       AuthenticationService.initialize(AuthenticatedProviderFactory.create());
       AuthenticationService.onSessionExpired(() => this.handleSessionExpired());
       AuthenticationService.onAuthError(message => this.handleAuthError(message));
@@ -45,6 +55,45 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
       this.getRouter().attachBeforeRouteMatched(event => this.handleBeforeRouteMatched(event));
     },
     /**
+     * Last-resort safety net: surfaces unexpected async failures and window
+     * errors that escaped every local handler, so the user always sees a
+     * message instead of a silent broken screen.
+     */
+    registerGlobalErrorHandlers: function _registerGlobalErrorHandlers() {
+      window.addEventListener("unhandledrejection", event => {
+        event.preventDefault();
+        this.handleUnexpectedError(event.reason);
+      });
+      window.addEventListener("error", event => {
+        this.handleUnexpectedError(event.error);
+      });
+    },
+    /**
+     * Reports an unexpected error once per dialog cycle (deduplicated while the
+     * MessageBox is open). Session/auth/backend-unavailability errors are
+     * ignored because they already have dedicated handlers.
+     *
+     * @param {unknown} reason the uncaught error or rejection reason
+     */
+    handleUnexpectedError: function _handleUnexpectedError(reason) {
+      if (!reason || isSessionExpiredError(reason) || isBackendUnavailableError(reason)) {
+        return;
+      }
+      console.error("[unexpected]", reason);
+      if (this._unexpectedErrorShown) {
+        return;
+      }
+      this._unexpectedErrorShown = true;
+      const bundle = this.getModel("i18n")?.getResourceBundle();
+      const base = bundle?.getText("unexpectedError") ?? "Ocorreu um erro inesperado.";
+      const detail = getBackendErrorMessage(reason);
+      MessageBox.error(detail ? `${base}\n\n${detail}` : base, {
+        onClose: () => {
+          this._unexpectedErrorShown = false;
+        }
+      });
+    },
+    /**
      * Resolves with the shared OData model once a valid session is available,
      * or with `null` when the user is not authenticated. The provisioning can
      * be retried after a login (the promise is re-armed when it fails).
@@ -53,7 +102,7 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
      */
     ensureServiceModel: function _ensureServiceModel() {
       const current = this.getModel();
-      if (current) {
+      if (current && this.isModelTokenCurrent()) {
         return Promise.resolve(current);
       }
       if (!this._serviceModelPromise) {
@@ -62,9 +111,20 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
             this._serviceModelPromise = null;
           }
           return model;
+        }).catch(error => {
+          this._serviceModelPromise = null;
+          throw error;
         });
       }
       return this._serviceModelPromise;
+    },
+    isModelTokenCurrent: function _isModelTokenCurrent() {
+      const session = AuthenticationService.getSession();
+      const token = session?.accessToken ?? "";
+      if (token && (!session || session.expiresAt <= Date.now())) {
+        return false;
+      }
+      return this._modelToken === token;
     },
     provisionServiceModel: async function _provisionServiceModel() {
       const session = AuthenticationService.getSession();
@@ -108,6 +168,7 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
     setServiceModel: function _setServiceModel(accessToken) {
       const config = XsuaaAuthHelper.getConfig();
       const httpHeaders = {};
+      const previous = this.getModel();
       if (accessToken) {
         httpHeaders.Authorization = `Bearer ${accessToken}`;
       }
@@ -119,7 +180,9 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
         earlyRequests: true
       });
       model.attachSessionTimeout(() => AuthenticationService.notifySessionExpired());
+      this._modelToken = accessToken;
       this.setModel(model);
+      previous?.destroy();
     },
     prepareStandaloneServiceModel: function _prepareStandaloneServiceModel() {
       if (!XsuaaAuthHelper.getConfig().odataService) {
@@ -140,6 +203,7 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
       }
       this._sessionExpiredShown = true;
       SessionStorage.clear();
+      this._serviceModelPromise = null;
       const bundle = this.getModel("i18n")?.getResourceBundle();
       const title = bundle?.getText("sessionExpiredTitle") ?? "Sessão expirada";
       const message = bundle?.getText("sessionExpiredMessage") ?? "Sua sessão expirou. Faça login novamente para continuar.";

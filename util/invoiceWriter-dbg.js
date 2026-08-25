@@ -33,12 +33,13 @@ sap.ui.define(["../service/ODataService"], function (___service_ODataService) {
    * @param {string} personId the person that owns the transactions
    * @param {TransactionWriteTarget[]} targets the identifier group
    * @param {string} categoryId the new category id
-   * @returns {Promise<boolean>} whether every update succeeded and the draft was activated
+   * @returns {Promise<void>} resolves once the draft was activated
+   * @throws {Error} when the draft edit, the updates or the activation fail
    */
   async function applyCategoryToTransactions(model, personId, targets, categoryId) {
     const odata = new ODataService(model);
     await odata.enableDraftEdit("Persons", personId);
-    let batchConstexts = [];
+    const batchConstexts = [];
     let bindings = [];
     try {
       for (const target of targets) {
@@ -59,8 +60,6 @@ sap.ui.define(["../service/ODataService"], function (___service_ODataService) {
       }
       await Promise.all(batchChanges);
       await odata.submitPending();
-    } catch {
-      return false;
     } finally {
       for (const binding of bindings) {
         try {
@@ -72,8 +71,11 @@ sap.ui.define(["../service/ODataService"], function (___service_ODataService) {
     }
     await odata.prepareDraft("Persons", personId);
     await odata.activateDraft("Persons", personId);
-    return true;
   }
+
+  /**
+   * Outcome of a batch delete: how many rows were removed and how many failed.
+   */
 
   /**
    * Deletes the selected transactions through the model bindings only. Every
@@ -87,13 +89,15 @@ sap.ui.define(["../service/ODataService"], function (___service_ODataService) {
    * @param {ODataModel} model the shared service model
    * @param {string} personId the person that owns the transactions
    * @param {TransactionWriteTarget[]} targets the transactions to remove
-   * @returns {Promise<boolean>} whether every delete succeeded and the draft was activated
+   * @returns {Promise<DeleteTransactionsResult>} how many deletes succeeded/failed
+   * @throws {Error} when the draft edit or the activation fails
    */
   async function deleteTransactionsViaBatch(model, personId, targets) {
     const odata = new ODataService(model);
     await odata.enableDraftEdit("Persons", personId);
     const batchContexts = [];
     const bindings = [];
+    let deleted = 0;
     try {
       for (const target of targets) {
         const binding = model.bindContext(`/${transactionDraftPath(personId, target)}`);
@@ -106,12 +110,11 @@ sap.ui.define(["../service/ODataService"], function (___service_ODataService) {
       bindings.push(...batchContexts.map(item => item.binding));
       const rowDeletes = bindings.map(binding => {
         const context = binding.getBoundContext();
-        return context ? context.delete().catch(() => undefined) : Promise.resolve();
+        return context ? context.delete().then(() => true).catch(() => false) : Promise.resolve(false);
       });
-      await Promise.all(rowDeletes);
+      const results = await Promise.all(rowDeletes);
+      deleted = results.filter(succeeded => succeeded).length;
       await odata.submitPending();
-    } catch {
-      return false;
     } finally {
       for (const binding of bindings) {
         try {
@@ -123,7 +126,10 @@ sap.ui.define(["../service/ODataService"], function (___service_ODataService) {
     }
     await odata.prepareDraft("Persons", personId);
     await odata.activateDraft("Persons", personId);
-    return true;
+    return {
+      Deleted: deleted,
+      Failed: targets.length - deleted
+    };
   }
   var __exports = {
     __esModule: true

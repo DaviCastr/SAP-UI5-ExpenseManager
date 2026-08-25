@@ -11,6 +11,8 @@ import { AuthenticatedProviderFactory } from "./auth/providers/AuthenticatedProv
 import { XsuaaAuthHelper } from "./auth/providers/XsuaaAuthHelper";
 import { SessionStorage } from "./auth/storage/SessionStorage";
 import Environment, { EnvironmentType } from "./util/Environment";
+import { isSessionExpiredError, isBackendUnavailableError } from "./util/http";
+import { getBackendErrorMessage } from "./util/feedback";
 
 /**
  * @namespace apps.dflc.expensemanager
@@ -26,11 +28,19 @@ export default class Component extends BaseComponent {
 
     private _sessionExpiredShown = false;
     private _serviceModelPromise: Promise<ODataModel | null> | null = null;
+    private _modelToken = "";
+    private _unexpectedErrorShown = false;
 
     public async init(): Promise<void> {
         super.init();
 
-        await XsuaaAuthHelper.loadRuntimeConfig();
+        try {
+            await XsuaaAuthHelper.loadRuntimeConfig();
+        } catch (error) {
+            console.error("[init] runtime-config.json", error);
+        }
+
+        this.registerGlobalErrorHandlers();
 
         AuthenticationService.initialize(
             AuthenticatedProviderFactory.create()
@@ -57,6 +67,50 @@ export default class Component extends BaseComponent {
     }
 
     /**
+     * Last-resort safety net: surfaces unexpected async failures and window
+     * errors that escaped every local handler, so the user always sees a
+     * message instead of a silent broken screen.
+     */
+    private registerGlobalErrorHandlers(): void {
+        window.addEventListener("unhandledrejection", (event) => {
+            event.preventDefault();
+            this.handleUnexpectedError((event as PromiseRejectionEvent).reason);
+        });
+        window.addEventListener("error", (event) => {
+            this.handleUnexpectedError((event as ErrorEvent).error);
+        });
+    }
+
+    /**
+     * Reports an unexpected error once per dialog cycle (deduplicated while the
+     * MessageBox is open). Session/auth/backend-unavailability errors are
+     * ignored because they already have dedicated handlers.
+     *
+     * @param {unknown} reason the uncaught error or rejection reason
+     */
+    public handleUnexpectedError(reason: unknown): void {
+        if (!reason || isSessionExpiredError(reason) || isBackendUnavailableError(reason)) {
+            return;
+        }
+
+        console.error("[unexpected]", reason);
+
+        if (this._unexpectedErrorShown) {
+            return;
+        }
+        this._unexpectedErrorShown = true;
+
+        const bundle = (this.getModel("i18n") as ResourceModel)?.getResourceBundle() as ResourceBundle | undefined;
+        const base = bundle?.getText("unexpectedError") ?? "Ocorreu um erro inesperado.";
+        const detail = getBackendErrorMessage(reason);
+        MessageBox.error(detail ? `${base}\n\n${detail}` : base, {
+            onClose: () => {
+                this._unexpectedErrorShown = false;
+            }
+        });
+    }
+
+    /**
      * Resolves with the shared OData model once a valid session is available,
      * or with `null` when the user is not authenticated. The provisioning can
      * be retried after a login (the promise is re-armed when it fails).
@@ -66,7 +120,7 @@ export default class Component extends BaseComponent {
     public ensureServiceModel(): Promise<ODataModel | null> {
         const current = this.getModel() as ODataModel | undefined;
 
-        if (current) {
+        if (current && this.isModelTokenCurrent()) {
             return Promise.resolve(current);
         }
 
@@ -76,10 +130,24 @@ export default class Component extends BaseComponent {
                     this._serviceModelPromise = null;
                 }
                 return model;
+            }).catch((error) => {
+                this._serviceModelPromise = null;
+                throw error;
             });
         }
 
         return this._serviceModelPromise;
+    }
+
+    private isModelTokenCurrent(): boolean {
+        const session = AuthenticationService.getSession();
+        const token = session?.accessToken ?? "";
+
+        if (token && (!session || session.expiresAt <= Date.now())) {
+            return false;
+        }
+
+        return this._modelToken === token;
     }
 
     private async provisionServiceModel(): Promise<ODataModel | null> {
@@ -136,6 +204,7 @@ export default class Component extends BaseComponent {
     private setServiceModel(accessToken: string): void {
         const config = XsuaaAuthHelper.getConfig();
         const httpHeaders: Record<string, string> = {};
+        const previous = this.getModel() as ODataModel | undefined;
 
         if (accessToken) {
             httpHeaders.Authorization = `Bearer ${accessToken}`;
@@ -151,7 +220,9 @@ export default class Component extends BaseComponent {
 
         model.attachSessionTimeout(() => AuthenticationService.notifySessionExpired());
 
+        this._modelToken = accessToken;
         this.setModel(model);
+        previous?.destroy();
     }
 
     private prepareStandaloneServiceModel(): void {
@@ -177,6 +248,7 @@ export default class Component extends BaseComponent {
 
         this._sessionExpiredShown = true;
         SessionStorage.clear();
+        this._serviceModelPromise = null;
 
         const bundle = (this.getModel("i18n") as ResourceModel)?.getResourceBundle() as ResourceBundle | undefined;
         const title = bundle?.getText("sessionExpiredTitle") ?? "Sessão expirada";

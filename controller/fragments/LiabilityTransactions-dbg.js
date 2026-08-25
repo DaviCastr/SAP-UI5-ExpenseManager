@@ -390,6 +390,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/CustomListItem", "
           const liability = context?.getObject();
           const personId = liability?.Person_ID || personIdFromPath(context?.getPath() || "");
           if (!personId) {
+            showWarning(view, "errorMissingPerson");
             return;
           }
           try {

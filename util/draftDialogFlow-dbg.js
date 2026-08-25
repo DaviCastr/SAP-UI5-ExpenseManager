@@ -123,13 +123,16 @@ sap.ui.define(["./feedback"], function (___feedback) {
    * @throws {Error} when the binding does not point at the draft in time
    */
   async function waitForDraftListBinding(list, timeoutMs = 15000) {
+    if (!list) {
+      throw new Error("draft list binding timeout");
+    }
     const deadline = Date.now() + timeoutMs;
     for (;;) {
-      const binding = list?.getBinding("items");
+      const binding = list.getBinding("items");
       if (binding && isDraftPath(binding.getHeaderContext()?.getPath())) {
         return binding;
       }
-      if (!binding || Date.now() > deadline) {
+      if (Date.now() > deadline) {
         throw new Error("draft list binding timeout");
       }
       await new Promise(resolve => setTimeout(resolve, 100));

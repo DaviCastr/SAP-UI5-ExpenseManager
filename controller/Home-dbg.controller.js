@@ -25,27 +25,75 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     _persons = [];
     periodService = new PeriodService();
     onInit() {
+      this.applyShareOptionTexts();
       void this.initView();
     }
+    applyShareOptionTexts() {
+      const ui = this.getUiModel();
+      ui.setProperty("/entityOptions", [{
+        key: "1",
+        text: this.getText("sharesEntityPersons")
+      }, {
+        key: "2",
+        text: this.getText("sharesEntityShares")
+      }, {
+        key: "3",
+        text: this.getText("sharesEntityPermissions")
+      }, {
+        key: "4",
+        text: this.getText("sharesEntityCategories")
+      }, {
+        key: "5",
+        text: this.getText("sharesEntityCards")
+      }, {
+        key: "6",
+        text: this.getText("sharesEntityInvoices")
+      }, {
+        key: "7",
+        text: this.getText("sharesEntityTransactions")
+      }, {
+        key: "8",
+        text: this.getText("sharesEntityBackups")
+      }, {
+        key: "9",
+        text: this.getText("sharesEntityLiabilities")
+      }, {
+        key: "10",
+        text: this.getText("sharesEntityLiabilityTx")
+      }]);
+      ui.setProperty("/permissionOptions", [{
+        key: "1",
+        text: this.getText("sharesActionView")
+      }, {
+        key: "2",
+        text: this.getText("sharesActionCreate")
+      }, {
+        key: "3",
+        text: this.getText("sharesActionEdit")
+      }, {
+        key: "4",
+        text: this.getText("sharesActionDelete")
+      }]);
+    }
     async initView() {
-      const model = await this.ensureServiceModel();
-      if (!model) {
-        if (!AuthenticationService.isAuthErrorPending()) {
-          this.navTo("Login");
-        }
-        return;
-      }
-      this._odata = new ODataService(model);
-      this._invoiceService = new InvoiceService(this._odata);
-      this._mediaService = new MediaService(this._odata, this.getUiModel());
-      this._renderer = new DashboardRenderer(this._invoiceService, this.getUiModel(), (key, parameters) => this.getText(key, parameters));
       try {
-        await this.refreshPersonSelector();
-      } catch (error) {
-        if (isSessionExpiredError(error) || isBackendUnavailableError(error)) {
+        const model = await this.ensureServiceModel();
+        if (!model) {
+          if (!AuthenticationService.isAuthErrorPending()) {
+            this.navTo("Login");
+          }
           return;
         }
-        this.showBackendError("backendUnavailableLogin");
+        if (!this._odata || this._serviceModelRef !== model) {
+          this._odata = new ODataService(model);
+          this._invoiceService = new InvoiceService(this._odata);
+          this._mediaService = new MediaService(this._odata, this.getUiModel());
+          this._renderer = new DashboardRenderer(this._invoiceService, this.getUiModel(), (key, parameters) => this.getText(key, parameters));
+          this._serviceModelRef = model;
+        }
+        await this.refreshPersonSelector();
+      } catch (error) {
+        this.handleLoadError(error, "backendUnavailableLogin");
       }
     }
     onPersonChange() {
@@ -54,7 +102,11 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       this.applyPersonSelection(id);
     }
     async onLogout() {
-      await AuthenticationService.logout();
+      try {
+        await AuthenticationService.logout();
+      } catch (error) {
+        console.error("[logout]", error);
+      }
       this.navTo("Login");
     }
     onPreviousMonth() {
@@ -142,7 +194,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         Fragment.byId("AddExpense", "expenseCard")?.setSelectedItem(null);
         Fragment.byId("AddExpense", "expenseCategory")?.setSelectedItem(null);
         dialog.open();
-      });
+      }).catch(error => this.handleError(error, "dialogOpenError"));
     }
     onOpenPersonDialog() {
       const ui = this.getUiModel();
@@ -154,7 +206,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         currency: "BRL",
         target: ""
       });
-      void this.openPreparedDialog("AddPerson", dialog => dialog.open());
+      void this.openPreparedDialog("AddPerson", dialog => dialog.open()).catch(error => this.handleError(error, "dialogOpenError"));
     }
     onOpenPersonDetailDialog() {
       return this.openPersonDetailDialog();
@@ -425,7 +477,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       void this.openPreparedDialog("DeleteTransactions", dialog => dialog.open()).catch(error => this.handleError(error, "invoicesOpenError"));
     }
     onRestoreBackup() {
-      void this.openPreparedDialog("Backup", dialog => dialog.open());
+      void this.openPreparedDialog("Backup", dialog => dialog.open()).catch(error => this.handleError(error, "dialogOpenError"));
     }
     onCategoryPress(oEvent) {
       const source = oEvent.getSource();
@@ -499,7 +551,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         })));
       }
       ui.setProperty("/simulationResult", null);
-      void this.openPreparedDialog("Simulation", dialog => dialog.open());
+      void this.openPreparedDialog("Simulation", dialog => dialog.open()).catch(error => this.handleError(error, "dialogOpenError"));
     }
     refresh() {
       const cardsList = this.byId("cardsListItems");
@@ -573,10 +625,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
           };
         });
       } catch (error) {
-        if (isSessionExpiredError(error) || isBackendUnavailableError(error)) {
-          return;
-        }
-        this.showBackendError("backendUnavailableLogin");
+        this.handleLoadError(error, "backendUnavailableLogin");
       }
       this._persons = persons;
       const select = this.byId("personSelect");
@@ -809,10 +858,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
           void this._mediaService?.resolveCardImages(cards, preferDraft);
         }
       } catch (error) {
-        if (isSessionExpiredError(error) || isBackendUnavailableError(error)) {
-          return;
-        }
-        this.showBackendError("backendUnavailableLogin");
+        this.handleLoadError(error, "backendUnavailableLogin");
       } finally {
         ui.setProperty("/busy", false);
       }

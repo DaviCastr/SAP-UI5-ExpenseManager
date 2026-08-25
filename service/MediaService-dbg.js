@@ -1,8 +1,7 @@
 sap.ui.define(["../util/http"], function (___util_http) {
   "use strict";
 
-  const buildHeaders = ___util_http["buildHeaders"];
-  const getOdataServiceUrl = ___util_http["getOdataServiceUrl"];
+  const request = ___util_http["request"];
   /**
    * Loads the entity images and stores them as data/base64 URLs in the `ui`
    * model. The images are requested through the authenticated OData model (or a
@@ -103,10 +102,7 @@ sap.ui.define(["../util/http"], function (___util_http) {
       const states = preferDraft ? [false, true] : [true];
       for (const isActiveEntity of states) {
         try {
-          const url = `${getOdataServiceUrl()}Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=${isActiveEntity})/Image`;
-          const response = await fetch(url, {
-            headers: buildHeaders({})
-          });
+          const response = await request(`Persons(ID='${encodeURIComponent(person.ID)}',IsActiveEntity=${isActiveEntity})/Image`);
           if (!response.ok) {
             continue;
           }
