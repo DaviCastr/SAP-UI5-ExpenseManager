@@ -8,8 +8,9 @@
     .balanceCard { min-width: 100%; }
     .surfaceCard { flex-basis: 100%; }
     .financePage .sapMPageEnableScrolling { overflow-x: hidden; }
-    .loginCard { padding: 2rem 1.4rem; }
+    .loginCard { padding: 1.8rem 1.3rem; gap: .75rem; }
     .loginShell { padding: 1rem; }
+    .loginBrandLogo { width: 2rem !important; height: 2rem !important; }
     .periodNav { flex-direction: column; align-items: stretch; }
     .periodNavActions { flex-direction: column; align-items: stretch; }
     .periodSelectors { justify-content: center; }
