@@ -197,21 +197,17 @@ const TransactionCategory = {
             return;
         }
 
-        const contexts = await binding.requestContexts();
-        const affected = contexts.map((context) => context.getObject() as AffectedTransactionRow);
-        const targets = buildTargets(affected || []);
-        if (targets.length === 0) {
-            showWarning(view, "transactionCategoryNoTargets");
-            return;
-        }
-
         ui.setProperty("/busy", true);
         try {
-            const published = await applyCategoryToTransactions(view.getModel() as ODataModel, personId, targets, categoryId);
-            if (!published) {
-                showWarning(view, "transactionCategorySaveError");
+            const contexts = await binding.requestContexts();
+            const affected = contexts.map((context) => context.getObject() as AffectedTransactionRow);
+            const targets = buildTargets(affected || []);
+            if (targets.length === 0) {
+                showWarning(view, "transactionCategoryNoTargets");
                 return;
             }
+
+            await applyCategoryToTransactions(view.getModel() as ODataModel, personId, targets, categoryId);
             showToast(view, "transactionCategorySaved", [String(targets.length)]);
             dialog.close();
             void reloadInvoiceData(view);

@@ -85,9 +85,9 @@ async function performDelete(
     const ui = uiOf(view);
     ui.setProperty("/busy", true);
     try {
-        const published = await deleteTransactionsViaBatch(view.getModel() as ODataModel, personId, targets);
-        if (!published) {
-            showWarning(view, "deleteTransactionsError");
+        const result = await deleteTransactionsViaBatch(view.getModel() as ODataModel, personId, targets);
+        if (result.Failed > 0) {
+            showWarning(view, "deleteTransactionsPartial", [String(result.Deleted), String(result.Failed)]);
             return;
         }
         showToast(view, "deleteTransactionsDeleted", [String(targets.length)]);

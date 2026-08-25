@@ -135,13 +135,17 @@ export async function waitForDraftListBinding(
     list: List | Table | undefined,
     timeoutMs = 15000
 ): Promise<ODataListBinding | undefined> {
+    if (!list) {
+        throw new Error("draft list binding timeout");
+    }
+
     const deadline = Date.now() + timeoutMs;
     for (;;) {
-        const binding = list?.getBinding("items") as ODataListBinding | undefined;
+        const binding = list.getBinding("items") as ODataListBinding | undefined;
         if (binding && isDraftPath(binding.getHeaderContext()?.getPath())) {
             return binding;
         }
-        if (!binding || Date.now() > deadline) {
+        if (Date.now() > deadline) {
             throw new Error("draft list binding timeout");
         }
         await new Promise((resolve) => setTimeout(resolve, 100));

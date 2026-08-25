@@ -45,6 +45,7 @@ export default class Home extends BaseController {
     private _invoiceService?: InvoiceService;
     private _mediaService?: MediaService;
     private _renderer?: DashboardRenderer;
+    private _serviceModelRef?: ODataModel;
 
     private _dialogs = new Map<string, Promise<Dialog>>();
     private _persons: UiPerson[] = [];
@@ -52,31 +53,56 @@ export default class Home extends BaseController {
     private readonly periodService = new PeriodService();
 
     public onInit(): void {
+        this.applyShareOptionTexts();
         void this.initView();
     }
 
+    private applyShareOptionTexts(): void {
+        const ui = this.getUiModel();
+
+        ui.setProperty("/entityOptions", [
+            { key: "1", text: this.getText("sharesEntityPersons") },
+            { key: "2", text: this.getText("sharesEntityShares") },
+            { key: "3", text: this.getText("sharesEntityPermissions") },
+            { key: "4", text: this.getText("sharesEntityCategories") },
+            { key: "5", text: this.getText("sharesEntityCards") },
+            { key: "6", text: this.getText("sharesEntityInvoices") },
+            { key: "7", text: this.getText("sharesEntityTransactions") },
+            { key: "8", text: this.getText("sharesEntityBackups") },
+            { key: "9", text: this.getText("sharesEntityLiabilities") },
+            { key: "10", text: this.getText("sharesEntityLiabilityTx") }
+        ]);
+
+        ui.setProperty("/permissionOptions", [
+            { key: "1", text: this.getText("sharesActionView") },
+            { key: "2", text: this.getText("sharesActionCreate") },
+            { key: "3", text: this.getText("sharesActionEdit") },
+            { key: "4", text: this.getText("sharesActionDelete") }
+        ]);
+    }
+
     private async initView(): Promise<void> {
-        const model = await this.ensureServiceModel();
-
-        if (!model) {
-            if (!AuthenticationService.isAuthErrorPending()) {
-                this.navTo("Login");
-            }
-            return;
-        }
-
-        this._odata = new ODataService(model);
-        this._invoiceService = new InvoiceService(this._odata);
-        this._mediaService = new MediaService(this._odata, this.getUiModel());
-        this._renderer = new DashboardRenderer(this._invoiceService, this.getUiModel(), (key, parameters) => this.getText(key, parameters));
-
         try {
-            await this.refreshPersonSelector();
-        } catch (error) {
-            if (isSessionExpiredError(error) || isBackendUnavailableError(error)) {
+            const model = await this.ensureServiceModel();
+
+            if (!model) {
+                if (!AuthenticationService.isAuthErrorPending()) {
+                    this.navTo("Login");
+                }
                 return;
             }
-            this.showBackendError("backendUnavailableLogin");
+
+            if (!this._odata || this._serviceModelRef !== model) {
+                this._odata = new ODataService(model);
+                this._invoiceService = new InvoiceService(this._odata);
+                this._mediaService = new MediaService(this._odata, this.getUiModel());
+                this._renderer = new DashboardRenderer(this._invoiceService, this.getUiModel(), (key, parameters) => this.getText(key, parameters));
+                this._serviceModelRef = model;
+            }
+
+            await this.refreshPersonSelector();
+        } catch (error) {
+            this.handleLoadError(error, "backendUnavailableLogin");
         }
     }
 
@@ -87,7 +113,11 @@ export default class Home extends BaseController {
     }
 
     public async onLogout(): Promise<void> {
-        await AuthenticationService.logout();
+        try {
+            await AuthenticationService.logout();
+        } catch (error) {
+            console.error("[logout]", error);
+        }
         this.navTo("Login");
     }
 
@@ -188,13 +218,14 @@ export default class Home extends BaseController {
             (Fragment.byId("AddExpense", "expenseCard") as Select | undefined)?.setSelectedItem(null);
             (Fragment.byId("AddExpense", "expenseCategory") as Select | undefined)?.setSelectedItem(null);
             dialog.open();
-        });
+        }).catch((error) => this.handleError(error, "dialogOpenError"));
     }
 
     public onOpenPersonDialog(): void {
         const ui = this.getUiModel();
         ui.setProperty("/newPerson", { name: "", email: "", phone: "", income: "", currency: "BRL", target: "" });
-        void this.openPreparedDialog("AddPerson", (dialog) => dialog.open());
+        void this.openPreparedDialog("AddPerson", (dialog) => dialog.open())
+            .catch((error) => this.handleError(error, "dialogOpenError"));
     }
 
     public onOpenPersonDetailDialog(): Promise<void> {
@@ -492,7 +523,8 @@ export default class Home extends BaseController {
     }
 
     public onRestoreBackup(): void {
-        void this.openPreparedDialog("Backup", (dialog) => dialog.open());
+        void this.openPreparedDialog("Backup", (dialog) => dialog.open())
+            .catch((error) => this.handleError(error, "dialogOpenError"));
     }
 
     public onCategoryPress(oEvent: Event): void {
@@ -579,7 +611,8 @@ export default class Home extends BaseController {
         }
         ui.setProperty("/simulationResult", null);
 
-        void this.openPreparedDialog("Simulation", (dialog) => dialog.open());
+        void this.openPreparedDialog("Simulation", (dialog) => dialog.open())
+            .catch((error) => this.handleError(error, "dialogOpenError"));
     }
 
     public refresh(): void {
@@ -660,10 +693,7 @@ export default class Home extends BaseController {
                     };
                 });
         } catch (error) {
-            if (isSessionExpiredError(error) || isBackendUnavailableError(error)) {
-                return;
-            }
-            this.showBackendError("backendUnavailableLogin");
+            this.handleLoadError(error, "backendUnavailableLogin");
         }
 
         this._persons = persons;
@@ -930,10 +960,7 @@ export default class Home extends BaseController {
                 void this._mediaService?.resolveCardImages(cards, preferDraft);
             }
         } catch (error) {
-            if (isSessionExpiredError(error) || isBackendUnavailableError(error)) {
-                return;
-            }
-            this.showBackendError("backendUnavailableLogin");
+            this.handleLoadError(error, "backendUnavailableLogin");
         } finally {
             ui.setProperty("/busy", false);
         }

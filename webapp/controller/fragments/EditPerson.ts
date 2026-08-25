@@ -81,9 +81,9 @@ function releaseDraftBinding(dialog: Dialog): void {
  */
 function flushPendingEdits(dialog: Dialog): void {
     try {
-        void (dialog.getModel() as ODataModel).submitBatch("$auto");
-    } catch {
-        // best effort; the draft keeps whatever already reached the backend
+        void (dialog.getModel() as ODataModel).submitBatch("$auto").catch((error) => console.warn("[flushPendingEdits]", error));
+    } catch (error) {
+        console.warn("[flushPendingEdits]", error);
     }
 }
 

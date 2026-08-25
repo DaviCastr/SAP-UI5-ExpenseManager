@@ -34,14 +34,10 @@ export default class Login extends BaseController {
     }
 
     /**
-     * Surfaces backend unavailability on the Login page. Only meaningful in
-     * the GitHub Pages demo environment, where the login depends on a live
-     * backend.
+     * Surfaces backend unavailability on the Login page.
      */
     private showBackendUnavailable(): void {
-        if (Environment.current() === EnvironmentType.GITHUB) {
-            this.showErrorMessage("backendUnavailableLogin");
-        }
+        this.showErrorMessage("backendUnavailableLogin");
     }
 
     private showToastMessage(messageKey: string): void {

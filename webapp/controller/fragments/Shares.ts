@@ -384,6 +384,7 @@ const Shares = {
                 const context = dialog.getBindingContext() as Context | undefined;
                 const person = context?.getObject() as { ID?: string } | undefined;
                 if (!person?.ID) {
+                    showWarning(view, "errorMissingPerson");
                     return;
                 }
 

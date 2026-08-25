@@ -40,18 +40,19 @@ export function transactionDraftPath(personId: string, target: TransactionWriteT
  * @param {string} personId the person that owns the transactions
  * @param {TransactionWriteTarget[]} targets the identifier group
  * @param {string} categoryId the new category id
- * @returns {Promise<boolean>} whether every update succeeded and the draft was activated
+ * @returns {Promise<void>} resolves once the draft was activated
+ * @throws {Error} when the draft edit, the updates or the activation fail
  */
 export async function applyCategoryToTransactions(
     model: ODataModel,
     personId: string,
     targets: TransactionWriteTarget[],
     categoryId: string
-): Promise<boolean> {
+): Promise<void> {
     const odata = new ODataService(model);
     await odata.enableDraftEdit("Persons", personId);
 
-    let batchConstexts = [];
+    const batchConstexts = [];
     let bindings: ODataContextBinding[] = [];
     try {
         for (const target of targets) {
@@ -74,8 +75,6 @@ export async function applyCategoryToTransactions(
         await Promise.all(batchChanges);
 
         await odata.submitPending();
-    } catch {
-        return false;
     } finally {
         for (const binding of bindings) {
             try {
@@ -88,7 +87,14 @@ export async function applyCategoryToTransactions(
 
     await odata.prepareDraft("Persons", personId);
     await odata.activateDraft("Persons", personId);
-    return true;
+}
+
+/**
+ * Outcome of a batch delete: how many rows were removed and how many failed.
+ */
+export interface DeleteTransactionsResult {
+    Deleted: number;
+    Failed: number;
 }
 
 /**
@@ -103,18 +109,20 @@ export async function applyCategoryToTransactions(
  * @param {ODataModel} model the shared service model
  * @param {string} personId the person that owns the transactions
  * @param {TransactionWriteTarget[]} targets the transactions to remove
- * @returns {Promise<boolean>} whether every delete succeeded and the draft was activated
+ * @returns {Promise<DeleteTransactionsResult>} how many deletes succeeded/failed
+ * @throws {Error} when the draft edit or the activation fails
  */
 export async function deleteTransactionsViaBatch(
     model: ODataModel,
     personId: string,
     targets: TransactionWriteTarget[]
-): Promise<boolean> {
+): Promise<DeleteTransactionsResult> {
     const odata = new ODataService(model);
     await odata.enableDraftEdit("Persons", personId);
 
     const batchContexts: { binding: ODataContextBinding; data: Promise<unknown> }[] = [];
     const bindings: ODataContextBinding[] = [];
+    let deleted = 0;
     try {
         for (const target of targets) {
             const binding = model.bindContext(`/${transactionDraftPath(personId, target)}`);
@@ -127,13 +135,12 @@ export async function deleteTransactionsViaBatch(
 
         const rowDeletes = bindings.map((binding) => {
             const context = binding.getBoundContext();
-            return context ? context.delete().catch(() => undefined) : Promise.resolve();
+            return context ? context.delete().then(() => true).catch(() => false) : Promise.resolve(false);
         });
-        await Promise.all(rowDeletes);
+        const results = await Promise.all(rowDeletes);
+        deleted = results.filter((succeeded) => succeeded).length;
 
         await odata.submitPending();
-    } catch {
-        return false;
     } finally {
         for (const binding of bindings) {
             try {
@@ -146,5 +153,5 @@ export async function deleteTransactionsViaBatch(
 
     await odata.prepareDraft("Persons", personId);
     await odata.activateDraft("Persons", personId);
-    return true;
+    return { Deleted: deleted, Failed: targets.length - deleted };
 }

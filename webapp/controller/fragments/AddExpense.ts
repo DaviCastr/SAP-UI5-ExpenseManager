@@ -41,6 +41,12 @@ const AddExpense = {
             return;
         }
 
+        const amount = Number(expense.amount.replace(",", "."));
+        if (!Number.isFinite(amount)) {
+            showWarning(view, "invalidNumberValue");
+            return;
+        }
+
         uiModel.setProperty("/busy", true);
 
         try {
@@ -48,7 +54,7 @@ const AddExpense = {
                 CardId: card.ID,
                 CategoryId: category.ID,
                 Description: expense.description,
-                Value: Number(expense.amount.replace(",", ".")),
+                Value: amount,
                 Currency: "BRL",
                 TransactionDate: expense.transactionDate || new Date().toISOString().slice(0, 10),
                 Installments: Number(expense.installments) || 1,
