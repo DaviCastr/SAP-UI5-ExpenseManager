@@ -125,23 +125,35 @@ export async function ensureDialogDraft(
  * targets the wrong collection and leaves a stuck transient row behind.
  * Polls until the binding's header context belongs to the draft.
  *
- * @param {List | Table} list the dialog list (or nested entities table)
+ * A resolver function may be passed instead of a control: nested rows are
+ * destroyed and recreated by the rebinding itself, so a control captured from
+ * a clicked row would stay stale forever while the live replacement appears
+ * later — the resolver is evaluated on every poll tick.
+ *
+ * @param {List | Table | (() => List | Table | undefined)} list the dialog
+ * list (or nested entities table), or a resolver returning it
  * @param {number} [timeoutMs] how long to wait for the draft binding
  * @returns {Promise<ODataListBinding | undefined>} the draft binding, or
  * `undefined` when the list has no items binding
  * @throws {Error} when the binding does not point at the draft in time
  */
 export async function waitForDraftListBinding(
-    list: List | Table | undefined,
+    list: List | Table | undefined | (() => List | Table | undefined),
     timeoutMs = 15000
 ): Promise<ODataListBinding | undefined> {
-    if (!list) {
+    const resolveList = (): List | Table | undefined =>
+        typeof list === "function" ? list() : list;
+
+    // A missing control passed directly is a programming error (fail fast);
+    // a resolver may legitimately return undefined while the rebinding recreates
+    // the rows, so that case keeps polling until the deadline.
+    if (!resolveList() && typeof list !== "function") {
         throw new Error("draft list binding timeout");
     }
 
     const deadline = Date.now() + timeoutMs;
     for (;;) {
-        const binding = list.getBinding("items") as ODataListBinding | undefined;
+        const binding = resolveList()?.getBinding("items") as ODataListBinding | undefined;
         if (binding && isDraftPath(binding.getHeaderContext()?.getPath())) {
             return binding;
         }
@@ -199,7 +211,9 @@ export async function findRowContextAfterLoad(
  * @param {object} params the deletion parameters
  * @param {XMLView} params.view the owning view
  * @param {Dialog} params.dialog the manager dialog
- * @param {List | Table} [params.list] the dialog list holding the row
+ * @param {List | Table | (() => List | Table | undefined)} [params.list] the
+ * dialog list holding the row, or a resolver returning it (see
+ * {@link waitForDraftListBinding} for why nested rows need a resolver)
  * @param {string} params.rowId the ID of the row to delete
  * @param {string} params.errorKey i18n key shown when the deletion fails
  * @param {string} params.missingRowKey i18n key shown when the row context
@@ -212,7 +226,7 @@ export async function findRowContextAfterLoad(
 export async function deleteRowInDialogDraft(params: {
     view: XMLView;
     dialog: Dialog;
-    list?: List | Table;
+    list?: List | Table | (() => List | Table | undefined);
     rowId: string;
     errorKey: string;
     missingRowKey: string;
