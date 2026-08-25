@@ -4,6 +4,7 @@ import XMLView from "sap/ui/core/mvc/XMLView";
 import Fragment from "sap/ui/core/Fragment";
 import Table from "sap/m/Table";
 import List from "sap/m/List";
+import CustomListItem from "sap/m/CustomListItem";
 import MessageBox from "sap/m/MessageBox";
 import type Event from "sap/ui/base/Event";
 import JSONModel from "sap/ui/model/json/JSONModel";
@@ -33,25 +34,6 @@ function findSharesDialog(control: Control): Dialog | undefined {
     let current: Control | undefined = control;
     while (current) {
         if (current instanceof Dialog) {
-            return current;
-        }
-        current = current.getParent() as Control | undefined;
-    }
-    return undefined;
-}
-
-/**
- * Walks up the parent chain of the given control and returns the first
- * `Table` found. Used to reach the nested Entities table of a Share from its
- * toolbar button.
- *
- * @param {Control} control the starting control
- * @returns {Table | undefined} the containing table, or `undefined`
- */
-function containingTable(control: Control): Table | undefined {
-    let current: Control | undefined = control;
-    while (current) {
-        if (current instanceof Table) {
             return current;
         }
         current = current.getParent() as Control | undefined;
@@ -91,6 +73,49 @@ function releaseDraftBinding(dialog: Dialog): void {
     } catch {
         // best effort; unbinding must not break the close flow
     }
+}
+
+/**
+ * Finds the ID of the Share row that contains the given control by walking up
+ * the parent chain to the share `CustomListItem`.
+ *
+ * @param {Control} control the starting control (e.g. an entity toolbar button)
+ * @returns {string | undefined} the share row ID, or `undefined` when not found
+ */
+function containingShareId(control: Control): string | undefined {
+    let current: Control | undefined = control;
+    while (current) {
+        if (current instanceof CustomListItem) {
+            return (current.getBindingContext()?.getObject() as { ID?: string } | undefined)?.ID;
+        }
+        current = current.getParent() as Control | undefined;
+    }
+    return undefined;
+}
+
+/**
+ * Resolves, from the LIVE shares list, the Entities table of the share row
+ * with the given ID. Rows are destroyed and recreated when the dialog switches
+ * to the person draft, so this must be called per poll tick instead of holding
+ * a control captured from a clicked button.
+ *
+ * @param {string | undefined} shareId the share row ID
+ * @returns {Table | undefined} the live entities table, or `undefined`
+ */
+function entitiesTableOf(shareId: string | undefined): Table | undefined {
+    const list = Fragment.byId("Shares", "sharesList") as List | undefined;
+    if (!shareId || !list) {
+        return undefined;
+    }
+
+    const row = list.getItems().find(
+        (item) => (item.getBindingContext()?.getObject() as { ID?: string } | undefined)?.ID === shareId
+    );
+    if (!row) {
+        return undefined;
+    }
+
+    return row.findAggregatedObjects(true).find((control): control is Table => control instanceof Table);
 }
 
 // Watches the service model's `messageChange` event while the dialog is open so
@@ -263,20 +288,19 @@ const Shares = {
             return;
         }
 
-        const table = containingTable(this);
-        if (!table) {
-            showWarning(view, "sharesLoadError");
-            return;
-        }
+        const shareId = containingShareId(this);
 
         await runExclusiveDialogAction(dialog, async () => {
             if (!(await ensureDialogDraft(view, dialog, "sharesAddEntityError"))) {
                 return;
             }
 
+            // The draft switch recreates every share row: resolve the LIVE
+            // entities table per tick and create on its own items binding, so
+            // the transient row appears in the visible table immediately.
             let binding: ODataListBinding | undefined;
             try {
-                binding = await waitForDraftListBinding(table);
+                binding = await waitForDraftListBinding(() => entitiesTableOf(shareId));
             } catch (error) {
                 handleActionError(view, error, "sharesAddEntityError");
                 return;
@@ -303,6 +327,7 @@ const Shares = {
         const view = dialog?.getParent() as XMLView | undefined;
         const context = this.getBindingContext() as Context | undefined;
         const entity = context?.getObject() as { ID?: string } | undefined;
+        const shareId = containingShareId(this);
 
         if (!dialog || !view || !entity?.ID) {
             return;
@@ -313,7 +338,7 @@ const Shares = {
                 await deleteRowInDialogDraft({
                     view,
                     dialog,
-                    list: containingTable(this),
+                    list: () => entitiesTableOf(shareId),
                     rowId: entity.ID as string,
                     errorKey: "sharesRemoveEntityError",
                     missingRowKey: "sharesLoadError"

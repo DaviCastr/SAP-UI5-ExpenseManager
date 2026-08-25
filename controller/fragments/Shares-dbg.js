@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/MessageBox", "../../service/ODataService", "../../util/draftDialogFlow", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, Table, MessageBox, ____service_ODataService, ____util_draftDialogFlow, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
+sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/CustomListItem", "sap/m/MessageBox", "../../service/ODataService", "../../util/draftDialogFlow", "../../util/i18n", "../../util/feedback", "../../util/rejectedChanges"], function (Dialog, Fragment, Table, CustomListItem, MessageBox, ____service_ODataService, ____util_draftDialogFlow, ____util_i18n, ____util_feedback, ____util_rejectedChanges) {
   "use strict";
 
   const ODataService = ____service_ODataService["ODataService"];
@@ -22,25 +22,6 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
     let current = control;
     while (current) {
       if (current instanceof Dialog) {
-        return current;
-      }
-      current = current.getParent();
-    }
-    return undefined;
-  }
-
-  /**
-   * Walks up the parent chain of the given control and returns the first
-   * `Table` found. Used to reach the nested Entities table of a Share from its
-   * toolbar button.
-   *
-   * @param {Control} control the starting control
-   * @returns {Table | undefined} the containing table, or `undefined`
-   */
-  function containingTable(control) {
-    let current = control;
-    while (current) {
-      if (current instanceof Table) {
         return current;
       }
       current = current.getParent();
@@ -80,6 +61,45 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
     } catch {
       // best effort; unbinding must not break the close flow
     }
+  }
+
+  /**
+   * Finds the ID of the Share row that contains the given control by walking up
+   * the parent chain to the share `CustomListItem`.
+   *
+   * @param {Control} control the starting control (e.g. an entity toolbar button)
+   * @returns {string | undefined} the share row ID, or `undefined` when not found
+   */
+  function containingShareId(control) {
+    let current = control;
+    while (current) {
+      if (current instanceof CustomListItem) {
+        return current.getBindingContext()?.getObject()?.ID;
+      }
+      current = current.getParent();
+    }
+    return undefined;
+  }
+
+  /**
+   * Resolves, from the LIVE shares list, the Entities table of the share row
+   * with the given ID. Rows are destroyed and recreated when the dialog switches
+   * to the person draft, so this must be called per poll tick instead of holding
+   * a control captured from a clicked button.
+   *
+   * @param {string | undefined} shareId the share row ID
+   * @returns {Table | undefined} the live entities table, or `undefined`
+   */
+  function entitiesTableOf(shareId) {
+    const list = Fragment.byId("Shares", "sharesList");
+    if (!shareId || !list) {
+      return undefined;
+    }
+    const row = list.getItems().find(item => item.getBindingContext()?.getObject()?.ID === shareId);
+    if (!row) {
+      return undefined;
+    }
+    return row.findAggregatedObjects(true).find(control => control instanceof Table);
   }
 
   // Watches the service model's `messageChange` event while the dialog is open so
@@ -230,18 +250,18 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
       if (!dialog || !view || !ui) {
         return;
       }
-      const table = containingTable(this);
-      if (!table) {
-        showWarning(view, "sharesLoadError");
-        return;
-      }
+      const shareId = containingShareId(this);
       await runExclusiveDialogAction(dialog, async () => {
         if (!(await ensureDialogDraft(view, dialog, "sharesAddEntityError"))) {
           return;
         }
+
+        // The draft switch recreates every share row: resolve the LIVE
+        // entities table per tick and create on its own items binding, so
+        // the transient row appears in the visible table immediately.
         let binding;
         try {
-          binding = await waitForDraftListBinding(table);
+          binding = await waitForDraftListBinding(() => entitiesTableOf(shareId));
         } catch (error) {
           handleActionError(view, error, "sharesAddEntityError");
           return;
@@ -266,6 +286,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
       const view = dialog?.getParent();
       const context = this.getBindingContext();
       const entity = context?.getObject();
+      const shareId = containingShareId(this);
       if (!dialog || !view || !entity?.ID) {
         return;
       }
@@ -274,7 +295,7 @@ sap.ui.define(["sap/m/Dialog", "sap/ui/core/Fragment", "sap/m/Table", "sap/m/Mes
           await deleteRowInDialogDraft({
             view,
             dialog,
-            list: containingTable(this),
+            list: () => entitiesTableOf(shareId),
             rowId: entity.ID,
             errorKey: "sharesRemoveEntityError",
             missingRowKey: "sharesLoadError"
