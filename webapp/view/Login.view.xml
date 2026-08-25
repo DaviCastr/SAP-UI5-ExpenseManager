@@ -113,7 +113,7 @@
                         <Text
                             text="{i18n>loginSubtitle}"
                             textAlign="Center"
-                            class="loginSubtitle sapUiLargeMarginBottom"
+                            class="loginSubtitle sapUiMediumMarginBottom"
                         />
 
                         <Button

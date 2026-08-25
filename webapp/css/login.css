@@ -30,18 +30,43 @@
     box-sizing: border-box;
 }
 
-.loginBrand { gap: .7rem; }
+.loginBrand {
+    gap: .7rem;
+    flex-wrap: nowrap;
+    max-width: 100%;
+}
 
 .loginBrandLogo {
     border-radius: .75rem;
     box-shadow: 0 4px 14px rgba(7, 61, 58, .18);
+    flex-shrink: 0;
 }
 
-.loginBrandTitle { color: var(--ink); font-weight: 700; }
+.loginBrandTitle {
+    color: var(--ink);
+    font-weight: 700;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    line-height: 1.25;
+    min-width: 0;
+    font-size: clamp(1.05rem, 3.8vw, 1.4rem) !important;
+}
 
-.loginHeadline { color: var(--ink); line-height: 1.2; white-space: normal; overflow: visible; text-overflow: clip; }
+.loginHeadline {
+    color: var(--ink);
+    line-height: 1.2;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    font-size: clamp(1.15rem, 4.6vw, 1.7rem) !important;
+}
 
-.loginSubtitle { color: var(--muted); line-height: 1.55; }
+.loginSubtitle {
+    color: var(--muted);
+    line-height: 1.5;
+    font-size: clamp(.88rem, 3.2vw, 1rem);
+}
 
 .loginPrimary {
     width: 100%;
@@ -145,17 +170,24 @@
     gap: .8rem;
     position: relative;
     z-index: 1;
+    flex-wrap: nowrap;
+    max-width: 100%;
 }
 
 .loginHeroLogo {
     border-radius: .8rem;
     box-shadow: 0 6px 18px rgba(7, 61, 58, .35);
+    flex-shrink: 0;
 }
 
 .loginHeroTitle {
     color: var(--white);
     font-weight: 700;
     letter-spacing: .01em;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    line-height: 1.25;
 }
 
 .loginHeroHeadline {

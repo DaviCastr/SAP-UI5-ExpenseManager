@@ -54,9 +54,8 @@
             <Button
                 text="{i18n>actionExportBackup}"
                 icon="sap-icon://download"
-                type="Emphasized"
+                type="Ghost"
                 press="handler.onExportBackup"
-                class="secondaryAction"
             />
             <Button
                 text="{i18n>backupCancelButton}"
