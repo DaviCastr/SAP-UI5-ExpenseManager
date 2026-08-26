@@ -63,7 +63,7 @@ export default class Home extends BaseController {
         ui.setProperty("/entityOptions", [
             { key: "1", text: this.getText("sharesEntityPersons") },
             { key: "2", text: this.getText("sharesEntityShares") },
-            { key: "3", text: this.getText("sharesEntityPermissions") },
+            { key: "3", text: this.getText("sharesEntityEntities") },
             { key: "4", text: this.getText("sharesEntityCategories") },
             { key: "5", text: this.getText("sharesEntityCards") },
             { key: "6", text: this.getText("sharesEntityInvoices") },

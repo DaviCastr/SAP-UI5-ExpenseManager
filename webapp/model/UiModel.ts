@@ -353,8 +353,6 @@ export default class UiModel extends JSONModel {
                 { key: "8", text: "Backups" },
                 { key: "9", text: "Liabilities" },
                 { key: "10", text: "LiabilityTransactions" },
-                { key: "11", text: "Financings" },
-                { key: "12", text: "FinancingInstallments" }
             ],
 
             permissionOptions: [
