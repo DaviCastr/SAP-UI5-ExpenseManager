@@ -142,12 +142,6 @@ sap.ui.define(["sap/ui/model/json/JSONModel", "../util/liabilityRules"], functio
         }, {
           key: "10",
           text: "LiabilityTransactions"
-        }, {
-          key: "11",
-          text: "Financings"
-        }, {
-          key: "12",
-          text: "FinancingInstallments"
         }],
         permissionOptions: [{
           key: "1",

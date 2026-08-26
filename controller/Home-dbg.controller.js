@@ -38,7 +38,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         text: this.getText("sharesEntityShares")
       }, {
         key: "3",
-        text: this.getText("sharesEntityPermissions")
+        text: this.getText("sharesEntityEntities")
       }, {
         key: "4",
         text: this.getText("sharesEntityCategories")
