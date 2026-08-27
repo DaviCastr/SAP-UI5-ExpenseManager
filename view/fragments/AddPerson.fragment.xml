@@ -9,6 +9,7 @@
         title="{i18n>personDialogTitle}"
         class="financeDialog"
         contentWidth="30rem"
+        busy="{ui>/busy}"
         beforeOpen="handler.onDialogBeforeOpen"
         core:require="{ handler: 'apps/dflc/expensemanager/controller/fragments/AddPerson' }"
     >
@@ -55,7 +56,7 @@
                 </VBox>
             </ScrollContainer>
         </content>
-        <beginButton><Button text="{i18n>personSaveButton}" icon="sap-icon://accept" type="Emphasized" press="handler.onAddPerson" /></beginButton>
+        <beginButton><Button text="{i18n>personSaveButton}" icon="sap-icon://accept" type="Emphasized" enabled="{= !${ui>/busy}}" press="handler.onAddPerson" /></beginButton>
         <endButton><Button text="{i18n>personCancelButton}" icon="sap-icon://decline" press="handler.onCancelPerson" /></endButton>
     </Dialog>
 </core:FragmentDefinition>

@@ -8,8 +8,10 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../service/OD
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
   let personPhoto = null;
+  let creating = false;
   const AddPerson = {
     onDialogBeforeOpen: function () {
+      creating = false;
       personPhoto = null;
       Fragment.byId("AddPerson", "personFileUploader")?.setValue("");
       Fragment.byId("AddPerson", "personAvatar")?.setSrc("");
@@ -30,6 +32,9 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../service/OD
       this.getParent().close();
     },
     onAddPerson: async function () {
+      if (creating) {
+        return;
+      }
       const dialog = this.getParent();
       const view = dialog.getParent();
       const uiModel = view.getModel("ui");
@@ -44,6 +49,7 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../service/OD
         showWarning(view, "invalidNumberValue");
         return;
       }
+      creating = true;
       uiModel.setProperty("/busy", true);
       try {
         const created = await createEntity("Persons", {
@@ -75,6 +81,7 @@ sap.ui.define(["sap/ui/core/Fragment", "../../util/entityApi", "../../service/OD
       } catch (error) {
         handleActionError(view, error, "errorCreatePerson");
       } finally {
+        creating = false;
         uiModel.setProperty("/busy", false);
       }
     }
