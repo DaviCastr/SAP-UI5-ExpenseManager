@@ -76,7 +76,9 @@
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
         "settings": {
-          "bundleName": "apps.dflc.expensemanager.i18n.i18n"
+          "bundleName": "apps.dflc.expensemanager.i18n.i18n",
+          "supportedLocales": ["", "en"],
+          "fallbackLocale": ""
         }
       }
     },

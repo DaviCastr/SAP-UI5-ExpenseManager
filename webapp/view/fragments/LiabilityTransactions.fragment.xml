@@ -149,7 +149,7 @@
 
                 <List
                     id="liabilityTransactionsList"
-                    items="{LiabilityTransactions}"
+                    items="{ path: 'LiabilityTransactions', sorter: { path: 'Date', descending: true } }"
                     mode="None"
                     growing="true"
                     noDataText="{i18n>liabilityTransactionsNoData}"
@@ -167,7 +167,7 @@
                                     height="auto"
                                     class="sapUiTinyMarginTopBottom"
                                 >
-                                    <f:Avatar
+                                    <Avatar
                                         src="sap-icon://payment-approval"
                                         displaySize="XS"
                                         class="sapUiTinyMarginEnd"

@@ -15,9 +15,11 @@ import type Home from "../../controller/Home.controller";
 import type { NewPerson } from "../../model/UiModel";
 
 let personPhoto: File | null = null;
+let creating = false;
 
 const AddPerson = {
     onDialogBeforeOpen: function (): void {
+        creating = false;
         personPhoto = null;
         (Fragment.byId("AddPerson", "personFileUploader") as FileUploader)?.setValue("");
         (Fragment.byId("AddPerson", "personAvatar") as Avatar)?.setSrc("");
@@ -42,6 +44,10 @@ const AddPerson = {
     },
 
     onAddPerson: async function (this: Control): Promise<void> {
+        if (creating) {
+            return;
+        }
+
         const dialog = this.getParent() as Dialog;
         const view = dialog.getParent() as XMLView;
         const uiModel = view.getModel("ui") as JSONModel;
@@ -60,6 +66,7 @@ const AddPerson = {
             return;
         }
 
+        creating = true;
         uiModel.setProperty("/busy", true);
 
         try {
@@ -96,6 +103,7 @@ const AddPerson = {
         } catch (error) {
             handleActionError(view, error, "errorCreatePerson");
         } finally {
+            creating = false;
             uiModel.setProperty("/busy", false);
         }
     }
