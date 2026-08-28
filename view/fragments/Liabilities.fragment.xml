@@ -305,6 +305,56 @@
                                                 />
                                             </layoutData>
                                             <Label
+                                                text="{i18n>liabilitiesTotalInLabel}"
+                                                class="liabilityFieldLabel"
+                                            />
+
+                                            <ObjectNumber
+                                                number="{
+                                                    parts: [
+                                                        { path: 'TotalIn' },
+                                                        { path: 'Currency_code' }
+                                                    ],
+                                                    formatter: 'formatter.formatCardAmount'
+                                                }"
+                                                state="Positive"
+                                                class="liabilityAmount"
+                                            />
+                                        </VBox>
+
+                                        <VBox class="liabilityGridField sapUiTinyMarginEnd">
+                                            <layoutData>
+                                                <FlexItemData
+                                                    minWidth="8rem"
+                                                    growFactor="1"
+                                                />
+                                            </layoutData>
+                                            <Label
+                                                text="{i18n>liabilitiesTotalOutLabel}"
+                                                class="liabilityFieldLabel"
+                                            />
+
+                                            <ObjectNumber
+                                                number="{
+                                                    parts: [
+                                                        { path: 'TotalOut' },
+                                                        { path: 'Currency_code' }
+                                                    ],
+                                                    formatter: 'formatter.formatCardAmount'
+                                                }"
+                                                state="Negative"
+                                                class="liabilityAmount"
+                                            />
+                                        </VBox>
+
+                                        <VBox class="liabilityGridField sapUiTinyMarginEnd">
+                                            <layoutData>
+                                                <FlexItemData
+                                                    minWidth="8rem"
+                                                    growFactor="1"
+                                                />
+                                            </layoutData>
+                                            <Label
                                                 text="{i18n>liabilitiesTotalAmountLabel}"
                                                 class="liabilityFieldLabel"
                                             />
