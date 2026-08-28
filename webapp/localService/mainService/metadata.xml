@@ -353,6 +353,8 @@
                 <Property Name="TotalAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
                 <Property Name="OutstandingBalance" Type="Edm.Decimal" Precision="15" Scale="2"/>
                 <Property Name="PaymentPercentage" Type="Edm.Decimal" Precision="9" Scale="2"/>
+                <Property Name="TotalIn" Type="Edm.Decimal" Precision="15" Scale="2"/>
+                <Property Name="TotalOut" Type="Edm.Decimal" Precision="15" Scale="2"/>
                 <Property Name="DueDay" Type="Edm.Int32"/>
                 <Property Name="InvoiceSentMonth" Type="Edm.Int32"/>
                 <Property Name="InvoiceSentYear" Type="Edm.Int32"/>
