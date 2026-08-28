@@ -502,11 +502,19 @@
                                                 text="{i18n>liabilitiesCurrencyLabel}"
                                             />
 
-                                            <Text
-                                                text="{ path: 'Currency_code', formatter: 'formatter.currencyDisplayName' }"
+                                            <Select
+                                                selectedKey="{Currency_code}"
                                                 width="100%"
-                                                wrapping="false"
-                                            />
+                                            >
+                                                <core:Item
+                                                    key="BRL"
+                                                    text="Real brasileiro (BRL)"
+                                                />
+                                                <core:Item
+                                                    key="USD"
+                                                    text="DÃ³lar americano (USD)"
+                                                />
+                                            </Select>
                                         </VBox>
 
                                         <VBox
