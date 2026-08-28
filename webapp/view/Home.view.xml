@@ -440,7 +440,7 @@
                     >
                         <Button
                             text="{i18n>personAddButton}"
-                            icon="sap-icon://person-add"
+                            icon="sap-icon://add"
                             type="Emphasized"
                             press=".onOpenPersonDialog"
                             class="emptyStateButton"
