@@ -133,7 +133,7 @@
                                 />
                                 <core:Item
                                     key="USD"
-                                    text="DÃ³lar americano (USD)"
+                                    text="Dólar americano (USD)"
                                 />
                             </Select>
                         </VBox>
@@ -405,7 +405,7 @@
                                                 />
                                                 <core:Item
                                                     key="USD"
-                                                    text="DÃ³lar americano (USD)"
+                                                    text="Dólar americano (USD)"
                                                 />
                                             </Select>
                                         </VBox>
