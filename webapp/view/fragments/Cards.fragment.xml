@@ -14,7 +14,7 @@
         title="{i18n>cardsDialogTitle}"
         class="financeDialog"
         contentWidth="46rem"
-        stretch="{device>/system/phone}"
+        stretch="{device>/system/stretchDialogs}"
         beforeOpen="handler.onDialogBeforeOpen"
         afterOpen="handler.onDialogAfterOpen"
         afterClose="handler.onDialogAfterClose"

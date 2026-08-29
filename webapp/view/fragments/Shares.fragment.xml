@@ -13,7 +13,7 @@
         title="{i18n>sharesDialogTitle}"
         class="financeDialog"
         contentWidth="40rem"
-        stretch="{device>/system/phone}" 
+        stretch="{device>/system/stretchDialogs}" 
         beforeOpen="handler.onDialogBeforeOpen"
         afterOpen="handler.onDialogAfterOpen"
         afterClose="handler.onDialogAfterClose"

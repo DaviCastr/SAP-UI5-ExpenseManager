@@ -12,7 +12,7 @@
         title="{i18n>invoicesDialogTitle}"
         class="financeDialog"
         contentWidth="50rem"
-        stretch="{device>/system/phone}"
+        stretch="{device>/system/stretchDialogs}"
         beforeOpen="handler.onDialogBeforeOpen"
         afterOpen="handler.onDialogAfterOpen"
         afterClose="handler.onDialogAfterClose"

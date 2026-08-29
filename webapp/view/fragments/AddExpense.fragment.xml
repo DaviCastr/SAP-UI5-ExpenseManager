@@ -9,7 +9,7 @@
         title="{i18n>expenseDialogTitle}"
         class="financeDialog expenseDialog"
         contentWidth="30rem"
-        stretch="{device>/system/phone}"
+        stretch="{device>/system/stretchDialogs}"
         core:require="{ handler: 'apps/dflc/expensemanager/controller/fragments/AddExpense' }"
     >
         <content>
