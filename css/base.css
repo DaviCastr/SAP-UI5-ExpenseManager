@@ -114,3 +114,21 @@ span.sapMBtnInner.sapMBtnEmphasized.sapMBtnActive,
 .sapFAvatar { background-color: var(--white) !important; }
 
 :is(.personAvatar, .categoryItemAvatar, .categoryDetailAvatar, .categoryManagerAvatar, .cardManagerAvatar, .invoiceCardAvatar, .invoiceTxAvatar, .invoiceCategoryAvatar) .sapFAvatar { background-color: var(--teal-050) !important; }
+
+/* PWA standalone: quando o app é instalado na home (tela cheia), a altura
+   física do viewport (100vh) excede a área realmente visível, então um dialog
+   esticado fica mais alto que a tela e o rodapé (botões) corta — além de
+   "dar zoom" ao abrir. Força a altura para a viewport dinâmica real. */
+@media all and (display-mode: standalone) {
+    .sapMDialog.sapMDialogStretched {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        top: 0 !important;
+    }
+    @supports (height: 100lvh) {
+        .sapMDialog.sapMDialogStretched {
+            height: 100lvh !important;
+            max-height: 100lvh !important;
+        }
+    }
+}

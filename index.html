@@ -4,13 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#f4f7f8">
     <title>Expense Manager</title>
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="img/favicon-32.png" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
     <style>
+        /* No PWA standalone a viewport física (100vh/100%) excede a área
+           visível, cortando o rodapé dos dialogs e "dando zoom" ao abri-los.
+           Usamos as unidades de altura dinâmicas (dvh/lvh) para encaixar no
+           espaço realmente visível, com fallback para navegadores antigos. */
         html, body, body > div, #container, #container-uiarea {
             height: 100%;
+        }
+        @supports (height: 100dvh) {
+            html, body, body > div, #container, #container-uiarea {
+                height: 100dvh;
+            }
+        }
+        @media all and (display-mode: standalone) {
+            @supports (height: 100lvh) {
+                html, body, body > div, #container, #container-uiarea {
+                    height: 100lvh;
+                }
+            }
+        }
+
+        /* Previne o auto-zoom do iOS/webview ao tocar em campos de texto. */
+        @supports (-webkit-touch-callout: none) {
+            input, textarea, select {
+                font-size: 16px !important;
+            }
         }
     </style>
     <script
