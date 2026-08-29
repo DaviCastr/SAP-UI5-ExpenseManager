@@ -9,7 +9,7 @@
         title="{i18n>backupDialogTitle}"
         class="financeDialog"
         contentWidth="30rem"
-        stretch="{device>/system/phone}"
+        stretch="{device>/system/stretchDialogs}"
         beforeOpen="handler.onDialogBeforeOpen"
         busy="{ui>/busy}"
         core:require="{

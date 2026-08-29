@@ -16,7 +16,7 @@
         title="{i18n>personDetailTitle}"
         class="financeDialog"
         contentWidth="42rem"
-        stretch="{device>/system/phone}" 
+        stretch="{device>/system/stretchDialogs}" 
         beforeOpen="handler.onDialogBeforeOpen"
         afterOpen="handler.onDialogAfterOpen"
         afterClose="handler.onDialogAfterClose"

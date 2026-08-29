@@ -12,7 +12,7 @@
         title="{i18n>transactionCategoryTitle}"
         class="financeDialog"
         contentWidth="38rem"
-        stretch="{device>/system/phone}"
+        stretch="{device>/system/stretchDialogs}"
         beforeOpen="handler.onDialogBeforeOpen"
         afterOpen="handler.onDialogAfterOpen"
         afterClose="handler.onDialogAfterClose"

@@ -1,2 +1,2 @@
-sap.ui.define(["sap/ui/model/json/JSONModel","sap/ui/Device"],function(e,n){"use strict";function i(){const i=new e(n);i.setDefaultBindingMode("OneWay");return i}var t={__esModule:true};t.createDeviceModel=i;return t});
+sap.ui.define(["sap/ui/model/json/JSONModel","sap/ui/Device"],function(e,n){"use strict";function t(){if(typeof window==="undefined"||!window.matchMedia){return window.navigator.standalone===true}return window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true}function i(){const i=new e(n);i.setProperty("/system/stretchDialogs",n.system.phone&&!t());i.setDefaultBindingMode("OneWay");return i}var o={__esModule:true};o.createDeviceModel=i;return o});
 //# sourceMappingURL=models.js.map

@@ -12,7 +12,7 @@
         title="{i18n>deleteTransactionsTitle}"
         class="financeDialog"
         contentWidth="46rem"
-        stretch="{device>/system/phone}"
+        stretch="{device>/system/stretchDialogs}"
         beforeOpen="handler.onDialogBeforeOpen"
         afterClose="handler.onDialogAfterClose"
         busy="{ui>/busy}"
