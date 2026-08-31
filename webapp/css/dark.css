@@ -1,0 +1,211 @@
+/* ==========================================================================
+   Tema escuro — ativado quando o <html> recebe data-theme="dark".
+   Sobrescreve as variáveis do tema claro (base.css) e ajusta as superfícies
+   customizadas que ainda usam cores fixas claras. O tema SAP também é
+   trocado para sap_horizon_dark no código (dialogs/inputs/controles).
+
+   IMPORTANTE: --white segue sendo #ffffff (é usado como texto branco sobre
+   os gradientes do hero/login). Por isso os fundos "card" são escurecidos
+   explicitamente por seletor, e não reaproveitando --white.
+   ========================================================================== */
+
+[data-theme="dark"] {
+    color-scheme: dark;
+
+    --teal-900: #0b5751;
+    --teal-800: #12805f;
+    --teal-700: #17b892;
+    --teal-600: #2fd0a6;
+    --teal-050: #0e2a26;
+    --teal-100: #123a35;
+
+    --ink: #e3efec;
+    --muted: #8ba7a1;
+    --surface: #0c1a19;
+    --line: #24413c;
+    --line-soft: #2d4f49;
+
+    /* Novas variáveis semânticas (usadas em seletores escurecidos abaixo) */
+    --hover-bg: #1a302d;
+    --divider: #24413c;
+    --scrollbar: #2f4f49;
+    --scrollbar-hover: #3d6159;
+
+    /* Interação dos controles padrão (tema SAP) para fechar com o dark */
+    --sapContent_FocusColor: var(--teal-600);
+    --sapContent_BusyColor: var(--teal-600);
+    --sapButton_Hover_Background: #18312c;
+    --sapButton_Hover_BorderColor: #2d4f49;
+    --sapButton_Hover_TextColor: var(--teal-600);
+    --sapButton_Active_Background: #113d37;
+    --sapButton_Active_BorderColor: var(--teal-700);
+    --sapButton_Active_TextColor: var(--ink);
+    --sapButton_Transparent_Hover_Background: #15312b;
+    --sapButton_Transparent_Hover_BorderColor: #2d4f49;
+    --sapButton_Transparent_Hover_TextColor: var(--teal-600);
+    --sapButton_Transparent_Active_Background: #113d37;
+    --sapButton_Transparent_Active_BorderColor: var(--teal-700);
+    --sapButton_Transparent_Active_TextColor: var(--ink);
+    --sapButton_Lite_Hover_Background: #15312b;
+    --sapButton_Lite_Hover_BorderColor: #2d4f49;
+    --sapButton_Lite_Hover_TextColor: var(--teal-600);
+    --sapButton_Lite_Active_Background: #113d37;
+    --sapButton_Lite_Active_BorderColor: var(--teal-700);
+    --sapButton_Lite_Active_TextColor: var(--ink);
+    --sapList_Hover_Background: #1a302d;
+}
+
+/* ---------- Fundos dos cards (--white no claro = card) ---------- */
+[data-theme="dark"] .surfaceCard,
+[data-theme="dark"] .metricCard,
+[data-theme="dark"] .loginCard,
+[data-theme="dark"] .categoryManagerCard,
+[data-theme="dark"] .cardManagerCard,
+[data-theme="dark"] .liabilityList .sapMLIB,
+[data-theme="dark"] .periodNav,
+[data-theme="dark"] .shareEntityTable .sapMListTblRow {
+    background-color: #142422 !important;
+    border-color: var(--line) !important;
+}
+
+/* ---------- Divisórias / bordas que ainda usam cores claras ---------- */
+[data-theme="dark"] .transactionList .sapMLIB:not(:last-child),
+[data-theme="dark"] .categoryList .sapMLIB:not(:last-child),
+[data-theme="dark"] .shareList .sapMLIB:not(:last-child),
+[data-theme="dark"] .invoiceCardList .sapMLIB:not(:last-child),
+[data-theme="dark"] .invoiceTransactionList .sapMLIB:not(:last-child),
+[data-theme="dark"] .invoiceAffectedList .sapMLIB:not(:last-child),
+[data-theme="dark"] .categoryInvoiceList .sapMLIB:not(:last-child) {
+    border-bottom: 1px solid var(--divider);
+}
+
+[data-theme="dark"] .categoryDetailHeader,
+[data-theme="dark"] .categoryManagerAddRow,
+[data-theme="dark"] .cardManagerAddRow,
+[data-theme="dark"] .shareAddRow,
+[data-theme="dark"] .simulationResult {
+    border-color: var(--divider);
+}
+
+[data-theme="dark"] .shareEntityTable .sapMListTblRow {
+    border: 0.0625rem solid var(--line) !important;
+}
+
+[data-theme="dark"] .categoryPercent {
+    border-color: #2d4f49;
+    background: rgba(23, 184, 146, .14);
+}
+
+[data-theme="dark"] .liabilityList .sapMLIB:hover {
+    box-shadow: 0 8px 18px rgba(0, 0, 0, .45);
+}
+
+/* ---------- Hover dos itens de lista (--hover-bg) ---------- */
+[data-theme="dark"] .transactionItem:hover,
+[data-theme="dark"] .categoryItem:hover,
+[data-theme="dark"] .creditCardItem:hover,
+[data-theme="dark"] .liabilityItem:hover,
+[data-theme="dark"] .shareList .sapMLIB:hover,
+[data-theme="dark"] .invoiceCardList .sapMLIB:hover,
+[data-theme="dark"] .invoiceTransactionList .sapMLIB:hover,
+[data-theme="dark"] .invoiceAffectedList .sapMLIB:hover,
+[data-theme="dark"] .categoryInvoiceList .sapMLIB:hover {
+    background-color: var(--hover-bg) !important;
+}
+
+/* ---------- Scrollbar discreta (escura) ---------- */
+[data-theme="dark"] .transactionList::-webkit-scrollbar-thumb,
+[data-theme="dark"] .categoryList::-webkit-scrollbar-thumb,
+[data-theme="dark"] .cardList::-webkit-scrollbar-thumb,
+[data-theme="dark"] .liabilityList::-webkit-scrollbar-thumb,
+[data-theme="dark"] .categoryManagerList::-webkit-scrollbar-thumb,
+[data-theme="dark"] .cardManagerList::-webkit-scrollbar-thumb,
+[data-theme="dark"] .shareList::-webkit-scrollbar-thumb,
+[data-theme="dark"] .invoiceCardList::-webkit-scrollbar-thumb,
+[data-theme="dark"] .invoiceTransactionList::-webkit-scrollbar-thumb,
+[data-theme="dark"] .invoiceAffectedList::-webkit-scrollbar-thumb,
+[data-theme="dark"] .categoryInvoiceList::-webkit-scrollbar-thumb {
+    background: var(--scrollbar);
+}
+[data-theme="dark"] .transactionList::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .categoryList::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .cardList::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .liabilityList::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .categoryManagerList::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .cardManagerList::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .shareList::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .invoiceCardList::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .invoiceTransactionList::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .invoiceAffectedList::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .categoryInvoiceList::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-hover);
+}
+[data-theme="dark"] .transactionList::-webkit-scrollbar-track,
+[data-theme="dark"] .categoryList::-webkit-scrollbar-track,
+[data-theme="dark"] .cardList::-webkit-scrollbar-track,
+[data-theme="dark"] .liabilityList::-webkit-scrollbar-track,
+[data-theme="dark"] .categoryManagerList::-webkit-scrollbar-track,
+[data-theme="dark"] .cardManagerList::-webkit-scrollbar-track,
+[data-theme="dark"] .shareList::-webkit-scrollbar-track,
+[data-theme="dark"] .invoiceCardList::-webkit-scrollbar-track,
+[data-theme="dark"] .invoiceTransactionList::-webkit-scrollbar-track,
+[data-theme="dark"] .invoiceAffectedList::-webkit-scrollbar-track,
+[data-theme="dark"] .categoryInvoiceList::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* ---------- Chips de ícone e avatares (pastéis claros -> tons escuros) ---------- */
+[data-theme="dark"] .transactionIcon,
+[data-theme="dark"] .categoryItemAvatar .sapFAvatar,
+[data-theme="dark"] .categoryDetailAvatar .sapFAvatar,
+[data-theme="dark"] .categoryManagerAvatar .sapFAvatar,
+[data-theme="dark"] .cardManagerAvatar .sapFAvatar,
+[data-theme="dark"] .invoiceCardAvatar .sapFAvatar,
+[data-theme="dark"] .invoiceTxAvatar .sapFAvatar,
+[data-theme="dark"] .invoiceCategoryAvatar .sapFAvatar {
+    background: var(--teal-100) !important;
+    color: var(--teal-600) !important;
+}
+
+/* ---------- Ícones dos cards de métrica (pastéis -> tons escuros) ---------- */
+[data-theme="dark"] .incomeMetric .sapUiIcon { background: #103026; color: #2fd0a6; }
+[data-theme="dark"] .expenseMetric .sapUiIcon { background: #33231a; color: #f0a35e; }
+[data-theme="dark"] .saveMetric .sapUiIcon { background: #1c2838; color: #7ba3ec; }
+[data-theme="dark"] .targetMetric .sapUiIcon { background: #2a2036; color: #b08ae8; }
+[data-theme="dark"] .paidMetric .sapUiIcon { background: #0f2f27; color: #2fa98a; }
+[data-theme="dark"] .payMetric .sapUiIcon { background: #331f24; color: #e8737f; }
+[data-theme="dark"] .closedMetric .sapUiIcon { background: #1e2a34; color: #8aa5bd; }
+[data-theme="dark"] .totalMetric .sapUiIcon { background: #322818; color: #e0a63f; }
+[data-theme="dark"] .liabilitiesMetric .sapUiIcon { background: #251b31; color: #b07fd4; }
+
+/* ---------- Chips de status das dívidas (pastéis -> tons escuros) ---------- */
+[data-theme="dark"] .liabilityStatus.sapMObjStatusSuccess .sapMObjStatusText {
+    background: #0f2f27; border: 1px solid #17513f; color: #4ad7a6;
+}
+[data-theme="dark"] .liabilityStatus:not(.sapMObjStatusSuccess):not(.sapMObjStatusWarning):not(.sapMObjStatusError):not(.sapMObjStatusInformation) .sapMObjStatusText {
+    background: #322818; border: 1px solid #57451d; color: #e6b84a;
+}
+
+/* ---------- Banner de rascunho (âmbar escurecido p/ contraste) ---------- */
+[data-theme="dark"] .personDraftBanner {
+    background: linear-gradient(120deg, #2a2313, #322818);
+    border: 1px solid #57451d;
+}
+[data-theme="dark"] .personDraftBannerIcon {
+    color: #e6b84a; background: #3a2f14;
+}
+[data-theme="dark"] .personDraftBadge .sapMObjStatusText {
+    background: #3a2f14; border: 1px solid #57451d; color: #e6b84a;
+}
+
+/* ---------- Sombras dos cards mais profundas no escuro ---------- */
+[data-theme="dark"] .surfaceCard,
+[data-theme="dark"] .metricCard,
+[data-theme="dark"] .loginCard,
+[data-theme="dark"] .categoryManagerCard,
+[data-theme="dark"] .cardManagerCard {
+    box-shadow: 0 4px 18px rgba(0, 0, 0, .4);
+}
+[data-theme="dark"] .metricCard:hover {
+    box-shadow: 0 10px 26px rgba(0, 0, 0, .5);
+}
