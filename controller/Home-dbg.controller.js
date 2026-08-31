@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox", "./BaseController", "../auth/AuthenticationService", "../service/ODataService", "../service/InvoiceService", "../service/PeriodService", "../service/MediaService", "../service/DashboardRenderer", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/http", "../util/feedback", "../util/draftDialogFlow"], function (MessageToast, Fragment, MessageBox, ___BaseController, ___auth_AuthenticationService, ___service_ODataService, ___service_InvoiceService, ___service_PeriodService, ___service_MediaService, ___service_DashboardRenderer, Filter, FilterOperator, ___util_expenseApi, ___util_http, ___util_feedback, ___util_draftDialogFlow) {
+sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Core", "sap/ui/util/Storage", "sap/ui/core/Fragment", "sap/m/MessageBox", "./BaseController", "../auth/AuthenticationService", "../service/ODataService", "../service/InvoiceService", "../service/PeriodService", "../service/MediaService", "../service/DashboardRenderer", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/http", "../util/feedback", "../util/draftDialogFlow"], function (MessageToast, Core, Storage, Fragment, MessageBox, ___BaseController, ___auth_AuthenticationService, ___service_ODataService, ___service_InvoiceService, ___service_PeriodService, ___service_MediaService, ___service_DashboardRenderer, Filter, FilterOperator, ___util_expenseApi, ___util_http, ___util_feedback, ___util_draftDialogFlow) {
   "use strict";
 
   const BaseController = ___BaseController["BaseController"];
@@ -26,6 +26,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     periodService = new PeriodService();
     onInit() {
       this.applyShareOptionTexts();
+      this.ensureThemeApplied();
       void this.initView();
     }
     applyShareOptionTexts() {
@@ -74,6 +75,36 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         key: "4",
         text: this.getText("sharesActionDelete")
       }]);
+    }
+    static THEME_KEY = "expensemanager-theme";
+    static THEME_STORAGE = new Storage(Storage.Type.local);
+    onToggleTheme() {
+      this.applyThemePreference(!this.isDarkTheme());
+    }
+    isDarkTheme() {
+      return document.documentElement.getAttribute("data-theme") === "dark";
+    }
+    applyThemePreference(dark) {
+      Home.THEME_STORAGE.put(Home.THEME_KEY, dark ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", dark ? "dark" : "");
+      Core.applyTheme(dark ? "sap_horizon_dark" : "sap_horizon");
+      this.syncThemeToggle(dark);
+    }
+    ensureThemeApplied() {
+      if (this.isDarkTheme()) {
+        // O script do index.html já setou data-theme; sincroniza o tema SAP.
+        Core.applyTheme("sap_horizon_dark");
+      }
+      this.syncThemeToggle();
+    }
+    syncThemeToggle(dark) {
+      const isDark = dark ?? this.isDarkTheme();
+      const button = this.byId("themeToggle");
+      if (!button) {
+        return;
+      }
+      button.setIcon(isDark ? "sap-icon://brightness-low" : "sap-icon://brightness-high");
+      button.setTooltip(this.getText(isDark ? "themeLightTooltip" : "themeDarkTooltip"));
     }
     async initView() {
       try {

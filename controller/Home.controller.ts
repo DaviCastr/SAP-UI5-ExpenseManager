@@ -1,9 +1,12 @@
 import MessageToast from "sap/m/MessageToast";
 import Dialog from "sap/m/Dialog";
+import Button from "sap/m/Button";
 import Select from "sap/m/Select";
 import List from "sap/m/List";
 import SearchField from "sap/m/SearchField";
 import Control from "sap/ui/core/Control";
+import Core from "sap/ui/core/Core";
+import Storage from "sap/ui/util/Storage";
 import Event from "sap/ui/base/Event";
 import Context from "sap/ui/model/Context";
 import Fragment from "sap/ui/core/Fragment";
@@ -54,6 +57,7 @@ export default class Home extends BaseController {
 
     public onInit(): void {
         this.applyShareOptionTexts();
+        this.ensureThemeApplied();
         void this.initView();
     }
 
@@ -79,6 +83,42 @@ export default class Home extends BaseController {
             { key: "3", text: this.getText("sharesActionEdit") },
             { key: "4", text: this.getText("sharesActionDelete") }
         ]);
+    }
+
+    private static readonly THEME_KEY = "expensemanager-theme";
+    private static readonly THEME_STORAGE = new Storage(Storage.Type.local);
+
+    public onToggleTheme(): void {
+        this.applyThemePreference(!this.isDarkTheme());
+    }
+
+    private isDarkTheme(): boolean {
+        return document.documentElement.getAttribute("data-theme") === "dark";
+    }
+
+    private applyThemePreference(dark: boolean): void {
+        Home.THEME_STORAGE.put(Home.THEME_KEY, dark ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", dark ? "dark" : "");
+        Core.applyTheme(dark ? "sap_horizon_dark" : "sap_horizon");
+        this.syncThemeToggle(dark);
+    }
+
+    private ensureThemeApplied(): void {
+        if (this.isDarkTheme()) {
+            // O script do index.html já setou data-theme; sincroniza o tema SAP.
+            Core.applyTheme("sap_horizon_dark");
+        }
+        this.syncThemeToggle();
+    }
+
+    private syncThemeToggle(dark?: boolean): void {
+        const isDark = dark ?? this.isDarkTheme();
+        const button = this.byId("themeToggle") as Button | undefined;
+        if (!button) {
+            return;
+        }
+        button.setIcon(isDark ? "sap-icon://brightness-low" : "sap-icon://brightness-high");
+        button.setTooltip(this.getText(isDark ? "themeLightTooltip" : "themeDarkTooltip"));
     }
 
     private async initView(): Promise<void> {

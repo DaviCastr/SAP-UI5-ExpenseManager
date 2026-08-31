@@ -52,6 +52,14 @@
                             class="topActions responsiveTopActions"
                             wrap="Wrap"
                         >
+                            <Button
+                                id="themeToggle"
+                                icon="sap-icon://brightness-high"
+                                type="Transparent"
+                                tooltip="{i18n>themeDarkTooltip}"
+                                press=".onToggleTheme"
+                                class="iconAction"
+                            />
                             <Text
                                 text="{i18n>personManageLabel}"
                                 class="personLabel"
