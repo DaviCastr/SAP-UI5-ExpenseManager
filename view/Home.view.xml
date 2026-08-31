@@ -767,6 +767,7 @@
                                                 }"
                                                 displaySize="XS"
                                                 displayShape="Circle"
+                                                class="categoryItemAvatar"
                                             />
                                         </VBox>
                                         <VBox>
