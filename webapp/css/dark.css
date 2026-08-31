@@ -163,7 +163,7 @@
 [data-theme="dark"] .invoiceCardAvatar .sapFAvatar,
 [data-theme="dark"] .invoiceTxAvatar .sapFAvatar,
 [data-theme="dark"] .invoiceCategoryAvatar .sapFAvatar {
-    background: var(--teal-100) !important;
+    /* background: var(--teal-100) !important; */
     color: var(--teal-600) !important;
 }
 
@@ -196,6 +196,43 @@
 }
 [data-theme="dark"] .personDraftBadge .sapMObjStatusText {
     background: #3a2f14; border: 1px solid #57451d; color: #e6b84a;
+}
+
+/* ---------- Topo: fundo da página (luz suave no canto superior direito) ---------- */
+[data-theme="dark"] .financePage,
+[data-theme="dark"] .financePage .sapMPageBgStandard {
+    background: radial-gradient(circle at 83% -10%, #1f6a58 0, transparent 30rem), var(--surface);
+}
+
+/* ---------- Hero "SEU DINHEIRO, COM CLAREZA": gradiente teal mais escuro p/ não ofuscar ---------- */
+[data-theme="dark"] .balanceHero {
+    background: linear-gradient(125deg, #071f1d 0%, #0d3a34 55%, #0f4a40 100%);
+}
+
+/* ---------- Seletor de pessoa (--white overloaded): fundo escuro + texto claro ---------- */
+[data-theme="dark"] .personSelect {
+    background: #142422;
+    border: 1px solid var(--line);
+}
+[data-theme="dark"] .personSelect .sapMSlt,
+[data-theme="dark"] .personSelect .sapMSltInner {
+    background: #142422;
+    border: 0;
+    color: var(--ink);
+}
+[data-theme="dark"] .personSelect .sapMSltArrow,
+[data-theme="dark"] .personSelect .sapMSltIcon {
+    color: var(--teal-600);
+}
+[data-theme="dark"] .personSelect .sapMSlt:hover .sapMSltInner,
+[data-theme="dark"] .personSelect .sapMSltPressed .sapMSltInner {
+    background: #1a302d;
+    color: var(--ink);
+}
+
+/* ---------- Toggle de tema: garante ícone visível sobre o fundo escuro ---------- */
+[data-theme="dark"] .iconAction .sapMBtnInner .sapUiIcon {
+    color: var(--teal-600);
 }
 
 /* ---------- Sombras dos cards mais profundas no escuro ---------- */

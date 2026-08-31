@@ -13,6 +13,7 @@ import { SessionStorage } from "./auth/storage/SessionStorage";
 import Environment, { EnvironmentType } from "./util/Environment";
 import { isSessionExpiredError, isBackendUnavailableError } from "./util/http";
 import { getBackendErrorMessage } from "./util/feedback";
+import { ensureThemeApplied } from "./util/theme";
 
 /**
  * @namespace apps.dflc.expensemanager
@@ -33,6 +34,8 @@ export default class Component extends BaseComponent {
 
     public async init(): Promise<void> {
         super.init();
+
+        ensureThemeApplied();
 
         try {
             await XsuaaAuthHelper.loadRuntimeConfig();

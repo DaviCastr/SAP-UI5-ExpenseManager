@@ -55,12 +55,19 @@
     ></script>
     <script>
         // Aplica o tema salvo antes do UI5 carregar, evitando "flash" do claro.
+        // O valor é gravado em JSON por sap/ui/util/Storage, por isso o JSON.parse.
         (function () {
             try {
-                if (localStorage.getItem("expensemanager-theme") === "dark") {
+                var stored = null;
+                try {
+                    stored = JSON.parse(sessionStorage.getItem("expensemanager-theme"));
+                } catch (e) {
+                    stored = null;
+                }
+                if (stored === "dark") {
                     document.documentElement.setAttribute("data-theme", "dark");
                 }
-            } catch (e) { /* localStorage indisponível (ex.: modo privado) */ }
+            } catch (e) { /* sessionStorage indisponível (ex.: modo privado) */ }
         })();
     </script>
 </head>

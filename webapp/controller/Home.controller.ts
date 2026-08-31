@@ -5,8 +5,6 @@ import Select from "sap/m/Select";
 import List from "sap/m/List";
 import SearchField from "sap/m/SearchField";
 import Control from "sap/ui/core/Control";
-import Core from "sap/ui/core/Core";
-import Storage from "sap/ui/util/Storage";
 import Event from "sap/ui/base/Event";
 import Context from "sap/ui/model/Context";
 import Fragment from "sap/ui/core/Fragment";
@@ -29,6 +27,7 @@ import {
     type CategoryBreakdownItem
 } from "../util/expenseApi";
 import { isSessionExpiredError, isBackendUnavailableError } from "../util/http";
+import { applyThemePreference, ensureThemeApplied as applyStoredTheme, isDarkTheme } from "../util/theme";
 import { getBackendErrorMessage } from "../util/feedback";
 import { runExclusiveAction } from "../util/draftDialogFlow";
 import type { UiPerson } from "../model/UiModel";
@@ -57,7 +56,7 @@ export default class Home extends BaseController {
 
     public onInit(): void {
         this.applyShareOptionTexts();
-        this.ensureThemeApplied();
+        this.syncThemeState();
         void this.initView();
     }
 
@@ -85,39 +84,23 @@ export default class Home extends BaseController {
         ]);
     }
 
-    private static readonly THEME_KEY = "expensemanager-theme";
-    private static readonly THEME_STORAGE = new Storage(Storage.Type.local);
-
     public onToggleTheme(): void {
-        this.applyThemePreference(!this.isDarkTheme());
-    }
-
-    private isDarkTheme(): boolean {
-        return document.documentElement.getAttribute("data-theme") === "dark";
-    }
-
-    private applyThemePreference(dark: boolean): void {
-        Home.THEME_STORAGE.put(Home.THEME_KEY, dark ? "dark" : "light");
-        document.documentElement.setAttribute("data-theme", dark ? "dark" : "");
-        Core.applyTheme(dark ? "sap_horizon_dark" : "sap_horizon");
-        this.syncThemeToggle(dark);
-    }
-
-    private ensureThemeApplied(): void {
-        if (this.isDarkTheme()) {
-            // O script do index.html já setou data-theme; sincroniza o tema SAP.
-            Core.applyTheme("sap_horizon_dark");
-        }
+        applyThemePreference(!isDarkTheme());
         this.syncThemeToggle();
     }
 
-    private syncThemeToggle(dark?: boolean): void {
-        const isDark = dark ?? this.isDarkTheme();
+    private syncThemeState(): void {
+        applyStoredTheme();
+        this.syncThemeToggle();
+    }
+
+    private syncThemeToggle(): void {
+        const isDark = isDarkTheme();
         const button = this.byId("themeToggle") as Button | undefined;
         if (!button) {
             return;
         }
-        button.setIcon(isDark ? "sap-icon://brightness-low" : "sap-icon://brightness-high");
+        button.setIcon(isDark ? "sap-icon://dark-mode" : "sap-icon://light-mode");
         button.setTooltip(this.getText(isDark ? "themeLightTooltip" : "themeDarkTooltip"));
     }
 
