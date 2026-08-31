@@ -1,4 +1,4 @@
-sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "sap/m/MessageBox", "./model/models", "./model/UiModel", "./auth/AuthenticationService", "./auth/providers/AuthenticatedProviderFactory", "./auth/providers/XsuaaAuthHelper", "./auth/storage/SessionStorage", "./util/Environment", "./util/http", "./util/feedback"], function (BaseComponent, ODataModel, MessageBox, ___model_models, __UiModel, ___auth_AuthenticationService, ___auth_providers_AuthenticatedProviderFactory, ___auth_providers_XsuaaAuthHelper, ___auth_storage_SessionStorage, __Environment, ___util_http, ___util_feedback) {
+sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "sap/m/MessageBox", "./model/models", "./model/UiModel", "./auth/AuthenticationService", "./auth/providers/AuthenticatedProviderFactory", "./auth/providers/XsuaaAuthHelper", "./auth/storage/SessionStorage", "./util/Environment", "./util/http", "./util/feedback", "./util/theme"], function (BaseComponent, ODataModel, MessageBox, ___model_models, __UiModel, ___auth_AuthenticationService, ___auth_providers_AuthenticatedProviderFactory, ___auth_providers_XsuaaAuthHelper, ___auth_storage_SessionStorage, __Environment, ___util_http, ___util_feedback, ___util_theme) {
   "use strict";
 
   function _interopRequireDefault(obj) {
@@ -15,6 +15,7 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
   const isSessionExpiredError = ___util_http["isSessionExpiredError"];
   const isBackendUnavailableError = ___util_http["isBackendUnavailableError"];
   const getBackendErrorMessage = ___util_feedback["getBackendErrorMessage"];
+  const ensureThemeApplied = ___util_theme["ensureThemeApplied"];
   /**
    * @namespace apps.dflc.expensemanager
    */
@@ -32,6 +33,7 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
     },
     init: async function _init() {
       BaseComponent.prototype.init.call(this);
+      ensureThemeApplied();
       try {
         await XsuaaAuthHelper.loadRuntimeConfig();
       } catch (error) {
