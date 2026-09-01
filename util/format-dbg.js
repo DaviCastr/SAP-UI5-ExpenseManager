@@ -75,11 +75,29 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
     }
     return "None";
   }
+
+  /**
+   * Parses a date value that can be a string, number or Date, producing a local
+   * date. The `new Date("YYYY-MM-DD")` constructor treats a date-only string as
+   * UTC midnight, which in timezones behind UTC (e.g. Brazil, UTC-3) shifts the
+   * rendered day back by one. Date-only strings are therefore assembled locally
+   * so the shown day matches the stored value.
+   *
+   * @param {string|number|Date} dateValue the date value to parse
+   * @returns {Date} a local Date
+   */
+  function parseDate(dateValue) {
+    if (typeof dateValue === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+      const [year, month, day] = dateValue.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    }
+    return new Date(dateValue);
+  }
   function formatDate(dateValue) {
     if (!dateValue) {
       return "";
     }
-    const date = new Date(dateValue);
+    const date = parseDate(dateValue);
     if (isNaN(date.getTime())) {
       return String(dateValue);
     }

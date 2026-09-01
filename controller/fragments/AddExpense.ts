@@ -61,7 +61,14 @@ const AddExpense = {
                 FixedExpense: !!expense.fixedExpense
             });
 
-            dialog.close();
+            // dialog.close();
+            uiModel.setProperty("/newExpense", {
+                description: "",
+                amount: "",
+                installments: 1,
+                fixedExpense: false,
+                transactionDate: new Date().toISOString().slice(0, 10)
+            });
             showToast(view, "expenseRegistered");
             if (view) {
                 void (view.getController() as Home).reload();

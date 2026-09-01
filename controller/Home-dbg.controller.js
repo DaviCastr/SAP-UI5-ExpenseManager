@@ -183,10 +183,10 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     }
 
     /**
-     * Filters the local (JSON) transaction list by date or description. The
-     * search text is matched against `SearchText` (description + formatted
-     * date) assembled by the DashboardRenderer, so a query such as "mercado"
-     * or "15/08" finds the matching rows client-side.
+     * Filters the local (JSON) transaction list by date, description, category
+     * or card. The search text is matched against `SearchText` (description +
+     * category + card + formatted date) assembled by the DashboardRenderer, so a
+     * query such as "mercado", "Nubank" or "15/08" finds the matching rows client-side.
      *
      * @returns {void}
      */

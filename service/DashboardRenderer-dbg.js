@@ -28,7 +28,7 @@ sap.ui.define(["./PeriodService", "../util/format"], function (___PeriodService,
       const transactions = (invoice.Transactions || []).slice().sort((a, b) => String(b.Date || "").localeCompare(String(a.Date || ""))).map(transaction => ({
         ...transaction,
         Currency: currency,
-        SearchText: [transaction.Description, formatDate(transaction.Date)].filter(Boolean).join(" ")
+        SearchText: [transaction.Description, transaction.Category?.Name, transaction.Card?.Name, formatDate(transaction.Date)].filter(Boolean).join(" ")
       }));
       this.ui.setProperty("/summary", {
         available: formatCurrency(available, currency),
