@@ -54,7 +54,7 @@
                         <Input
                             id="expenseAmount"
                             value="{ui>/newExpense/amount}"
-                            type="Number"
+                            type="Text"
                             placeholder="{i18n>expenseAmountPlaceholder}"
                         />
                         

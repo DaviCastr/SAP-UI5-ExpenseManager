@@ -45,14 +45,14 @@
                     <Label text="{i18n>personPhoneLabel}" labelFor="personPhone" />
                     <Input id="personPhone" value="{ui>/newPerson/phone}" placeholder="{i18n>personPhonePlaceholder}" />
                     <Label text="{i18n>personIncomeLabel}" labelFor="personIncome" />
-                    <Input id="personIncome" value="{ui>/newPerson/income}" type="Number" placeholder="{i18n>personIncomePlaceholder}" />
+                    <Input id="personIncome" value="{ui>/newPerson/income}" type="Text" placeholder="{i18n>personIncomePlaceholder}" />
                     <Label text="{i18n>personCurrencyLabel}" labelFor="personCurrency" />
                     <Select id="personCurrency" selectedKey="{ui>/newPerson/currency}">
                         <core:Item key="BRL" text="Real brasileiro (BRL)" />
                         <core:Item key="USD" text="Dólar americano (USD)" />
                     </Select>
                     <Label text="{i18n>personTargetLabel}" labelFor="personTarget" />
-                    <Input id="personTarget" value="{ui>/newPerson/target}" type="Number" placeholder="{i18n>personTargetPlaceholder}" />
+                    <Input id="personTarget" value="{ui>/newPerson/target}" type="Text" placeholder="{i18n>personTargetPlaceholder}" />
                 </VBox>
             </ScrollContainer>
         </content>
