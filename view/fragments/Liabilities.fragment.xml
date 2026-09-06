@@ -317,7 +317,7 @@
                                                     ],
                                                     formatter: 'formatter.formatCardAmount'
                                                 }"
-                                                state="Positive"
+                                                state="Success"
                                                 class="liabilityAmount"
                                             />
                                         </VBox>
@@ -342,7 +342,7 @@
                                                     ],
                                                     formatter: 'formatter.formatCardAmount'
                                                 }"
-                                                state="Negative"
+                                                state="Error"
                                                 class="liabilityAmount"
                                             />
                                         </VBox>

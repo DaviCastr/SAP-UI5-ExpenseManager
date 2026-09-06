@@ -61,6 +61,8 @@ export default class Component extends BaseComponent {
             // The service model is provisioned lazily by the route guard and the controllers.
         } else if (environment === EnvironmentType.LOCAL && XsuaaAuthHelper.getConfig().auth) {
             XsuaaAuthHelper.setLocalOverrides();
+        } else if (environment === EnvironmentType.BTP) {
+            this.prepareBtpServiceModel();
         } else {
             this.prepareStandaloneServiceModel();
         }
@@ -226,6 +228,11 @@ export default class Component extends BaseComponent {
         this._modelToken = accessToken;
         this.setModel(model);
         previous?.destroy();
+    }
+
+    private prepareBtpServiceModel(): void {
+        XsuaaAuthHelper.setServiceUrl("/api/service/ExpenseManager/");
+        this.setServiceModel("");
     }
 
     private prepareStandaloneServiceModel(): void {

@@ -50,6 +50,8 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
         // The service model is provisioned lazily by the route guard and the controllers.
       } else if (environment === EnvironmentType.LOCAL && XsuaaAuthHelper.getConfig().auth) {
         XsuaaAuthHelper.setLocalOverrides();
+      } else if (environment === EnvironmentType.BTP) {
+        this.prepareBtpServiceModel();
       } else {
         this.prepareStandaloneServiceModel();
       }
@@ -185,6 +187,10 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
       this._modelToken = accessToken;
       this.setModel(model);
       previous?.destroy();
+    },
+    prepareBtpServiceModel: function _prepareBtpServiceModel() {
+      XsuaaAuthHelper.setServiceUrl("/api/service/ExpenseManager/");
+      this.setServiceModel("");
     },
     prepareStandaloneServiceModel: function _prepareStandaloneServiceModel() {
       if (!XsuaaAuthHelper.getConfig().odataService) {
