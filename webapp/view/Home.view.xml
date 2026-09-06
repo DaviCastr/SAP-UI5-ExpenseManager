@@ -1201,7 +1201,7 @@
                                                 }],
                                                 formatter: 'formatter.formatCardAmount'
                                             }"
-                                            state="Positive"
+                                            state="Success"
                                             class="liabilityAmount"
                                         />
                                         <Text
@@ -1217,7 +1217,7 @@
                                                 }],
                                                 formatter: 'formatter.formatCardAmount'
                                             }"
-                                            state="Negative"
+                                            state="Error"
                                             class="liabilityAmount"
                                         />
                                     </VBox>
