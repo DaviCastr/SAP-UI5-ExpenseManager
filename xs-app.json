@@ -3,9 +3,9 @@
   "authenticationMethod": "route",
   "routes": [
     {
-      "source": "^/api/(.*)$",
-      "target": "/$1",
-      "destination": "ExpenseManager-destination",
+      "source": "^/api/service/ExpenseManager/(.*)$",
+      "target": "/service/ExpenseManager/$1",
+      "destination": "ExpenseManager",
       "authenticationType": "xsuaa",
       "csrfProtection": false
     },

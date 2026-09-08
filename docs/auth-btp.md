@@ -40,10 +40,27 @@ Isso encerra a sessão no APP Router e devolve o usuário ao app (fazendo novo l
 
 ## URL do serviço
 
-Assim como no GitHub Pages, o `odataService` vem de `webapp/config/runtime-config.json` (URL real absoluta).
+**Diferente do GitHub Pages**, o `odataService` **não** usa a URL absoluta do `webapp/config/runtime-config.json` neste ambiente. O `Component.ts` monta uma URL **relativa ao launchpad, com o contexto do app**:
+
+```ts
+private getLaunchpadAppBasePath(): string {
+    const pathname = window.location.pathname;
+    return pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "");
+}
+
+private prepareBtpServiceModel(): void {
+    XsuaaAuthHelper.setServiceUrl(`${this.getLaunchpadAppBasePath()}/api/service/ExpenseManager/`);
+    this.setServiceModel("");
+}
+```
+
+Chamadas vão para `/<contexto-do-app>/api/service/ExpenseManager/...`. O managed app router identifica o app pelo contexto, remove o prefixo, aplica o `xs-app.json` (rota `^/api/service/ExpenseManager/(.*)$` → destination `ExpenseManager`) e encaminha ao CAP com `HTML5.ForwardAuthToken: true`.
+
+> **Por que dava 404:** sem o prefixo do contexto (`/api/service/...` na raiz do launchpad), o managed app router não sabe de qual app é a chamada → 404. Com o contexto, o roteamento funciona.
 
 ## Links
 
 - [Visão geral da autenticação](./auth-overview.md)
 - [Ambiente LOCAL (com proxy)](./auth-local.md)
 - [Ambiente GITHUB Pages (direto)](./auth-github-pages.md)
+- [Guia completo no app](./../webapp/AUTHENTICATION.md)

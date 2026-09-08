@@ -15,6 +15,7 @@ Documentação técnica do aplicativo **SAPUI5 Freestyle + TypeScript** (fronten
 | [**Ambiente GITHUB Pages**](./auth-github-pages.md) | `davicastr.github.io` — URL real, OAuth direto, sem proxy. |
 | [**Ambiente BTP**](./auth-btp.md) | `*.cfapps...` — autenticação via APP Router / HTML5 ForwardAuthToken. |
 | [**Ambiente MOCK**](./auth-mock.md) | `npm run start-mock` — dados falsos e autenticação simulada. |
+| [**Guia completo no app**](../webapp/AUTHENTICATION.md) | GH Pages × BTP lado a lado, com a resolução do 404 no launchpad. |
 
 ## Como ler
 
