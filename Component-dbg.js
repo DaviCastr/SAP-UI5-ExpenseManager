@@ -188,8 +188,18 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
       this.setModel(model);
       previous?.destroy();
     },
+    /**
+     * Returns the app base path on the managed app router / launchpad
+     * (e.g. `/<dest-guid>.<app-name>.<artifact>-<version>`), used to prefix the
+     * OData service URL so the managed app router routes requests back to this
+     * app's xs-app.json. Returns an empty string when the app runs at the root.
+     */
+    getLaunchpadAppBasePath: function _getLaunchpadAppBasePath() {
+      const pathname = window.location.pathname;
+      return pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "");
+    },
     prepareBtpServiceModel: function _prepareBtpServiceModel() {
-      XsuaaAuthHelper.setServiceUrl("/api/service/ExpenseManager/");
+      XsuaaAuthHelper.setServiceUrl(`${this.getLaunchpadAppBasePath()}/api/service/ExpenseManager/`);
       this.setServiceModel("");
     },
     prepareStandaloneServiceModel: function _prepareStandaloneServiceModel() {

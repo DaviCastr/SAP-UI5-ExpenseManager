@@ -230,8 +230,19 @@ export default class Component extends BaseComponent {
         previous?.destroy();
     }
 
+    /**
+     * Returns the app base path on the managed app router / launchpad
+     * (e.g. `/<dest-guid>.<app-name>.<artifact>-<version>`), used to prefix the
+     * OData service URL so the managed app router routes requests back to this
+     * app's xs-app.json. Returns an empty string when the app runs at the root.
+     */
+    private getLaunchpadAppBasePath(): string {
+        const pathname = window.location.pathname;
+        return pathname.replace(/\/index\.html$/, "").replace(/\/+$/, "");
+    }
+
     private prepareBtpServiceModel(): void {
-        XsuaaAuthHelper.setServiceUrl("/api/service/ExpenseManager/");
+        XsuaaAuthHelper.setServiceUrl(`${this.getLaunchpadAppBasePath()}/api/service/ExpenseManager/`);
         this.setServiceModel("");
     }
 
