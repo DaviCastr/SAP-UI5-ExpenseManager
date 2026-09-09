@@ -5,7 +5,7 @@
     {
       "source": "^/api/service/ExpenseManager/(.*)$",
       "target": "/service/ExpenseManager/$1",
-      "destination": "ExpenseManager",
+      "destination": "ExpenseManager-srv-api",
       "authenticationType": "xsuaa",
       "csrfProtection": false
     },
