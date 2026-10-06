@@ -1,5 +1,5 @@
 # Meu Fluxo — Expense Manager
-
+ 
 Aplicativo financeiro responsivo construído em SAPUI5 Freestyle e TypeScript. A interface foi pensada primeiro para uso diário: saldo, gastos, cartões e ações frequentes ficam no mesmo painel, com adaptação para celular, tablet e desktop.
 
 ## O que já está pronto
