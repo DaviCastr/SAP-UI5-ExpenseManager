@@ -270,7 +270,8 @@
                                         <ObjectNumber
                                             number="{
                                                 parts: [ { path: 'Amount' }, { path: 'Currency_code' } ],
-                                                formatter: 'formatter.formatCardAmount'
+                                                formatter: 'formatter.formatCardAmount',
+                                                useRawValues: true
                                             }"
                                             emphasized="false"
                                             class="liabilityAmount sapUiTinyMarginBegin"

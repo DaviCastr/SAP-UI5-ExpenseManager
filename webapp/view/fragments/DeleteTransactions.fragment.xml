@@ -82,7 +82,8 @@
                                         { path: 'Amount' },
                                         { path: 'Currency/code' }
                                     ],
-                                    formatter: 'formatter.formatCurrency'
+                                    formatter: 'formatter.formatCurrency',
+                                    useRawValues: true
                                 }"
                                 class="transactionAmount"
                             />

@@ -46,7 +46,8 @@
                     <AccordionItem
                         title="{
                             parts: [ { path: 'Name' }, { path: 'TotalAmount' }, { path: '$ui>/categoryDetail/Currency/code' } ],
-                            formatter: 'formatter.formatCardTitle'
+                            formatter: 'formatter.formatCardTitle',
+                            useRawValues: true
                         }"
                         icon="sap-icon://credit-card"
                     >
@@ -62,7 +63,8 @@
                                 <ObjectNumber
                                     number="{
                                         parts: [ { path: 'TotalAmount' }, { path: '$ui>/categoryDetail/Currency/code' } ],
-                                        formatter: 'formatter.formatCurrency'
+                                        formatter: 'formatter.formatCurrency',
+                                        useRawValues: true
                                     }"
                                     class="transactionAmount"
                                 />
@@ -77,7 +79,8 @@
                                         <ObjectNumber
                                             number="{
                                                 parts: [ { path: 'Amount' }, { path: '$ui>/categoryDetail/Currency/code' } ],
-                                                formatter: 'formatter.formatCurrency'
+                                                formatter: 'formatter.formatCurrency',
+                                                useRawValues: true
                                             }"
                                             class="transactionAmount"
                                         />
