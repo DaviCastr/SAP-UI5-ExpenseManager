@@ -291,7 +291,8 @@
                                                         { path: 'OutstandingBalance' },
                                                         { path: 'Currency_code' }
                                                     ],
-                                                    formatter: 'formatter.formatCardAmount'
+                                                    formatter: 'formatter.formatCardAmount',
+                                                    useRawValues: true
                                                 }"
                                                 class="liabilityAmount"
                                             />
@@ -315,7 +316,8 @@
                                                         { path: 'TotalIn' },
                                                         { path: 'Currency_code' }
                                                     ],
-                                                    formatter: 'formatter.formatCardAmount'
+                                                    formatter: 'formatter.formatCardAmount',
+                                                    useRawValues: true
                                                 }"
                                                 state="Success"
                                                 class="liabilityAmount"
@@ -340,7 +342,8 @@
                                                         { path: 'TotalOut' },
                                                         { path: 'Currency_code' }
                                                     ],
-                                                    formatter: 'formatter.formatCardAmount'
+                                                    formatter: 'formatter.formatCardAmount',
+                                                    useRawValues: true
                                                 }"
                                                 state="Error"
                                                 class="liabilityAmount"
@@ -365,7 +368,8 @@
                                                         { path: 'TotalAmount' },
                                                         { path: 'Currency_code' }
                                                     ],
-                                                    formatter: 'formatter.formatCardAmount'
+                                                    formatter: 'formatter.formatCardAmount',
+                                                    useRawValues: true
                                                 }"
                                                 class="liabilityAmount"
                                             />

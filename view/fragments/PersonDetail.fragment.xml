@@ -131,7 +131,10 @@
                                 <f:FormElement label="{i18n>personIncomeLabel}">
                                     <f:fields>
                                         <Input
-                                            value="{Income}"
+                                            value="{
+                                                path: 'Income',
+                                                type: 'apps/dflc/expensemanager/util/DecimalInput'
+                                            }"
                                             enabled="{ui>/managerDialogInDraft}"
                                             placeholder="{i18n>personIncomePlaceholder}"
                                         />
@@ -140,7 +143,10 @@
                                 <f:FormElement label="{i18n>personTargetLabel}">
                                     <f:fields>
                                         <Input
-                                            value="{ExpenseTarget}"
+                                            value="{
+                                                path: 'ExpenseTarget',
+                                                type: 'apps/dflc/expensemanager/util/DecimalInput'
+                                            }"
                                             enabled="{ui>/managerDialogInDraft}"
                                             placeholder="{i18n>personTargetPlaceholder}"
                                         />

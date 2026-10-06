@@ -249,13 +249,13 @@
                                     class="sapUiTinyMarginEnd"
                                 >
                                     <ObjectNumber
-                                        number="{ parts: [ { path: 'Amount' }, { path: 'Currency/code' }, { path: 'ui>/invoice/header/CurrencyCode' } ], formatter: 'formatter.formatTransactionAmount' }"
+                                        number="{ parts: [ { path: 'Amount' }, { path: 'Currency/code' }, { path: 'ui>/invoice/header/CurrencyCode' } ], formatter: 'formatter.formatTransactionAmount', useRawValues: true }"
                                         class="transactionAmount invoiceTxAmount"
                                     />
                                     <Text
-                                        text="{ parts: [ { path: 'i18n>transactionTotalLabel' }, { path: 'TotalAmount' }, { path: 'Amount' }, { path: 'Currency/code' } ], formatter: 'formatter.formatTotalWithLabel' }"
+                                        text="{ parts: [ { path: 'i18n>transactionTotalLabel' }, { path: 'TotalAmount' }, { path: 'Amount' }, { path: 'Currency/code' } ], formatter: 'formatter.formatTotalWithLabel', useRawValues: true }"
                                         class="invoiceTxCategory"
-                                        visible="{ parts: [ { path: 'TotalAmount' }, { path: 'Amount' } ], formatter: 'formatter.hasTotalAmount' }"
+                                        visible="{ parts: [ { path: 'TotalAmount' }, { path: 'Amount' } ], formatter: 'formatter.hasTotalAmount', useRawValues: true }"
                                     />
                                 </VBox>
                                 <HBox class="invoiceTxActions">
