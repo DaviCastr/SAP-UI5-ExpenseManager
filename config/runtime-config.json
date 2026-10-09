@@ -3,8 +3,8 @@
   "odataService": "https://d4e1c97ctrial-dev-expensemanager-srv.cfapps.us10-001.hana.ondemand.com/service/ExpenseManager/",
   "auth": {
     "authDomain": "https://d4e1c97ctrial.authentication.us10.hana.ondemand.com",
-    "clientId": "sb-ExpenseManager-uaa-dev!t684376",
-    "scope": "openid ExpenseManager-uaa-dev!t684376.ExpenseManagerUser",
+    "clientId": "sb-ExpenseManager-uaa-dev!t724933",
+    "scope": "openid ExpenseManager-uaa-dev!t724933.ExpenseManagerUser",
     "redirectUri": "https://davicastr.github.io/SAP-UI5-ExpenseManager/",
     "tokenEndpoint": "https://d4e1c97ctrial-dev-expensemanager-srv.cfapps.us10-001.hana.ondemand.com/auth/login",
     "refreshEndpoint": "https://d4e1c97ctrial-dev-expensemanager-srv.cfapps.us10-001.hana.ondemand.com/auth/refresh"
