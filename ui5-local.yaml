@@ -9,7 +9,7 @@ server:
     - name: expense-manager-local-proxy
       afterMiddleware: compression
       configuration:
-        backend: https://orgname-dev-expensemanager-srv.cfapps.us10-003.hana.ondemand.com
+        backend: https://d4e1c97ctrial-dev-expensemanager-srv.cfapps.us10-001.hana.ondemand.com
     - name: fiori-tools-appreload
       afterMiddleware: compression
       configuration:
