@@ -107,7 +107,9 @@ sap.ui.define(["sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "./Pe
       reader.onload = () => {
         const dataUrl = reader.result;
         this.findAvatar(item)?.setSrc(dataUrl);
-        this.getUiModel().setProperty(`${this.config.imagesPath}/${id}`, dataUrl);
+        if (this.config.imagesPath) {
+          this.getUiModel().setProperty(`${this.config.imagesPath}/${id}`, dataUrl);
+        }
         this.previewPhoto(id, dataUrl);
       };
       reader.readAsDataURL(file);
@@ -225,7 +227,7 @@ sap.ui.define(["sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "./Pe
         entitySet,
         imagesPath
       } = this.config;
-      if (!binding) {
+      if (!binding || !imagesPath) {
         return;
       }
       try {

@@ -1,0 +1,180 @@
+<mvc:View
+    controllerName="apps.dflc.expensemanager.controller.Liabilities"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m"
+    core:require="{
+        formatter: 'apps/dflc/expensemanager/util/format'
+    }"
+>
+    <VBox id="liabilitiesPage" class="tabPage" busy="{ui>/busy}">
+        <VBox class="tabPageHeader">
+            <Title text="{i18n>liabilitiesDialogTitle}" level="H2" class="tabPageTitle" />
+            <Text text="{i18n>liabilitiesTabIntro}" class="sectionHint" />
+        </VBox>
+
+        <VBox class="surfaceCard cardAddPanel">
+            <HBox alignItems="Center" class="cardAddHeader">
+                <core:Icon src="sap-icon://add-activity" class="cardAddIcon" />
+                <Title text="{i18n>liabilitiesAddLabel}" level="H3" />
+            </HBox>
+            <HBox wrap="Wrap" alignItems="End" class="cardAddFields liabilityAddFields">
+                <VBox class="cardAddField">
+                    <Label text="{i18n>liabilitiesNameLabel}" labelFor="newLiabilityName" />
+                    <Input id="newLiabilityName" value="{ui>/newLiability/name}" placeholder="{i18n>liabilitiesNamePlaceholder}" />
+                </VBox>
+                <VBox class="cardAddField">
+                    <Label text="{i18n>liabilitiesTotalAmountLabel}" labelFor="newLiabilityTotalAmount" />
+                    <Input
+                        id="newLiabilityTotalAmount"
+                        value="{ path: 'ui>/newLiability/totalAmount', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
+                        placeholder="0,00"
+                    />
+                </VBox>
+                <VBox class="cardAddField">
+                    <Label text="{i18n>liabilitiesCurrencyLabel}" labelFor="newLiabilityCurrency" />
+                    <Select id="newLiabilityCurrency" selectedKey="{ui>/newLiability/currency}" width="100%">
+                        <core:Item key="BRL" text="Real brasileiro (BRL)" />
+                        <core:Item key="USD" text="Dólar americano (USD)" />
+                    </Select>
+                </VBox>
+                <VBox class="cardAddField">
+                    <Label text="{i18n>liabilitiesDueDayLabel}" labelFor="newLiabilityDueDay" />
+                    <StepInput id="newLiabilityDueDay" value="{ui>/newLiability/dueDay}" min="1" max="31" width="100%" />
+                </VBox>
+                <VBox class="cardAddField liabilityAddDescription">
+                    <Label text="{i18n>liabilitiesDescriptionLabel}" labelFor="newLiabilityDescription" />
+                    <Input id="newLiabilityDescription" value="{ui>/newLiability/description}" placeholder="{i18n>liabilitiesDescriptionPlaceholder}" />
+                </VBox>
+                <Button
+                    text="{i18n>liabilitiesAddLabel}"
+                    icon="sap-icon://add"
+                    type="Emphasized"
+                    press=".onAdd"
+                    class="cardAddButton"
+                />
+            </HBox>
+        </VBox>
+
+        <List
+            id="liabilitiesList"
+            items="{Liabilities}"
+            growing="true"
+            growingThreshold="30"
+            showSeparators="None"
+            noDataText="{i18n>liabilitiesNoData}"
+            class="cardTileList liabilityTileList"
+        >
+            <CustomListItem class="cardTile">
+                <VBox class="cardTileBody">
+                    <HBox alignItems="Center" class="cardTileHeader">
+                        <Avatar src="sap-icon://loan" displaySize="Custom" customDisplaySize="2.6rem" displayShape="Square" class="cardTileAvatar" />
+                        <VBox class="cardTileTitle">
+                            <Title text="{Name}" level="H4" wrapping="true" />
+                            <ObjectStatus
+                                text="{ path: 'Status', formatter: 'formatter.liabilityStatusText' }"
+                                state="{ path: 'Status', formatter: 'formatter.liabilityStatusState' }"
+                            />
+                        </VBox>
+                        <Button icon="sap-icon://activity-items" type="Transparent" tooltip="{i18n>liabilitiesMovementsTooltip}" press=".onViewTransactions" />
+                        <Button
+                            icon="sap-icon://edit"
+                            type="Transparent"
+                            tooltip="{i18n>liabilitiesEditTooltip}"
+                            press=".onToggleRowEdit"
+                            visible="{ parts: [ { path: 'ui>/liabilityEditId', targetType: 'any' }, { path: 'ID', targetType: 'any' } ], formatter: 'formatter.isLiabilityNotBeingEdited' }"
+                        />
+                        <Button
+                            icon="sap-icon://accept"
+                            type="Transparent"
+                            tooltip="{i18n>liabilitiesFinishEditTooltip}"
+                            press=".onToggleRowEdit"
+                            visible="{ parts: [ { path: 'ui>/liabilityEditId', targetType: 'any' }, { path: 'ID', targetType: 'any' } ], formatter: 'formatter.isLiabilityBeingEdited' }"
+                        />
+                        <Button icon="sap-icon://delete" type="Transparent" tooltip="{i18n>liabilitiesRemoveTooltip}" press=".onRemove" />
+                    </HBox>
+
+                    <VBox
+                        class="liabilityTileSummary"
+                        visible="{ parts: [ { path: 'ui>/liabilityEditId', targetType: 'any' }, { path: 'ID', targetType: 'any' } ], formatter: 'formatter.isLiabilityNotBeingEdited' }"
+                    >
+                        <HBox justifyContent="SpaceBetween" alignItems="End" wrap="Wrap" class="cardTileSummary">
+                            <VBox>
+                                <Text text="{i18n>liabilitiesOutstandingBalanceLabel}" class="cardTileLabel" />
+                                <Text
+                                    text="{ parts: [ { path: 'OutstandingBalance' }, { path: 'Currency_code' } ], formatter: 'formatter.formatCardAmount' }"
+                                    class="cardTileAmount"
+                                />
+                            </VBox>
+                            <Text
+                                text="{ parts: [ { path: 'i18n>liabilitiesDueDayText' }, { path: 'DueDay' } ], formatter: 'formatter.formatTemplate' }"
+                                class="cardTileSchedule"
+                            />
+                        </HBox>
+                        <ProgressIndicator
+                            percentValue="{ path: 'PaymentPercentage', formatter: 'formatter.liabilityProgressValue' }"
+                            displayValue="{ path: 'PaymentPercentage', formatter: 'formatter.liabilityProgressText' }"
+                            state="None"
+                            width="100%"
+                            class="liabilityProgress"
+                        />
+                        <HBox class="liabilityTileFigures">
+                            <VBox>
+                                <Text text="{i18n>liabilitiesTotalInLabel}" class="cardTileLabel" />
+                                <ObjectNumber
+                                    number="{ parts: [ { path: 'TotalIn' }, { path: 'Currency_code' } ], formatter: 'formatter.formatCardAmount', useRawValues: true }"
+                                    state="Success"
+                                />
+                            </VBox>
+                            <VBox>
+                                <Text text="{i18n>liabilitiesTotalOutLabel}" class="cardTileLabel" />
+                                <ObjectNumber
+                                    number="{ parts: [ { path: 'TotalOut' }, { path: 'Currency_code' } ], formatter: 'formatter.formatCardAmount', useRawValues: true }"
+                                    state="Error"
+                                />
+                            </VBox>
+                            <VBox>
+                                <Text text="{i18n>liabilitiesTotalAmountLabel}" class="cardTileLabel" />
+                                <ObjectNumber
+                                    number="{ parts: [ { path: 'TotalAmount' }, { path: 'Currency_code' } ], formatter: 'formatter.formatCardAmount', useRawValues: true }"
+                                />
+                            </VBox>
+                        </HBox>
+                        <Text text="{Description}" visible="{= !!${Description} }" class="cardTileSchedule" />
+                    </VBox>
+
+                    <HBox
+                        wrap="Wrap"
+                        alignItems="End"
+                        class="cardTileFields liabilityTileFields"
+                        visible="{ parts: [ { path: 'ui>/liabilityEditId', targetType: 'any' }, { path: 'ID', targetType: 'any' } ], formatter: 'formatter.isLiabilityBeingEdited' }"
+                    >
+                        <VBox class="cardTileField liabilityFieldWide">
+                            <Label text="{i18n>liabilitiesNameLabel}" />
+                            <Input value="{Name}" />
+                        </VBox>
+                        <VBox class="cardTileField">
+                            <Label text="{i18n>liabilitiesTotalAmountLabel}" />
+                            <Input value="{ path: 'TotalAmount', type: 'apps/dflc/expensemanager/util/DecimalInput' }" />
+                        </VBox>
+                        <VBox class="cardTileField">
+                            <Label text="{i18n>liabilitiesCurrencyLabel}" />
+                            <Select selectedKey="{Currency_code}" forceSelection="false" width="100%">
+                                <core:Item key="BRL" text="Real (BRL)" />
+                                <core:Item key="USD" text="Dólar (USD)" />
+                            </Select>
+                        </VBox>
+                        <VBox class="cardTileField">
+                            <Label text="{i18n>liabilitiesDueDayLabel}" />
+                            <StepInput value="{DueDay}" min="1" max="31" width="100%" />
+                        </VBox>
+                        <VBox class="cardTileField liabilityFieldWide">
+                            <Label text="{i18n>liabilitiesDescriptionLabel}" />
+                            <Input value="{Description}" />
+                        </VBox>
+                    </HBox>
+                </VBox>
+            </CustomListItem>
+        </List>
+    </VBox>
+</mvc:View>

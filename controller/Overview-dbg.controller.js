@@ -48,7 +48,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/m/MessageBox", "sap/ui/model/Filter", 
       this.navTo("Invoices");
     }
     onOpenLiabilitiesDialog() {
-      this.workspace()?.onOpenLiabilitiesDialog();
+      this.navTo("Liabilities");
     }
     onOpenLiabilityTransactions(oEvent) {
       this.workspace()?.onOpenLiabilityTransactions(oEvent);

@@ -440,10 +440,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
      * edit/add inside it, which switches the dialog to the person draft.
      */
     onOpenLiabilitiesDialog() {
-      this.getUiModel().setProperty("/liabilityEditId", "");
-      void this.openDraftManagerDialog("Liabilities", "liabilitiesOpenError", undefined, {
-        readOnlyOpen: true
-      });
+      this.navTo("Liabilities");
     }
 
     /**
@@ -459,9 +456,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       if (!liability?.ID) {
         return;
       }
-      void this.openDraftManagerDialog("Liabilities", "liabilitiesOpenError", undefined, {
-        readOnlyOpen: true
-      });
+      this.navTo("Liabilities");
     }
 
     /**

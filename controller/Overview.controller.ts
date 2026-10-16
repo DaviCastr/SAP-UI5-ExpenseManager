@@ -78,7 +78,7 @@ export default class Overview extends BaseController {
     }
 
     public onOpenLiabilitiesDialog(): void {
-        this.workspace()?.onOpenLiabilitiesDialog();
+        this.navTo("Liabilities");
     }
 
     public onOpenLiabilityTransactions(oEvent: Event): void {

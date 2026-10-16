@@ -190,6 +190,12 @@ html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilter
 .invoicePeriodFields { gap: .75rem; }
 .invoiceSummaryTotal { gap: .15rem; }
 .invoiceTransactionsPanel .invoiceTransactionList { max-height: none; overflow: visible; }
+.liabilityAddFields { grid-template-columns: 2fr 1fr 1.4fr 1fr; }
+.liabilityAddFields > .liabilityAddDescription { grid-column: 1 / 4; }
+.liabilityTileList .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)); }
+.liabilityTileSummary { gap: .65rem; }
+.liabilityTileFigures { gap: 1.25rem; flex-wrap: wrap; }
+.liabilityTileFields > .liabilityFieldWide { grid-column: 1 / -1; }
 .categoryAddFields { grid-template-columns: minmax(0, 24rem) auto; justify-content: start; }
 .categoryTileList .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; }
 .categoryTileList .cardTileBody { padding: .75rem .9rem; }
@@ -198,6 +204,7 @@ html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilter
     .cardAddFields { grid-template-columns: 1fr 1fr; }
     .cardAddFields > .sapMFlexItem:first-child { grid-column: 1 / -1; }
     .cardAddFields > .sapMFlexItem:last-child { grid-column: 1 / -1; }
+    .liabilityAddFields > .liabilityAddDescription { grid-column: 1 / -1; }
 }
 
 @media (max-width: 600px) {

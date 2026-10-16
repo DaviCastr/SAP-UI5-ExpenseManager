@@ -224,6 +224,7 @@
                         <IconTabFilter key="Cards" icon="sap-icon://credit-card" text="{i18n>tabCards}" />
                         <IconTabFilter key="Categories" icon="sap-icon://tag" text="{i18n>tabCategories}" />
                         <IconTabFilter key="Invoices" icon="sap-icon://receipt" text="{i18n>tabInvoices}" />
+                        <IconTabFilter key="Liabilities" icon="sap-icon://loan" text="{i18n>tabLiabilities}" />
                     </items>
                 </IconTabBar>
                 <VBox id="tabContent" class="tabContent" visible="{= !${ui>/personsEmpty} }" />

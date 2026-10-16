@@ -38,7 +38,7 @@ export interface CollectionTabConfig {
     pageId: string;
     listId: string;
     entitySet: string;
-    imagesPath: string;
+    imagesPath?: string;
     texts: CollectionTabTexts;
 }
 
@@ -153,7 +153,9 @@ export abstract class CollectionTab extends PersonTab {
         reader.onload = () => {
             const dataUrl = reader.result as string;
             this.findAvatar(item)?.setSrc(dataUrl);
-            this.getUiModel().setProperty(`${this.config.imagesPath}/${id}`, dataUrl);
+            if (this.config.imagesPath) {
+                this.getUiModel().setProperty(`${this.config.imagesPath}/${id}`, dataUrl);
+            }
             this.previewPhoto(id, dataUrl);
         };
         reader.readAsDataURL(file);
@@ -212,7 +214,7 @@ export abstract class CollectionTab extends PersonTab {
         this.page().unbindObject();
     }
 
-    private async enterDraft(errorKey: string): Promise<boolean> {
+    protected async enterDraft(errorKey: string): Promise<boolean> {
         return ensureDialogDraft(this.getView() as XMLView, this.page(), errorKey);
     }
 
@@ -277,7 +279,7 @@ export abstract class CollectionTab extends PersonTab {
         const binding = this.list()?.getBinding("items") as ODataListBinding | undefined;
         const { entitySet, imagesPath } = this.config;
 
-        if (!binding) {
+        if (!binding || !imagesPath) {
             return;
         }
 
@@ -326,7 +328,7 @@ export abstract class CollectionTab extends PersonTab {
         return undefined;
     }
 
-    private page(): Control {
+    protected page(): Control {
         return this.byId(this.config.pageId) as Control;
     }
 
