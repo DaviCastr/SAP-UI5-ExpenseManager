@@ -450,7 +450,7 @@ export default class Home extends BaseController {
     }
 
     public onOpenCategoryManagerDialog(): void {
-        void this.openDraftManagerDialog("Categories", "categoriesOpenError", undefined, { readOnlyOpen: true });
+        this.navTo("Categories");
     }
 
     public onOpenInvoicesDialog(): void {
@@ -1038,7 +1038,7 @@ export default class Home extends BaseController {
      * @returns {Promise<void>} resolves once the dialog is open
      */
     private async openDraftManagerDialog(
-        fragmentName: "Categories" | "Liabilities" | "Shares",
+        fragmentName: "Liabilities" | "Shares",
         errorKey: string,
         onOpened?: (dialog: Dialog) => void,
         options?: { readOnlyOpen?: boolean }

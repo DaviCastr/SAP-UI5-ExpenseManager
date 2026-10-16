@@ -222,6 +222,7 @@
                     <items>
                         <IconTabFilter key="Home" icon="sap-icon://home" text="{i18n>tabOverview}" />
                         <IconTabFilter key="Cards" icon="sap-icon://credit-card" text="{i18n>tabCards}" />
+                        <IconTabFilter key="Categories" icon="sap-icon://tag" text="{i18n>tabCategories}" />
                     </items>
                 </IconTabBar>
                 <VBox id="tabContent" class="tabContent" visible="{= !${ui>/personsEmpty} }" />

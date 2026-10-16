@@ -1,0 +1,99 @@
+<mvc:View
+    controllerName="apps.dflc.expensemanager.controller.Categories"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m"
+    xmlns:u="sap.ui.unified"
+    core:require="{
+        formatter: 'apps/dflc/expensemanager/util/format'
+    }"
+>
+    <VBox id="categoriesPage" class="tabPage" busy="{ui>/busy}">
+        <HBox justifyContent="SpaceBetween" alignItems="Center" wrap="Wrap" class="tabPageHeader">
+            <VBox>
+                <Title text="{i18n>categoriesDialogTitle}" level="H2" class="tabPageTitle" />
+                <Text text="{i18n>categoriesTabIntro}" class="sectionHint" />
+            </VBox>
+            <Button
+                text="{i18n>categoriesEditTooltip}"
+                icon="sap-icon://edit"
+                type="Emphasized"
+                press=".onToggleEdit"
+                visible="{= !${ui>/selectedPersonDraft} }"
+            />
+        </HBox>
+
+        <VBox class="surfaceCard cardAddPanel">
+            <HBox alignItems="Center" class="cardAddHeader">
+                <core:Icon src="sap-icon://add-activity" class="cardAddIcon" />
+                <Title text="{i18n>categoriesAddLabel}" level="H3" />
+            </HBox>
+            <HBox wrap="Wrap" alignItems="End" class="cardAddFields categoryAddFields">
+                <VBox class="cardAddField">
+                    <Label text="{i18n>categoryNameLabel}" labelFor="newCategoryName" />
+                    <Input id="newCategoryName" value="{ui>/newCategory/name}" placeholder="{i18n>categoryNamePlaceholder}" maxLength="20" />
+                </VBox>
+                <Button
+                    text="{i18n>categoriesAddLabel}"
+                    icon="sap-icon://add"
+                    type="Emphasized"
+                    press=".onAdd"
+                    class="cardAddButton"
+                />
+            </HBox>
+        </VBox>
+
+        <List
+            id="categoriesList"
+            items="{Categories}"
+            growing="true"
+            growingThreshold="60"
+            showSeparators="None"
+            noDataText="{i18n>categoriesManagerNoData}"
+            class="cardTileList categoryTileList"
+        >
+            <CustomListItem class="cardTile">
+                <HBox alignItems="Center" class="cardTileBody cardTileHeader">
+                    <Avatar
+                        src="{ parts: [ { path: 'ID' }, { path: 'ui>/dialogCategoryImages' } ], formatter: 'formatter.cardImageValue' }"
+                        displaySize="Custom"
+                        customDisplaySize="2.6rem"
+                        displayShape="Circle"
+                        initials="{ parts: [ { path: 'Name' } ], formatter: 'formatter.initials' }"
+                        class="cardTileAvatar"
+                    />
+                    <VBox class="cardTileTitle">
+                        <Title text="{Name}" level="H4" wrapping="true" visible="{= !${ui>/selectedPersonDraft} }" />
+                        <Input
+                            value="{Name}"
+                            maxLength="20"
+                            placeholder="{i18n>categoryNamePlaceholder}"
+                            visible="{ui>/selectedPersonDraft}"
+                            class="cardManagerInput"
+                        />
+                    </VBox>
+                    <u:FileUploader
+                        buttonOnly="true"
+                        iconOnly="true"
+                        icon="sap-icon://camera"
+                        buttonType="Transparent"
+                        tooltip="{i18n>categoryPhotoButton}"
+                        fileType="png,jpg,jpeg"
+                        sendXHR="true"
+                        httpRequestMethod="PUT"
+                        useMultipart="false"
+                        change=".onPhotoChanged"
+                        visible="{ui>/selectedPersonDraft}"
+                        class="cardManagerPhoto"
+                    />
+                    <Button
+                        icon="sap-icon://delete"
+                        type="Transparent"
+                        tooltip="{i18n>categoriesRemoveTooltip}"
+                        press=".onRemove"
+                    />
+                </HBox>
+            </CustomListItem>
+        </List>
+    </VBox>
+</mvc:View>

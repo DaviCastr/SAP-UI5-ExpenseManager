@@ -179,6 +179,10 @@ html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilter
 .cardTileFields > .sapMFlexItem { min-width: 0; }
 .cardTileFields .sapMInputBase, .cardTileFields .sapMSlt { width: 100% !important; }
 
+.categoryAddFields { grid-template-columns: minmax(0, 24rem) auto; justify-content: start; }
+.categoryTileList .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; }
+.categoryTileList .cardTileBody { padding: .75rem .9rem; }
+
 @media (max-width: 900px) {
     .cardAddFields { grid-template-columns: 1fr 1fr; }
     .cardAddFields > .sapMFlexItem:first-child { grid-column: 1 / -1; }
