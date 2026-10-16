@@ -1,7 +1,7 @@
-sap.ui.define(["sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "./BaseController", "../service/ODataService", "../util/draftDialogFlow", "../util/fileUpload", "../util/http", "../util/feedback", "../util/rejectedChanges", "../util/personEvents"], function (Avatar, MessageBox, CustomListItem, ___BaseController, ___service_ODataService, ___util_draftDialogFlow, ___util_fileUpload, ___util_http, ___util_feedback, ___util_rejectedChanges, ___util_personEvents) {
+sap.ui.define(["sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "./PersonTab", "../service/ODataService", "../util/draftDialogFlow", "../util/fileUpload", "../util/http", "../util/feedback", "../util/rejectedChanges"], function (Avatar, MessageBox, CustomListItem, ___PersonTab, ___service_ODataService, ___util_draftDialogFlow, ___util_fileUpload, ___util_http, ___util_feedback, ___util_rejectedChanges) {
   "use strict";
 
-  const BaseController = ___BaseController["BaseController"];
+  const PersonTab = ___PersonTab["PersonTab"];
   const ODataService = ___service_ODataService["ODataService"];
   const deleteRowInDialogDraft = ___util_draftDialogFlow["deleteRowInDialogDraft"];
   const ensureDialogDraft = ___util_draftDialogFlow["ensureDialogDraft"];
@@ -12,9 +12,6 @@ sap.ui.define(["sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "./Ba
   const handleActionError = ___util_feedback["handleActionError"];
   const showWarning = ___util_feedback["showWarning"];
   const createRejectedChangeGuard = ___util_rejectedChanges["createRejectedChangeGuard"];
-  const PERSON_CHANNEL = ___util_personEvents["PERSON_CHANNEL"];
-  const PERSON_DRAFT_CLOSING = ___util_personEvents["PERSON_DRAFT_CLOSING"];
-  const PERSON_SELECTED = ___util_personEvents["PERSON_SELECTED"];
   /**
    * Base of the tabs that manage a collection of the selected person (cards,
    * categories…). The tab is bound to the person's current state (the draft
@@ -22,23 +19,10 @@ sap.ui.define(["sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "./Ba
    * are saved or discarded with the rest of the draft from the workspace footer.
    * Subclasses describe the collection and build the entry of the "add" form.
    */
-  class CollectionTab extends BaseController {
+  class CollectionTab extends PersonTab {
     rejectedGuard = createRejectedChangeGuard();
-    active = false;
-    onInit() {
-      const eventBus = this.getOwnerComponent()?.getEventBus();
-      eventBus?.subscribe(PERSON_CHANNEL, PERSON_SELECTED, this.onPersonSelected);
-      eventBus?.subscribe(PERSON_CHANNEL, PERSON_DRAFT_CLOSING, this.onDraftClosing);
-      const router = this.getRouter();
-      router.attachRouteMatched(event => this.onRouteMatched(event.getParameter("name") === this.config.route));
-      this.onRouteMatched(router.getRouteInfoByHash(router.getHashChanger().getHash())?.name === this.config.route);
-      this.resetForm();
-    }
-    onExit() {
-      const eventBus = this.getOwnerComponent()?.getEventBus();
-      eventBus?.unsubscribe(PERSON_CHANNEL, PERSON_SELECTED, this.onPersonSelected);
-      eventBus?.unsubscribe(PERSON_CHANNEL, PERSON_DRAFT_CLOSING, this.onDraftClosing);
-      this.rejectedGuard.detach();
+    get tabRoute() {
+      return this.config.route;
     }
 
     /**
@@ -148,21 +132,17 @@ sap.ui.define(["sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "./Ba
     warn(key) {
       showWarning(this.getView(), key);
     }
-    onRouteMatched(active) {
-      this.active = active;
-      if (!active) {
-        this.rejectedGuard.detach();
-        return;
-      }
-      this.onPersonSelected();
+    onTabInit() {
+      this.resetForm();
+    }
+    onTabActivated() {
       this.rejectedGuard.attach(this.page(), this.config.texts.editError, this.config.texts.rejectedChanges);
     }
-    onPersonSelected = () => {
-      const personId = this.selectedPersonId();
+    onTabDeactivated() {
+      this.rejectedGuard.detach();
+    }
+    showPerson(personId) {
       const workspace = this.workspace();
-      if (!this.active) {
-        return;
-      }
       if (!personId || !workspace) {
         this.page().unbindObject();
         return;
@@ -170,10 +150,10 @@ sap.ui.define(["sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "./Ba
       this.page().setModel(this.getServiceModel());
       this.page().bindObject(workspace.currentPersonPathFor(personId));
       void this.loadRowImages();
-    };
-    onDraftClosing = () => {
+    }
+    onDraftClosing() {
       this.page().unbindObject();
-    };
+    }
     async enterDraft(errorKey) {
       return ensureDialogDraft(this.getView(), this.page(), errorKey);
     }
@@ -292,12 +272,6 @@ sap.ui.define(["sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "./Ba
     }
     list() {
       return this.byId(this.config.listId);
-    }
-    selectedPersonId() {
-      return this.getUiModel().getProperty("/selectedPersonId") || "";
-    }
-    workspace() {
-      return this.getOwnerComponent()?.getWorkspace();
     }
   }
   var __exports = {

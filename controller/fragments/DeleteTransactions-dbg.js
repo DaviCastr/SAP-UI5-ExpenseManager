@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/MessageBox", "sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../../util/invoiceWriter", "../../util/i18n", "../../util/feedback", "./Invoices"], function (MessageBox, Fragment, Filter, FilterOperator, ____util_invoiceWriter, ____util_i18n, ____util_feedback, ___Invoices) {
+sap.ui.define(["sap/m/MessageBox", "sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../../util/invoiceWriter", "../../util/i18n", "../../util/feedback"], function (MessageBox, Fragment, Filter, FilterOperator, ____util_invoiceWriter, ____util_i18n, ____util_feedback) {
   "use strict";
 
   const deleteTransactionsViaBatch = ____util_invoiceWriter["deleteTransactionsViaBatch"];
@@ -6,7 +6,6 @@ sap.ui.define(["sap/m/MessageBox", "sap/ui/core/Fragment", "sap/ui/model/Filter"
   const handleActionError = ____util_feedback["handleActionError"];
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
-  const reloadInvoiceData = ___Invoices["reloadInvoiceData"];
   const uiOf = view => view.getModel("ui");
 
   /**
@@ -74,7 +73,6 @@ sap.ui.define(["sap/m/MessageBox", "sap/ui/core/Fragment", "sap/ui/model/Filter"
       }
       showToast(view, "deleteTransactionsDeleted", [String(targets.length)]);
       dialog.close();
-      void reloadInvoiceData(view);
     } catch (error) {
       handleActionError(view, error, "deleteTransactionsError");
     } finally {

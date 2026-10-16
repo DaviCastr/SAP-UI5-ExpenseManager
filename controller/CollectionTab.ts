@@ -9,9 +9,7 @@ import type XMLView from "sap/ui/core/mvc/XMLView";
 import type Context from "sap/ui/model/odata/v4/Context";
 import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
-import { BaseController } from "./BaseController";
-import type Home from "./Home.controller";
-import type Component from "../Component";
+import { PersonTab } from "./PersonTab";
 import { ODataService } from "../service/ODataService";
 import {
     deleteRowInDialogDraft,
@@ -23,7 +21,6 @@ import { uploadNow } from "../util/fileUpload";
 import { request } from "../util/http";
 import { handleActionError, showWarning } from "../util/feedback";
 import { createRejectedChangeGuard } from "../util/rejectedChanges";
-import { PERSON_CHANNEL, PERSON_DRAFT_CLOSING, PERSON_SELECTED } from "../util/personEvents";
 
 export interface CollectionTabTexts {
     addError: string;
@@ -52,30 +49,14 @@ export interface CollectionTabConfig {
  * are saved or discarded with the rest of the draft from the workspace footer.
  * Subclasses describe the collection and build the entry of the "add" form.
  */
-export abstract class CollectionTab extends BaseController {
+export abstract class CollectionTab extends PersonTab {
 
     protected abstract readonly config: CollectionTabConfig;
 
     private readonly rejectedGuard = createRejectedChangeGuard();
 
-    private active = false;
-
-    public onInit(): void {
-        const eventBus = this.getOwnerComponent()?.getEventBus();
-        eventBus?.subscribe(PERSON_CHANNEL, PERSON_SELECTED, this.onPersonSelected);
-        eventBus?.subscribe(PERSON_CHANNEL, PERSON_DRAFT_CLOSING, this.onDraftClosing);
-
-        const router = this.getRouter();
-        router.attachRouteMatched((event) => this.onRouteMatched(event.getParameter("name") === this.config.route));
-        this.onRouteMatched(router.getRouteInfoByHash(router.getHashChanger().getHash())?.name === this.config.route);
-        this.resetForm();
-    }
-
-    public onExit(): void {
-        const eventBus = this.getOwnerComponent()?.getEventBus();
-        eventBus?.unsubscribe(PERSON_CHANNEL, PERSON_SELECTED, this.onPersonSelected);
-        eventBus?.unsubscribe(PERSON_CHANNEL, PERSON_DRAFT_CLOSING, this.onDraftClosing);
-        this.rejectedGuard.detach();
+    protected get tabRoute(): string {
+        return this.config.route;
     }
 
     /**
@@ -202,25 +183,20 @@ export abstract class CollectionTab extends BaseController {
         showWarning(this.getView() as XMLView, key);
     }
 
-    private onRouteMatched(active: boolean): void {
-        this.active = active;
+    protected onTabInit(): void {
+        this.resetForm();
+    }
 
-        if (!active) {
-            this.rejectedGuard.detach();
-            return;
-        }
-
-        this.onPersonSelected();
+    protected onTabActivated(): void {
         this.rejectedGuard.attach(this.page(), this.config.texts.editError, this.config.texts.rejectedChanges);
     }
 
-    private readonly onPersonSelected = (): void => {
-        const personId = this.selectedPersonId();
-        const workspace = this.workspace();
+    protected onTabDeactivated(): void {
+        this.rejectedGuard.detach();
+    }
 
-        if (!this.active) {
-            return;
-        }
+    protected showPerson(personId: string): void {
+        const workspace = this.workspace();
 
         if (!personId || !workspace) {
             this.page().unbindObject();
@@ -230,11 +206,11 @@ export abstract class CollectionTab extends BaseController {
         this.page().setModel(this.getServiceModel());
         this.page().bindObject(workspace.currentPersonPathFor(personId));
         void this.loadRowImages();
-    };
+    }
 
-    private readonly onDraftClosing = (): void => {
+    protected onDraftClosing(): void {
         this.page().unbindObject();
-    };
+    }
 
     private async enterDraft(errorKey: string): Promise<boolean> {
         return ensureDialogDraft(this.getView() as XMLView, this.page(), errorKey);
@@ -358,11 +334,4 @@ export abstract class CollectionTab extends BaseController {
         return this.byId(this.config.listId) as List | undefined;
     }
 
-    private selectedPersonId(): string {
-        return (this.getUiModel().getProperty("/selectedPersonId") as string) || "";
-    }
-
-    private workspace(): Home | undefined {
-        return (this.getOwnerComponent() as unknown as Component | undefined)?.getWorkspace();
-    }
 }

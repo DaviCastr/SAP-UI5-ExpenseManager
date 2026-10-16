@@ -1,0 +1,182 @@
+<mvc:View
+    controllerName="apps.dflc.expensemanager.controller.Invoices"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m"
+    core:require="{
+        formatter: 'apps/dflc/expensemanager/util/format'
+    }"
+>
+    <VBox id="invoicesPage" class="tabPage" busy="{ui>/busy}">
+        <VBox class="tabPageHeader">
+            <Title text="{i18n>invoicesDialogTitle}" level="H2" class="tabPageTitle" />
+            <Text text="{i18n>invoicesTabIntro}" class="sectionHint" />
+        </VBox>
+
+        <List
+            id="invoiceCardList"
+            items="{ path: 'ui>/invoice/cards' }"
+            mode="SingleSelectMaster"
+            selectionChange=".onCardChanged"
+            showSeparators="None"
+            noDataText="{i18n>cardsNoData}"
+            class="cardTileList invoiceCardTiles"
+            visible="{= !${ui>/invoice/cardsEmpty} }"
+        >
+            <CustomListItem type="Active" class="cardTile">
+                <HBox alignItems="Center" class="cardTileBody cardTileHeader">
+                    <Avatar
+                        src="{ui>ImageBase64}"
+                        initials="{ parts: [ { path: 'ui>Name' } ], formatter: 'formatter.initials' }"
+                        displaySize="Custom"
+                        customDisplaySize="2.6rem"
+                        displayShape="Square"
+                        class="cardTileAvatar"
+                    />
+                    <VBox class="cardTileTitle">
+                        <Title text="{ui>Name}" level="H4" wrapping="true" />
+                        <Text
+                            text="{ parts: [ { path: 'ui>Limit' }, { path: 'ui>Currency_code' } ], formatter: 'formatter.formatCardAmount' }"
+                            class="cardTileSchedule"
+                        />
+                    </VBox>
+                </HBox>
+            </CustomListItem>
+        </List>
+
+        <MessageStrip
+            text="{i18n>invoiceNoCards}"
+            type="Warning"
+            showIcon="true"
+            visible="{ui>/invoice/cardsEmpty}"
+        />
+
+        <HBox
+            wrap="Wrap"
+            justifyContent="SpaceBetween"
+            alignItems="Center"
+            class="surfaceCard invoiceSummaryBar"
+            visible="{= !${ui>/invoice/cardsEmpty} }"
+        >
+            <HBox wrap="Wrap" alignItems="End" class="invoicePeriodFields">
+                <VBox>
+                    <Label text="{i18n>invoiceYearLabel}" labelFor="invoiceYearSelect" />
+                    <Select
+                        id="invoiceYearSelect"
+                        selectedKey="{ui>/invoice/year}"
+                        change=".onPeriodChange"
+                        width="7rem"
+                        items="{ path: 'ui>/invoice/yearOptions' }"
+                    >
+                        <core:Item key="{ui>key}" text="{ui>text}" />
+                    </Select>
+                </VBox>
+                <VBox>
+                    <Label text="{i18n>invoiceMonthLabel}" labelFor="invoiceMonthSelect" />
+                    <Select
+                        id="invoiceMonthSelect"
+                        selectedKey="{ui>/invoice/month}"
+                        change=".onPeriodChange"
+                        width="11rem"
+                        items="{ path: 'ui>/invoice/monthOptions' }"
+                    >
+                        <core:Item key="{ui>key}" text="{ui>text}" />
+                    </Select>
+                </VBox>
+                <HBox alignItems="Center">
+                    <Button icon="sap-icon://slim-arrow-left" type="Transparent" tooltip="{i18n>invoicePrevTooltip}" press=".onPreviousPeriod" />
+                    <Text text="{ui>/invoice/periodLabel}" class="invoicePeriodLabel" />
+                    <Button icon="sap-icon://slim-arrow-right" type="Transparent" tooltip="{i18n>invoiceNextTooltip}" press=".onNextPeriod" />
+                </HBox>
+            </HBox>
+
+            <VBox alignItems="End" class="invoiceSummaryTotal" visible="{ui>/invoice/loaded}">
+                <Text text="{i18n>invoiceTotalAmountLabel}" class="cardTileLabel" />
+                <Text
+                    text="{ parts: [ { path: 'ui>/invoice/header/TotalAmount' }, { path: 'ui>/invoice/header/CurrencyCode' } ], formatter: 'formatter.formatCurrency' }"
+                    class="cardTileAmount"
+                />
+                <HBox alignItems="Center">
+                    <core:Icon src="sap-icon://message-success" class="invoiceSentIcon" visible="{ui>/invoice/header/InvoiceSent}" />
+                    <core:Icon src="sap-icon://message-warning" class="invoiceNotSentIcon" visible="{= !${ui>/invoice/header/InvoiceSent} }" />
+                    <Text text="{i18n>invoiceSentLabel}" class="sectionHint sapUiTinyMarginBegin" visible="{ui>/invoice/header/InvoiceSent}" />
+                    <Text text="{i18n>invoiceNotSentLabel}" class="sectionHint sapUiTinyMarginBegin" visible="{= !${ui>/invoice/header/InvoiceSent} }" />
+                </HBox>
+            </VBox>
+        </HBox>
+
+        <VBox
+            alignItems="Center"
+            justifyContent="Center"
+            class="surfaceCard invoiceEmpty"
+            visible="{= !${ui>/invoice/cardsEmpty} &amp;&amp; !${ui>/invoice/loaded} }"
+        >
+            <core:Icon src="sap-icon://document" class="invoiceEmptyIcon" />
+            <Text text="{i18n>invoiceNoData}" class="sectionHint" />
+        </VBox>
+
+        <VBox id="invoiceDetails" class="surfaceCard invoiceTransactionsPanel" visible="{ui>/invoice/loaded}">
+            <HBox justifyContent="SpaceBetween" alignItems="Center" class="sectionHeader">
+                <VBox>
+                    <Title text="{i18n>invoiceTransactionsTitle}" level="H3" />
+                    <Text text="{i18n>invoiceTransactionsHint}" class="sectionHint" />
+                </VBox>
+            </HBox>
+
+            <SearchField
+                id="invoiceTransactionSearch"
+                placeholder="{i18n>invoiceSearchTransactions}"
+                width="100%"
+                class="sapUiTinyMarginTop sapUiTinyMarginBottom"
+                search=".onTransactionSearch"
+            />
+
+            <List
+                id="invoiceTransactionList"
+                items="{ path: 'Transactions', sorter: { path: 'Date', descending: true }, parameters: { $expand: 'Category,Currency', $select: 'Identifier,Currency_code' } }"
+                showSeparators="None"
+                noDataText="{i18n>invoiceTransactionsNoData}"
+                class="invoiceTransactionList"
+            >
+                <CustomListItem>
+                    <HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="transactionItem invoiceTransactionItem">
+                        <HBox alignItems="Center">
+                            <Avatar
+                                src="{ parts: [ { path: 'Category/ID' }, { path: 'ui>/invoice/transactionImages' } ], formatter: 'formatter.cardImageValue' }"
+                                initials="{ path: 'Category/Name', formatter: 'formatter.initials' }"
+                                displayShape="Circle"
+                                tooltip="{ path: 'Category/Name' }"
+                                class="invoiceTxAvatar sapUiTinyMarginEnd"
+                            />
+                            <VBox>
+                                <Text text="{Description}" class="transactionTitle" />
+                                <Text text="{Category/Name}" class="invoiceTxCategory" />
+                                <Text
+                                    text="{ parts: [ { path: 'Date' }, { path: 'Installment' }, { path: 'TotalInstallments' } ], formatter: 'formatter.transactionSubtitle' }"
+                                    class="transactionDate"
+                                />
+                            </VBox>
+                        </HBox>
+                        <HBox alignItems="Center">
+                            <VBox alignItems="End" class="sapUiTinyMarginEnd">
+                                <ObjectNumber
+                                    number="{ parts: [ { path: 'Amount' }, { path: 'Currency/code' }, { path: 'ui>/invoice/header/CurrencyCode' } ], formatter: 'formatter.formatTransactionAmount', useRawValues: true }"
+                                    class="transactionAmount invoiceTxAmount"
+                                />
+                                <Text
+                                    text="{ parts: [ { path: 'i18n>transactionTotalLabel' }, { path: 'TotalAmount' }, { path: 'Amount' }, { path: 'Currency/code' } ], formatter: 'formatter.formatTotalWithLabel', useRawValues: true }"
+                                    class="invoiceTxCategory"
+                                    visible="{ parts: [ { path: 'TotalAmount' }, { path: 'Amount' } ], formatter: 'formatter.hasTotalAmount', useRawValues: true }"
+                                />
+                            </VBox>
+                            <HBox class="invoiceTxActions">
+                                <Button icon="sap-icon://puzzle" type="Transparent" tooltip="{i18n>invoiceEditCategoryTooltip}" press=".onEditCategoryPress" />
+                                <Button icon="sap-icon://delete" type="Transparent" tooltip="{i18n>invoiceDeleteTooltip}" press=".onDeletePress" />
+                            </HBox>
+                        </HBox>
+                    </HBox>
+                </CustomListItem>
+            </List>
+        </VBox>
+    </VBox>
+</mvc:View>

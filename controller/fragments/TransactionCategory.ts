@@ -13,7 +13,6 @@ import type { IdentifierTransaction } from "../../service/InvoiceService";
 import { applyCategoryToTransactions, type TransactionWriteTarget } from "../../util/invoiceWriter";
 import { getText } from "../../util/i18n";
 import { handleActionError, showToast, showWarning } from "../../util/feedback";
-import { reloadInvoiceData } from "./Invoices";
 import type Home from "../../controller/Home.controller";
 
 interface CategorySelectorRow {
@@ -210,7 +209,6 @@ const TransactionCategory = {
             await applyCategoryToTransactions(view.getModel() as ODataModel, personId, targets, categoryId);
             showToast(view, "transactionCategorySaved", [String(targets.length)]);
             dialog.close();
-            void reloadInvoiceData(view);
         } catch (error) {
             handleActionError(view, error, "transactionCategorySaveError");
         } finally {

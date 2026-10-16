@@ -454,7 +454,7 @@ export default class Home extends BaseController {
     }
 
     public onOpenInvoicesDialog(): void {
-        void this.openInvoicesDialog();
+        this.navTo("Invoices");
     }
 
     /**
@@ -540,26 +540,6 @@ export default class Home extends BaseController {
             this.handleError(error, "liabilityTransactionsOpenError");
         } finally {
             ui.setProperty("/busy", false);
-        }
-    }
-
-    /**
-     * Opens the invoice management dialog. The dialog is read-only for the
-     * invoice data itself; the per-transaction actions (recategorization and
-     * batch exclusion) are opened on top of it through the manager methods below.
-     */
-    private async openInvoicesDialog(): Promise<void> {
-        const personId = this.getSelectedPersonId();
-
-        if (!personId) {
-            this.showErrorMessage("errorMissingPerson");
-            return;
-        }
-
-        try {
-            await this.openPreparedDialog("Invoices", (dialog) => dialog.open());
-        } catch (error) {
-            this.handleError(error, "invoicesOpenError");
         }
     }
 

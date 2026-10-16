@@ -45,7 +45,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/m/MessageBox", "sap/ui/model/Filter", 
       this.navTo("Categories");
     }
     onOpenInvoicesDialog() {
-      this.workspace()?.onOpenInvoicesDialog();
+      this.navTo("Invoices");
     }
     onOpenLiabilitiesDialog() {
       this.workspace()?.onOpenLiabilitiesDialog();

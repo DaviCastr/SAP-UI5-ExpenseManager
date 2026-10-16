@@ -179,6 +179,17 @@ html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilter
 .cardTileFields > .sapMFlexItem { min-width: 0; }
 .cardTileFields .sapMInputBase, .cardTileFields .sapMSlt { width: 100% !important; }
 
+.tabPage .surfaceCard { flex: 0 0 auto; }
+.sapMVBox.tabPageHeader { gap: .2rem; }
+.invoiceTxAvatar.sapFAvatar { background: var(--teal-050) !important; }
+.invoiceTxAvatar.sapFAvatar, .invoiceTxAvatar.sapFAvatar * { color: var(--teal-800) !important; font-weight: 700; }
+.invoiceCardTiles .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; }
+.invoiceCardTiles .sapMLIB.cardTile { cursor: pointer; }
+.invoiceCardTiles .sapMLIB.cardTile.sapMLIBSelected { border-color: var(--teal-700); box-shadow: 0 0 0 2px var(--teal-700), 0 10px 26px rgba(19, 48, 48, .1); background: var(--teal-050); }
+.invoiceSummaryBar { gap: 1rem; }
+.invoicePeriodFields { gap: .75rem; }
+.invoiceSummaryTotal { gap: .15rem; }
+.invoiceTransactionsPanel .invoiceTransactionList { max-height: none; overflow: visible; }
 .categoryAddFields { grid-template-columns: minmax(0, 24rem) auto; justify-content: start; }
 .categoryTileList .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; }
 .categoryTileList .cardTileBody { padding: .75rem .9rem; }

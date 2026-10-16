@@ -1,4 +1,4 @@
-sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../../service/ODataService", "../../util/invoiceWriter", "../../util/i18n", "../../util/feedback", "./Invoices"], function (Fragment, Filter, FilterOperator, ____service_ODataService, ____util_invoiceWriter, ____util_i18n, ____util_feedback, ___Invoices) {
+sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../../service/ODataService", "../../util/invoiceWriter", "../../util/i18n", "../../util/feedback"], function (Fragment, Filter, FilterOperator, ____service_ODataService, ____util_invoiceWriter, ____util_i18n, ____util_feedback) {
   "use strict";
 
   const ODataService = ____service_ODataService["ODataService"];
@@ -7,7 +7,6 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/Filt
   const handleActionError = ____util_feedback["handleActionError"];
   const showToast = ____util_feedback["showToast"];
   const showWarning = ____util_feedback["showWarning"];
-  const reloadInvoiceData = ___Invoices["reloadInvoiceData"];
   const uiOf = view => view.getModel("ui");
 
   /**
@@ -178,7 +177,6 @@ sap.ui.define(["sap/ui/core/Fragment", "sap/ui/model/Filter", "sap/ui/model/Filt
         await applyCategoryToTransactions(view.getModel(), personId, targets, categoryId);
         showToast(view, "transactionCategorySaved", [String(targets.length)]);
         dialog.close();
-        void reloadInvoiceData(view);
       } catch (error) {
         handleActionError(view, error, "transactionCategorySaveError");
       } finally {

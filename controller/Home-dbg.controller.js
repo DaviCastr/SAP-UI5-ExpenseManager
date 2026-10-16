@@ -424,7 +424,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       this.navTo("Categories");
     }
     onOpenInvoicesDialog() {
-      void this.openInvoicesDialog();
+      this.navTo("Invoices");
     }
 
     /**
@@ -508,24 +508,6 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         this.handleError(error, "liabilityTransactionsOpenError");
       } finally {
         ui.setProperty("/busy", false);
-      }
-    }
-
-    /**
-     * Opens the invoice management dialog. The dialog is read-only for the
-     * invoice data itself; the per-transaction actions (recategorization and
-     * batch exclusion) are opened on top of it through the manager methods below.
-     */
-    async openInvoicesDialog() {
-      const personId = this.getSelectedPersonId();
-      if (!personId) {
-        this.showErrorMessage("errorMissingPerson");
-        return;
-      }
-      try {
-        await this.openPreparedDialog("Invoices", dialog => dialog.open());
-      } catch (error) {
-        this.handleError(error, "invoicesOpenError");
       }
     }
 
