@@ -70,6 +70,8 @@
 html[data-theme="dark"] body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:hover .sapMITBFilterWrapper .sapMITBInlineIcon.sapUiIcon,
 html[data-theme="dark"] body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilterWrapper .sapMITBInlineIcon.sapUiIcon { color: var(--teal-600) !important; }
 
+[data-theme="dark"] .shareEntityRow .sapMObjStatusText { color: var(--teal-600) !important; background: var(--teal-100); }
+
 [data-theme="dark"] .sapMMsgStrip.sapMMsgStripInformation {
     background: var(--teal-100);
     border-color: var(--line-soft);
