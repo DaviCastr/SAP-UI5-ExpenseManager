@@ -1,0 +1,111 @@
+<mvc:View
+    controllerName="apps.dflc.expensemanager.controller.Shares"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m"
+>
+    <VBox id="sharesPage" class="tabPage" busy="{ui>/busy}">
+        <HBox justifyContent="SpaceBetween" alignItems="Center" wrap="Wrap" class="tabPageHeader">
+            <VBox>
+                <Title text="{i18n>sharesDialogTitle}" level="H2" class="tabPageTitle" />
+                <Text text="{i18n>sharesTabIntro}" class="sectionHint" />
+            </VBox>
+            <Button
+                text="{i18n>sharesEditTooltip}"
+                icon="sap-icon://edit"
+                type="Emphasized"
+                press=".onToggleEdit"
+                visible="{= !${ui>/selectedPersonDraft} }"
+            />
+        </HBox>
+
+        <VBox class="surfaceCard cardAddPanel">
+            <HBox alignItems="Center" class="cardAddHeader">
+                <core:Icon src="sap-icon://add-contact" class="cardAddIcon" />
+                <Title text="{i18n>sharesNewShareTitle}" level="H3" />
+            </HBox>
+            <HBox wrap="Wrap" alignItems="End" class="cardAddFields categoryAddFields">
+                <VBox class="cardAddField">
+                    <Label text="{i18n>sharesUserLabel}" labelFor="shareUser" />
+                    <Input id="shareUser" value="{ui>/newShare/shareUser}" placeholder="{i18n>sharesUserPlaceholder}" type="Email" />
+                </VBox>
+                <Button
+                    text="{i18n>sharesAddShareLabel}"
+                    icon="sap-icon://add-contact"
+                    type="Emphasized"
+                    press=".onAdd"
+                    class="cardAddButton"
+                />
+            </HBox>
+        </VBox>
+
+        <List
+            id="sharesList"
+            items="{Shares}"
+            growing="true"
+            showSeparators="None"
+            noDataText="{i18n>sharesNoData}"
+            class="cardTileList shareTileList"
+        >
+            <CustomListItem class="cardTile">
+                <VBox class="cardTileBody">
+                    <HBox alignItems="Center" class="cardTileHeader">
+                        <Avatar src="sap-icon://person-placeholder" displaySize="Custom" customDisplaySize="2.6rem" displayShape="Circle" class="cardTileAvatar" />
+                        <VBox class="cardTileTitle">
+                            <Title text="{User}" level="H4" wrapping="true" visible="{= !${ui>/selectedPersonDraft} }" />
+                            <Input value="{User}" placeholder="{i18n>sharesUserPlaceholder}" visible="{ui>/selectedPersonDraft}" class="cardManagerInput" />
+                        </VBox>
+                        <Button icon="sap-icon://delete" type="Transparent" tooltip="{i18n>sharesRemoveShareTooltip}" press=".onRemove" />
+                    </HBox>
+
+                    <VBox class="shareEntities">
+                        <Text text="{i18n>sharesEntitiesLabel}" class="cardTileLabel" />
+                        <List items="{Entities}" showSeparators="Inner" noDataText="{i18n>sharesNoEntities}" class="shareEntityList">
+                            <CustomListItem>
+                                <HBox alignItems="Center" class="shareEntityRow">
+                                    <Text
+                                        text="{ parts: [ { path: 'Entity', targetType: 'any' }, 'ui>/entityOptions' ], formatter: '.optionText' }"
+                                        visible="{= !${ui>/selectedPersonDraft} }"
+                                        class="shareEntityName"
+                                    />
+                                    <Select
+                                        selectedKey="{Entity}"
+                                        items="{ui>/entityOptions}"
+                                        forceSelection="false"
+                                        visible="{ui>/selectedPersonDraft}"
+                                        class="shareEntityName"
+                                    >
+                                        <core:Item key="{ui>key}" text="{ui>text}" />
+                                    </Select>
+                                    <ObjectStatus
+                                        text="{ parts: [ { path: 'Permission', targetType: 'any' }, 'ui>/permissionOptions' ], formatter: '.optionText' }"
+                                        state="Information"
+                                        visible="{= !${ui>/selectedPersonDraft} }"
+                                    />
+                                    <Select
+                                        selectedKey="{Permission}"
+                                        items="{ui>/permissionOptions}"
+                                        forceSelection="false"
+                                        visible="{ui>/selectedPersonDraft}"
+                                    >
+                                        <core:Item key="{ui>key}" text="{ui>text}" />
+                                    </Select>
+                                    <Button icon="sap-icon://sys-cancel" type="Transparent" tooltip="{i18n>sharesRemoveEntityTooltip}" press=".onRemoveEntity" />
+                                </HBox>
+                            </CustomListItem>
+                        </List>
+                        <HBox alignItems="End" wrap="Wrap" class="shareEntityAdd">
+                            <Select selectedKey="{ui>/newShare/entity}" items="{ui>/entityOptions}">
+                                <core:Item key="{ui>key}" text="{ui>text}" />
+                            </Select>
+                            <Select selectedKey="{ui>/newShare/permission}" items="{ui>/permissionOptions}">
+                                <core:Item key="{ui>key}" text="{ui>text}" />
+                            </Select>
+                            <Button icon="sap-icon://add" text="{i18n>sharesAddEntityTooltip}" type="Ghost" press=".onAddEntity" />
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </CustomListItem>
+        </List>
+    </VBox>
+</mvc:View>

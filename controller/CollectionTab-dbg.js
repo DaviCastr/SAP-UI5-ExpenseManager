@@ -168,7 +168,7 @@ sap.ui.define(["sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "./Pe
      * @param {ODataListBinding} binding the list binding the row was created on
      * @param {Context} context the created context
      */
-    trackCreate(binding, context) {
+    trackCreate(binding, context, onSuccess = () => this.resetForm()) {
       const handler = event => {
         const params = event.getParameters();
         if (params.context !== context) {
@@ -176,7 +176,7 @@ sap.ui.define(["sap/m/Avatar", "sap/m/MessageBox", "sap/m/CustomListItem", "./Pe
         }
         binding.detachCreateCompleted(handler);
         if (params.success) {
-          this.resetForm();
+          onSuccess();
           return;
         }
         void context.delete().catch(() => undefined);

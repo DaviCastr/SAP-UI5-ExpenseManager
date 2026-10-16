@@ -165,6 +165,13 @@
 					]
 				},
 				{
+					"name": "Shares",
+					"pattern": "compartilhar",
+					"target": [
+						"Shares"
+					]
+				},
+				{
 					"name": "Login",
 					"pattern": "login",
 					"target": "Login"
@@ -214,6 +221,14 @@
 				"Liabilities": {
 					"id": "Liabilities",
 					"name": "Liabilities",
+					"parent": "Home",
+					"controlId": "tabContent",
+					"controlAggregation": "items",
+					"clearControlAggregation": true
+				},
+				"Shares": {
+					"id": "Shares",
+					"name": "Shares",
 					"parent": "Home",
 					"controlId": "tabContent",
 					"controlAggregation": "items",

@@ -226,7 +226,7 @@ export abstract class CollectionTab extends PersonTab {
      * @param {ODataListBinding} binding the list binding the row was created on
      * @param {Context} context the created context
      */
-    private trackCreate(binding: ODataListBinding, context: Context): void {
+    protected trackCreate(binding: ODataListBinding, context: Context, onSuccess = (): void => this.resetForm()): void {
         const handler = (event: Event): void => {
             const params = event.getParameters() as { context?: Context; success?: boolean };
             if (params.context !== context) {
@@ -234,7 +234,7 @@ export abstract class CollectionTab extends PersonTab {
             }
             binding.detachCreateCompleted(handler);
             if (params.success) {
-                this.resetForm();
+                onSuccess();
                 return;
             }
             void context.delete().catch(() => undefined);
@@ -332,7 +332,7 @@ export abstract class CollectionTab extends PersonTab {
         return this.byId(this.config.pageId) as Control;
     }
 
-    private list(): List | undefined {
+    protected list(): List | undefined {
         return this.byId(this.config.listId) as List | undefined;
     }
 

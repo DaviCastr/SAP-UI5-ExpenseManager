@@ -196,6 +196,16 @@ html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilter
 .liabilityTileSummary { gap: .65rem; }
 .liabilityTileFigures { gap: 1.25rem; flex-wrap: wrap; }
 .liabilityTileFields > .liabilityFieldWide { grid-column: 1 / -1; }
+.shareTileList .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr)); }
+.shareEntities { gap: .4rem; padding-top: .75rem; border-top: 1px dashed var(--line-soft); }
+.shareEntityList { background: transparent; }
+.shareEntityList .sapMLIB { background: transparent; padding: 0; min-height: auto !important; height: auto !important; border-bottom-color: var(--line) !important; }
+.shareEntityRow .sapMObjStatusText { color: var(--teal-800) !important; background: var(--teal-050); padding: .1rem .6rem; border-radius: 1rem; font-weight: 600; font-size: .78rem; }
+.cardTileList .sapMLIB.cardTile { align-items: flex-start; }
+.shareEntityRow { gap: .5rem; width: 100%; padding: .2rem 0; }
+.shareEntityRow > .sapMFlexItem:first-child, .shareEntityRow > .sapMFlexItem:nth-child(2) { flex: 1 1 auto; min-width: 0; }
+.shareEntityName { font-weight: 600; color: var(--ink); }
+.shareEntityAdd { gap: .5rem; padding-top: .35rem; }
 .categoryAddFields { grid-template-columns: minmax(0, 24rem) auto; justify-content: start; }
 .categoryTileList .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; }
 .categoryTileList .cardTileBody { padding: .75rem .9rem; }

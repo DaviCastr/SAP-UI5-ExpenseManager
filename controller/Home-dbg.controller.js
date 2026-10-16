@@ -895,69 +895,8 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         dialog.open();
       });
     }
-
-    /**
-     * Opens the Shares management dialog in read-only mode: the dialog is
-     * bound to the person's CURRENT state (the draft when one is open,
-     * otherwise the active entity) and no draft is created until the user
-     * adds/edits/removes inside it, which switches the dialog to the person
-     * draft binding (see `enterDialogDraftMode`). Shares/Entities are
-     * compositions of the selected person, so every change made there is
-     * contained in the same person draft as the rest of the entity tree.
-     */
-    async onOpenSharesDialog() {
-      await this.openDraftManagerDialog("Shares", "sharesOpenError", undefined, {
-        readOnlyOpen: true
-      });
-    }
-
-    /**
-     * Opens the Cards, Categories or Liabilities management dialog for the
-     * selected person. By default the dialog is bound to the person's draft
-     * (created when none is open), so every change made there is contained in
-     * the same person draft as the rest of the entity tree; saving activates
-     * that draft and discarding drops it.
-     *
-     * With `options.readOnlyOpen` the dialog opens bound to the person's
-     * CURRENT state (the draft when one is open, otherwise the active entity)
-     * and no draft is created: mutating actions inside the dialog must then
-     * call `enterDialogDraftMode` to switch to the draft binding.
-     *
-     * @param {string} fragmentName the dialog fragment to open
-     * @param {string} errorKey i18n key shown when the dialog cannot be opened
-     * @param {Function} [onOpened] callback invoked after the dialog is bound
-     * and opened (e.g. to expand a specific row into edit mode)
-     * @param {{ readOnlyOpen?: boolean }} [options] read-only open behavior
-     * @returns {Promise<void>} resolves once the dialog is open
-     */
-    async openDraftManagerDialog(fragmentName, errorKey, onOpened, options) {
-      const personId = this.getSelectedPersonId();
-      if (!personId) {
-        this.showErrorMessage("errorMissingPerson");
-        return;
-      }
-      const ui = this.getUiModel();
-      ui.setProperty("/busy", true);
-      try {
-        let path;
-        if (options?.readOnlyOpen) {
-          path = this.currentPersonPathFor(personId);
-        } else {
-          await this.ensurePersonDraft(personId);
-          path = this._odata?.draftPath("Persons", personId) ?? "";
-        }
-        await this.openPreparedDialog(fragmentName, dialog => {
-          dialog.setModel(this.getServiceModel());
-          dialog.unbindObject();
-          dialog.bindObject(path);
-          dialog.open();
-          onOpened?.(dialog);
-        });
-      } catch (error) {
-        this.handleError(error, errorKey);
-      } finally {
-        ui.setProperty("/busy", false);
-      }
+    onOpenSharesDialog() {
+      this.navTo("Shares");
     }
 
     /**
