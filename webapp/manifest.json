@@ -149,6 +149,13 @@
           ]
         },
         {
+          "name": "Liabilities",
+          "pattern": "dividas",
+          "target": [
+            "Liabilities"
+          ]
+        },
+        {
           "name": "Login",
           "pattern": "login",
           "target": "Login"
@@ -190,6 +197,14 @@
         "Invoices": {
           "id": "Invoices",
           "name": "Invoices",
+          "parent": "Home",
+          "controlId": "tabContent",
+          "controlAggregation": "items",
+          "clearControlAggregation": true
+        },
+        "Liabilities": {
+          "id": "Liabilities",
+          "name": "Liabilities",
           "parent": "Home",
           "controlId": "tabContent",
           "controlAggregation": "items",

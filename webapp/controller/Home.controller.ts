@@ -470,8 +470,7 @@ export default class Home extends BaseController {
      * edit/add inside it, which switches the dialog to the person draft.
      */
     public onOpenLiabilitiesDialog(): void {
-        this.getUiModel().setProperty("/liabilityEditId", "");
-        void this.openDraftManagerDialog("Liabilities", "liabilitiesOpenError", undefined, { readOnlyOpen: true });
+        this.navTo("Liabilities");
     }
 
     /**
@@ -488,7 +487,7 @@ export default class Home extends BaseController {
             return;
         }
 
-        void this.openDraftManagerDialog("Liabilities", "liabilitiesOpenError", undefined, { readOnlyOpen: true });
+        this.navTo("Liabilities");
     }
 
     /**
@@ -1018,7 +1017,7 @@ export default class Home extends BaseController {
      * @returns {Promise<void>} resolves once the dialog is open
      */
     private async openDraftManagerDialog(
-        fragmentName: "Liabilities" | "Shares",
+        fragmentName: "Shares",
         errorKey: string,
         onOpened?: (dialog: Dialog) => void,
         options?: { readOnlyOpen?: boolean }
