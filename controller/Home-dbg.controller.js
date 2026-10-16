@@ -20,6 +20,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
   const isDarkTheme = ___util_theme["isDarkTheme"];
   const getBackendErrorMessage = ___util_feedback["getBackendErrorMessage"];
   const PERSON_CHANNEL = ___util_personEvents["PERSON_CHANNEL"];
+  const PERSON_DRAFT_CLOSING = ___util_personEvents["PERSON_DRAFT_CLOSING"];
   const PERSON_SELECTED = ___util_personEvents["PERSON_SELECTED"];
   /**
    * Orchestrates the Home dashboard. Loading, selection and image/media state
@@ -34,6 +35,12 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     periodService = new PeriodService();
     onInit() {
       this.getOwnerComponent().setWorkspace(this);
+      this.getRouter().attachRouteMatched(event => {
+        const route = event.getParameter("name");
+        if (route && route !== "Login") {
+          this.getUiModel().setProperty("/tab", route);
+        }
+      });
       this.applyShareOptionTexts();
       this.syncThemeState();
       void this.initView();
@@ -84,6 +91,9 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         key: "4",
         text: this.getText("sharesActionDelete")
       }]);
+    }
+    onTabSelect(event) {
+      this.navTo(event.getParameter("key") ?? "Home");
     }
     onToggleTheme() {
       applyThemePreference(!isDarkTheme());
@@ -230,6 +240,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         return false;
       }
       ui.setProperty("/busy", true);
+      this.announceDraftClosing();
       try {
         this.releasePersonDetailDraftBinding();
         await this._odata.publishPersonDraft(personId);
@@ -237,6 +248,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         MessageToast.show(this.getText("personDraftSaved"));
         return true;
       } catch (error) {
+        this.announcePersonSelected();
         if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
           const detail = getBackendErrorMessage(error);
           MessageBox.error(detail ? `${this.getText("errorSavePersonDraft")}\n\n${detail}` : this.getText("errorSavePersonDraft"));
@@ -259,6 +271,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         return false;
       }
       ui.setProperty("/busy", true);
+      this.announceDraftClosing();
       try {
         this.releasePersonDetailDraftBinding();
         await this._odata.discardDraft("Persons", personId);
@@ -266,6 +279,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         MessageToast.show(this.getText("personDraftDiscarded"));
         return true;
       } catch (error) {
+        this.announcePersonSelected();
         if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
           this.showErrorMessage("errorDiscardPersonDraft");
         }
@@ -404,9 +418,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       }
     }
     onOpenCardManagerDialog() {
-      void this.openDraftManagerDialog("Cards", "cardsOpenError", undefined, {
-        readOnlyOpen: true
-      });
+      this.navTo("Cards");
     }
     onOpenCategoryManagerDialog() {
       void this.openDraftManagerDialog("Categories", "categoriesOpenError", undefined, {
@@ -698,6 +710,14 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     }
     announcePersonSelected() {
       this.getOwnerComponent()?.getEventBus().publish(PERSON_CHANNEL, PERSON_SELECTED);
+    }
+
+    /**
+     * Tells the tab views that the person draft is about to be saved or
+     * discarded, so they release their draft bindings before the draft is gone.
+     */
+    announceDraftClosing() {
+      this.getOwnerComponent()?.getEventBus().publish(PERSON_CHANNEL, PERSON_DRAFT_CLOSING);
     }
     personPathFor(id) {
       if (!id) {

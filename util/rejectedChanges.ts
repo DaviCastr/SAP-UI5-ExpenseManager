@@ -1,5 +1,5 @@
 import type Event from "sap/ui/base/Event";
-import Dialog from "sap/m/Dialog";
+import type Control from "sap/ui/core/Control";
 import type XMLView from "sap/ui/core/mvc/XMLView";
 import type Message from "sap/ui/core/message/Message";
 import MessageType from "sap/ui/core/message/MessageType";
@@ -31,7 +31,7 @@ export interface RejectedChangeGuard {
      * @param {string} errorKey i18n key shown together with the backend message
      * @param {string} rejectedKey i18n key shown when Save is blocked
      */
-    attach(dialog: Dialog, errorKey: string, rejectedKey: string): void;
+    attach(dialog: Control, errorKey: string, rejectedKey: string): void;
 
     /**
      * Stops observing the model; call when the dialog closes so re-opening it
@@ -149,7 +149,7 @@ export function createRejectedChangeGuard(): RejectedChangeGuard {
             if (messageChangeListener) {
                 return;
             }
-            const model = dialog.getBindingContext()?.getModel() as ODataModel | undefined;
+            const model = (dialog.getBindingContext()?.getModel() ?? dialog.getModel()) as ODataModel | undefined;
             if (!model) {
                 return;
             }

@@ -89,7 +89,7 @@ sap.ui.define(["sap/ui/core/message/MessageType", "./feedback"], function (Messa
         if (messageChangeListener) {
           return;
         }
-        const model = dialog.getBindingContext()?.getModel();
+        const model = dialog.getBindingContext()?.getModel() ?? dialog.getModel();
         if (!model) {
           return;
         }

@@ -13,6 +13,17 @@ sap.ui.define(["./feedback", "../service/ODataService"], function (___feedback, 
    * dialogs; meant to be reused by Cards, Categories and Shares.
    */
   const DRAFT_PATH_MARKER = "IsActiveEntity=false";
+
+  /**
+   * Returns the workspace (Home controller) that owns the person draft, for
+   * dialogs (owned by the Home view) and tab views alike.
+   *
+   * @param {XMLView} view the view owning the control
+   * @returns {Home | undefined} the workspace
+   */
+  function workspaceOf(view) {
+    return view.getController()?.getOwnerComponent()?.getWorkspace();
+  }
   function isDraftPath(path) {
     return !!path && path.includes(DRAFT_PATH_MARKER);
   }
@@ -100,7 +111,7 @@ sap.ui.define(["./feedback", "../service/ODataService"], function (___feedback, 
    */
   async function ensureDialogDraft(view, dialog, errorKey, subPath) {
     try {
-      await view.getController().enterDialogDraftMode(dialog, subPath);
+      await workspaceOf(view)?.enterDialogDraftMode(dialog, subPath);
       return true;
     } catch (error) {
       reportActionFailure(view, error, errorKey);

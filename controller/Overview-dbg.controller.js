@@ -15,6 +15,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/m/MessageBox", "sap/ui/model/Filter", 
   const getBackendErrorMessage = ___util_feedback["getBackendErrorMessage"];
   const runExclusiveAction = ___util_draftDialogFlow["runExclusiveAction"];
   const PERSON_CHANNEL = ___util_personEvents["PERSON_CHANNEL"];
+  const PERSON_DRAFT_CLOSING = ___util_personEvents["PERSON_DRAFT_CLOSING"];
   const PERSON_SELECTED = ___util_personEvents["PERSON_SELECTED"];
   /**
    * "Visão geral" tab: period navigation, metrics, movements, spending by
@@ -25,18 +26,20 @@ sap.ui.define(["sap/m/MessageToast", "sap/m/MessageBox", "sap/ui/model/Filter", 
     periodService = new PeriodService();
     onInit() {
       this.getOwnerComponent()?.getEventBus().subscribe(PERSON_CHANNEL, PERSON_SELECTED, this.onPersonSelected);
+      this.getOwnerComponent()?.getEventBus().subscribe(PERSON_CHANNEL, PERSON_DRAFT_CLOSING, this.onDraftClosing);
       if (this.getSelectedPersonId()) {
         this.onPersonSelected();
       }
     }
     onExit() {
       this.getOwnerComponent()?.getEventBus().unsubscribe(PERSON_CHANNEL, PERSON_SELECTED, this.onPersonSelected);
+      this.getOwnerComponent()?.getEventBus().unsubscribe(PERSON_CHANNEL, PERSON_DRAFT_CLOSING, this.onDraftClosing);
     }
     onOpenExpenseDialog() {
       this.workspace()?.onOpenExpenseDialog();
     }
     onOpenCardManagerDialog() {
-      this.workspace()?.onOpenCardManagerDialog();
+      this.navTo("Cards");
     }
     onOpenCategoryManagerDialog() {
       this.workspace()?.onOpenCategoryManagerDialog();
@@ -199,6 +202,9 @@ sap.ui.define(["sap/m/MessageToast", "sap/m/MessageBox", "sap/ui/model/Filter", 
           this.applyPeriodData();
         }
       });
+    };
+    onDraftClosing = () => {
+      ["personDetails", "cardsList", "metricsGrid", "liabilitiesList"].forEach(id => this.byId(id)?.unbindObject());
     };
     async ensureServices() {
       const model = await this.ensureServiceModel();

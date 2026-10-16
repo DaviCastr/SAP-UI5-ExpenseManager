@@ -19,6 +19,7 @@ import formatMessage from "sap/base/strings/formatMessage";
 import { ButtonType } from "sap/m/library";
 import { ValueState } from "sap/ui/core/library";
 import { chooseAction } from "../util/choiceDialog";
+import type { IconTabBar$SelectEvent } from "sap/m/IconTabBar";
 import type { Period } from "../service/InvoiceService";
 import { PeriodService } from "../service/PeriodService";
 import { MediaService } from "../service/MediaService";
@@ -36,7 +37,7 @@ import { getBackendErrorMessage } from "../util/feedback";
 import { runExclusiveAction } from "../util/draftDialogFlow";
 import type { UiPerson } from "../model/UiModel";
 import type Component from "../Component";
-import { PERSON_CHANNEL, PERSON_SELECTED } from "../util/personEvents";
+import { PERSON_CHANNEL, PERSON_DRAFT_CLOSING, PERSON_SELECTED } from "../util/personEvents";
 
 interface CardRow {
     ID: string;
@@ -62,6 +63,12 @@ export default class Home extends BaseController {
 
     public onInit(): void {
         (this.getOwnerComponent() as unknown as Component).setWorkspace(this);
+        this.getRouter().attachRouteMatched((event) => {
+            const route = event.getParameter("name");
+            if (route && route !== "Login") {
+                this.getUiModel().setProperty("/tab", route);
+            }
+        });
         this.applyShareOptionTexts();
         this.syncThemeState();
         void this.initView();
@@ -89,6 +96,10 @@ export default class Home extends BaseController {
             { key: "3", text: this.getText("sharesActionEdit") },
             { key: "4", text: this.getText("sharesActionDelete") }
         ]);
+    }
+
+    public onTabSelect(event: IconTabBar$SelectEvent): void {
+        this.navTo(event.getParameter("key") ?? "Home");
     }
 
     public onToggleTheme(): void {
@@ -251,6 +262,7 @@ export default class Home extends BaseController {
         }
 
         ui.setProperty("/busy", true);
+        this.announceDraftClosing();
 
         try {
             this.releasePersonDetailDraftBinding();
@@ -259,6 +271,7 @@ export default class Home extends BaseController {
             MessageToast.show(this.getText("personDraftSaved"));
             return true;
         } catch (error) {
+            this.announcePersonSelected();
             if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
                 const detail = getBackendErrorMessage(error);
                 MessageBox.error(
@@ -285,6 +298,7 @@ export default class Home extends BaseController {
         }
 
         ui.setProperty("/busy", true);
+        this.announceDraftClosing();
 
         try {
             this.releasePersonDetailDraftBinding();
@@ -293,6 +307,7 @@ export default class Home extends BaseController {
             MessageToast.show(this.getText("personDraftDiscarded"));
             return true;
         } catch (error) {
+            this.announcePersonSelected();
             if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
                 this.showErrorMessage("errorDiscardPersonDraft");
             }
@@ -431,7 +446,7 @@ export default class Home extends BaseController {
     }
 
     public onOpenCardManagerDialog(): void {
-        void this.openDraftManagerDialog("Cards", "cardsOpenError", undefined, { readOnlyOpen: true });
+        this.navTo("Cards");
     }
 
     public onOpenCategoryManagerDialog(): void {
@@ -764,6 +779,14 @@ export default class Home extends BaseController {
         this.getOwnerComponent()?.getEventBus().publish(PERSON_CHANNEL, PERSON_SELECTED);
     }
 
+    /**
+     * Tells the tab views that the person draft is about to be saved or
+     * discarded, so they release their draft bindings before the draft is gone.
+     */
+    private announceDraftClosing(): void {
+        this.getOwnerComponent()?.getEventBus().publish(PERSON_CHANNEL, PERSON_DRAFT_CLOSING);
+    }
+
     public personPathFor(id: string): string {
         if (!id) {
             return "";
@@ -808,7 +831,7 @@ export default class Home extends BaseController {
      * @param {string} id the person ID
      * @returns {string} the absolute OData path of the person
      */
-    private currentPersonPathFor(id: string): string {
+    public currentPersonPathFor(id: string): string {
         if (this.isPersonDraftOpen(id)) {
             return this._odata?.draftPath("Persons", id) ?? this.activePersonPathFor(id);
         }
@@ -1015,7 +1038,7 @@ export default class Home extends BaseController {
      * @returns {Promise<void>} resolves once the dialog is open
      */
     private async openDraftManagerDialog(
-        fragmentName: "Cards" | "Categories" | "Liabilities" | "Shares",
+        fragmentName: "Categories" | "Liabilities" | "Shares",
         errorKey: string,
         onOpened?: (dialog: Dialog) => void,
         options?: { readOnlyOpen?: boolean }
@@ -1065,7 +1088,7 @@ export default class Home extends BaseController {
      * draft root (e.g. "/Liabilities(ID='x')" for the movements dialog)
      * @returns {Promise<void>} resolves once the dialog is bound to the draft
      */
-    public async enterDialogDraftMode(dialog: Dialog, subPath?: string): Promise<void> {
+    public async enterDialogDraftMode(dialog: Control, subPath?: string): Promise<void> {
         const personId = this.getSelectedPersonId();
         const ui = this.getUiModel();
 
@@ -1111,7 +1134,7 @@ export default class Home extends BaseController {
      * @returns {Promise<void>} resolves once the draft context is loaded
      * @throws {Error} when the draft context does not arrive in time
      */
-    private async waitForDialogDraftContext(dialog: Dialog, draftBase: string): Promise<void> {
+    private async waitForDialogDraftContext(dialog: Control, draftBase: string): Promise<void> {
         const deadline = Date.now() + 15000;
         for (;;) {
             const context = dialog.getBindingContext();

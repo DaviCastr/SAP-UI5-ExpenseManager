@@ -1,4 +1,4 @@
-import Dialog from "sap/m/Dialog";
+import type Control from "sap/ui/core/Control";
 import List from "sap/m/List";
 import Table from "sap/m/Table";
 import XMLView from "sap/ui/core/mvc/XMLView";
@@ -6,6 +6,7 @@ import type Context from "sap/ui/model/odata/v4/Context";
 import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
 import { getBackendErrorMessage, handleActionError, showWarning } from "./feedback";
 import type Home from "../controller/Home.controller";
+import type Component from "../Component";
 import { DraftEditCancelledError, DraftLockedError } from "../service/ODataService";
 
 /**
@@ -16,6 +17,17 @@ import { DraftEditCancelledError, DraftLockedError } from "../service/ODataServi
  */
 
 const DRAFT_PATH_MARKER = "IsActiveEntity=false";
+
+/**
+ * Returns the workspace (Home controller) that owns the person draft, for
+ * dialogs (owned by the Home view) and tab views alike.
+ *
+ * @param {XMLView} view the view owning the control
+ * @returns {Home | undefined} the workspace
+ */
+function workspaceOf(view: XMLView): Home | undefined {
+    return (view.getController()?.getOwnerComponent() as unknown as Component | undefined)?.getWorkspace();
+}
 
 function isDraftPath(path?: string): boolean {
     return !!path && path.includes(DRAFT_PATH_MARKER);
@@ -42,7 +54,7 @@ function reportActionFailure(view: XMLView, error: unknown, errorKey: string): v
 // run twice in parallel for the same dialog: double clicks before the current
 // processing ends would start a second draft switch and fail with
 // "a draft already exists" (or duplicate the created row).
-const busyDialogs = new WeakSet<Dialog>();
+const busyDialogs = new WeakSet<Control>();
 
 /**
  * Runs an exclusive dialog action: while one action is still processing for
@@ -53,7 +65,7 @@ const busyDialogs = new WeakSet<Dialog>();
  * @returns {Promise<T | undefined>} the action result, or `undefined` when
  * another action was already running for the dialog
  */
-export async function runExclusiveDialogAction<T>(dialog: Dialog, action: () => Promise<T>): Promise<T | undefined> {
+export async function runExclusiveDialogAction<T>(dialog: Control, action: () => Promise<T>): Promise<T | undefined> {
     if (busyDialogs.has(dialog)) {
         return undefined;
     }
@@ -104,12 +116,12 @@ export async function runExclusiveAction<T>(key: string, action: () => Promise<T
  */
 export async function ensureDialogDraft(
     view: XMLView,
-    dialog: Dialog,
+    dialog: Control,
     errorKey: string,
     subPath?: string
 ): Promise<boolean> {
     try {
-        await (view.getController() as Home).enterDialogDraftMode(dialog, subPath);
+        await workspaceOf(view)?.enterDialogDraftMode(dialog, subPath);
         return true;
     } catch (error) {
         reportActionFailure(view, error, errorKey);
@@ -226,7 +238,7 @@ export async function findRowContextAfterLoad(
  */
 export async function deleteRowInDialogDraft(params: {
     view: XMLView;
-    dialog: Dialog;
+    dialog: Control;
     list?: List | Table | (() => List | Table | undefined);
     rowId: string;
     errorKey: string;
