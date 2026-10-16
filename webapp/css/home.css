@@ -160,6 +160,8 @@
 
 /* Avisos de rascunho da pessoa selecionada */
 .personDraftStrip { border-radius: .75rem; }
+.personDraftStrip .sapMMsgStripMessage,
+.personDraftStrip .sapMMsgStripMessage .sapMText { color: var(--ink); }
 .financePage.sapMPageWithFooter .financeShell { padding-bottom: 4.5rem; }
 
 .shareEntityTable .sapMListTblRow {
