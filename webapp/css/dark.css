@@ -65,6 +65,10 @@
 [data-theme="dark"] .sectionTabs .sapMITBSelected .sapMITHTextContent,
 [data-theme="dark"] .sectionTabs .sapMITBSelected .sapMITBSelectItemIcon { color: var(--teal-600) !important; }
 [data-theme="dark"] .sectionTabs .sapMITBSelected .sapMITBContentArrow::after { background-color: var(--teal-600) !important; }
+[data-theme="dark"] .sectionTabs .sapMITBFilter:hover .sapMITBText,
+[data-theme="dark"] .sectionTabs .sapMITBFilter:active .sapMITBText,
+html[data-theme="dark"] body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:hover .sapMITBFilterWrapper .sapMITBInlineIcon.sapUiIcon,
+html[data-theme="dark"] body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilterWrapper .sapMITBInlineIcon.sapUiIcon { color: var(--teal-600) !important; }
 
 [data-theme="dark"] .sapMMsgStrip.sapMMsgStripInformation {
     background: var(--teal-100);
