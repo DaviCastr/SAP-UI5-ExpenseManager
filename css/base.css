@@ -33,6 +33,23 @@
     --sapButton_Lite_Active_Background: #d9f2e8;
     --sapButton_Lite_Active_BorderColor: var(--teal-700);
     --sapList_Hover_Background: #f2faf7;
+    --sapBrandColor: var(--teal-700);
+    --sapSelectedColor: var(--teal-700);
+    --sapHighlightColor: var(--teal-700);
+    --sapContent_Selected_ForegroundColor: var(--teal-800);
+    --sapContent_Selected_TextColor: var(--teal-800);
+    --sapLinkColor: var(--teal-800);
+}
+
+.sapMMsgStrip.sapMMsgStripInformation {
+    background: var(--teal-050);
+    border-color: #bfe8d8;
+    color: var(--ink);
+}
+
+.sapMMsgStrip.sapMMsgStripInformation .sapMMsgStripIcon,
+.sapMMsgStrip.sapMMsgStripInformation .sapUiIcon {
+    color: var(--teal-800);
 }
 
 html, body, .sapUiBody { background: var(--surface); font-family: "72", "Segoe UI", sans-serif; }

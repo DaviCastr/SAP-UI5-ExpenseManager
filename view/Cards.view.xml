@@ -8,10 +8,10 @@
         formatter: 'apps/dflc/expensemanager/util/format'
     }"
 >
-    <VBox id="cardsPage" class="surfaceCard tabPage" busy="{ui>/busy}">
-        <HBox justifyContent="SpaceBetween" alignItems="Center" wrap="Wrap" class="sectionHeader">
+    <VBox id="cardsPage" class="tabPage" busy="{ui>/busy}">
+        <HBox justifyContent="SpaceBetween" alignItems="Center" wrap="Wrap" class="tabPageHeader">
             <VBox>
-                <Title text="{i18n>cardsDialogTitle}" level="H3" />
+                <Title text="{i18n>cardsDialogTitle}" level="H2" class="tabPageTitle" />
                 <Text text="{i18n>cardsTabIntro}" class="sectionHint" />
             </VBox>
             <Button
@@ -22,85 +22,55 @@
                 visible="{= !${ui>/selectedPersonDraft} }"
             />
         </HBox>
-        <VBox class="cardManagerAddRow sapUiSmallMarginBottom">
-            <Label
-                text="{i18n>cardsAddLabel}"
-                labelFor="newCardName"
-                class="cardManagerAddTitle"
-            />
-            <HBox wrap="Wrap" alignItems="End" class="sapUiTinyMarginTop">
-                <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+
+        <VBox class="surfaceCard cardAddPanel">
+            <HBox alignItems="Center" class="cardAddHeader">
+                <core:Icon src="sap-icon://add-activity" class="cardAddIcon" />
+                <Title text="{i18n>cardsAddLabel}" level="H3" />
+            </HBox>
+            <HBox wrap="Wrap" alignItems="End" class="cardAddFields">
+                <VBox class="cardAddField cardAddFieldWide">
                     <Label text="{i18n>cardNameLabel}" labelFor="newCardName" />
-                    <Input
-                        id="newCardName"
-                        value="{ui>/newCard/name}"
-                        placeholder="{i18n>cardNamePlaceholder}"
-                        width="100%"
-                    >
-                        <layoutData>
-                            <FlexItemData minWidth="12rem" maxWidth="15rem" growFactor="1" />
-                        </layoutData>
-                    </Input>
+                    <Input id="newCardName" value="{ui>/newCard/name}" placeholder="{i18n>cardNamePlaceholder}" />
                 </VBox>
-                <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <VBox class="cardAddField">
                     <Label text="{i18n>cardLimitLabel}" labelFor="newCardLimit" />
                     <Input
                         id="newCardLimit"
                         value="{ path: 'ui>/newCard/limit', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
                         placeholder="{i18n>cardLimitPlaceholder}"
-                        width="100%"
-                    >
-                        <layoutData>
-                            <FlexItemData minWidth="6rem" maxWidth="7.5rem" />
-                        </layoutData>
-                    </Input>
+                    />
                 </VBox>
-                <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <VBox class="cardAddField">
                     <Label text="{i18n>cardCurrencyLabel}" labelFor="newCardCurrency" />
-                    <Select
-                        id="newCardCurrency"
-                        selectedKey="{ui>/newCard/currency}"
-                        width="100%"
-                    >
-                        <layoutData>
-                            <FlexItemData minWidth="10rem" maxWidth="12rem" />
-                        </layoutData>
+                    <Select id="newCardCurrency" selectedKey="{ui>/newCard/currency}" width="100%">
                         <core:Item key="BRL" text="Real brasileiro (BRL)" />
                         <core:Item key="USD" text="Dólar americano (USD)" />
                     </Select>
                 </VBox>
-                <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <VBox class="cardAddField cardAddFieldDay">
                     <Label text="{i18n>cardsClosingLabel}" labelFor="newCardClosing" />
                     <Input
                         id="newCardClosing"
                         value="{ path: 'ui>/newCard/closingDay', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
                         placeholder="{i18n>cardsDayPlaceholder}"
-                        width="100%"
-                    >
-                        <layoutData>
-                            <FlexItemData minWidth="4.5rem" maxWidth="5.5rem" />
-                        </layoutData>
-                    </Input>
+                    />
                 </VBox>
-                <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <VBox class="cardAddField cardAddFieldDay">
                     <Label text="{i18n>cardsDueLabel}" labelFor="newCardDue" />
                     <Input
                         id="newCardDue"
                         value="{ path: 'ui>/newCard/dueDay', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
                         placeholder="{i18n>cardsDayPlaceholder}"
-                        width="100%"
-                    >
-                        <layoutData>
-                            <FlexItemData minWidth="4.5rem" maxWidth="5.5rem" />
-                        </layoutData>
-                    </Input>
+                    />
                 </VBox>
                 <Button
+                    id="addCardButton"
                     text="{i18n>cardsAddLabel}"
                     icon="sap-icon://add"
                     type="Emphasized"
                     press=".onAddCard"
-                    class="sapUiTinyMarginBottom"
+                    class="cardAddButton"
                 />
             </HBox>
         </VBox>
@@ -110,33 +80,31 @@
             items="{Cards}"
             mode="None"
             growing="true"
+            growingThreshold="30"
+            showSeparators="None"
             noDataText="{i18n>cardsNoData}"
-            class="shareList cardManagerList"
+            class="cardTileList"
         >
-            <CustomListItem class="cardManagerCard sapUiTinyMarginBottom">
-                <VBox class="cardManagerBody">
-                    <HBox
-                        alignItems="Center"
-                        class="cardManagerRow"
-                    >
+            <CustomListItem class="cardTile">
+                <VBox class="cardTileBody">
+                    <HBox alignItems="Center" class="cardTileHeader">
                         <Avatar
                             src="{ parts: [ { path: 'ID' }, { path: 'ui>/dialogCardImages' } ], formatter: 'formatter.cardImageValue' }"
                             displaySize="Custom"
-                            customDisplaySize="2.75rem"
-                            displayShape="Circle"
+                            customDisplaySize="3rem"
+                            displayShape="Square"
                             initials="{ parts: [ { path: 'Name' } ], formatter: 'formatter.initials' }"
-                            class="cardManagerAvatar"
+                            class="cardManagerAvatar cardTileAvatar"
                         />
-                        <Input
-                            value="{Name}"
-                            enabled="{ui>/selectedPersonDraft}"
-                            placeholder="{i18n>cardNamePlaceholder}"
-                            class="cardManagerInput"
-                        >
-                            <layoutData>
-                                <FlexItemData growFactor="1" minWidth="8rem" />
-                            </layoutData>
-                        </Input>
+                        <VBox class="cardTileTitle">
+                            <Title text="{Name}" level="H4" wrapping="true" visible="{= !${ui>/selectedPersonDraft} }" />
+                            <Input
+                                value="{Name}"
+                                placeholder="{i18n>cardNamePlaceholder}"
+                                visible="{ui>/selectedPersonDraft}"
+                                class="cardManagerInput"
+                            />
+                        </VBox>
                         <u:FileUploader
                             buttonOnly="true"
                             iconOnly="true"
@@ -150,15 +118,8 @@
                             httpRequestMethod="PUT"
                             useMultipart="false"
                             change=".onCardPhotoChanged"
-                            enabled="{ui>/selectedPersonDraft}"
+                            visible="{ui>/selectedPersonDraft}"
                             class="cardManagerPhoto"
-                        />
-                        <Button
-                            icon="sap-icon://edit"
-                            type="Transparent"
-                            tooltip="{i18n>cardsEditTooltip}"
-                            press=".onToggleCardsEdit"
-                            visible="{= !${ui>/selectedPersonDraft} }"
                         />
                         <Button
                             icon="sap-icon://delete"
@@ -167,61 +128,40 @@
                             press=".onRemoveCard"
                         />
                     </HBox>
-                    <HBox
-                        wrap="Wrap"
-                        alignItems="End"
-                        class="cardManagerFields"
-                    >
-                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
-                            <Label text="{i18n>cardLimitLabel}" />
-                            <Input
-                                value="{ path: 'Limit', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
-                                enabled="{ui>/selectedPersonDraft}"
-                                width="100%"
-                            >
-                                <layoutData>
-                                    <FlexItemData minWidth="6rem" maxWidth="7.5rem" />
-                                </layoutData>
-                            </Input>
+
+                    <HBox justifyContent="SpaceBetween" alignItems="End" wrap="Wrap" class="cardTileSummary" visible="{= !${ui>/selectedPersonDraft} }">
+                        <VBox>
+                            <Text text="{i18n>cardLimitLabel}" class="cardTileLabel" />
+                            <Text
+                                text="{ parts: [ { path: 'Limit' }, { path: 'Currency_code' } ], formatter: 'formatter.formatCardAmount' }"
+                                class="cardTileAmount"
+                            />
                         </VBox>
-                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                        <Text
+                            text="{ parts: [ 'i18n>cardsSchedule', { path: 'ClosingDay' }, { path: 'DueDay' } ], formatter: 'formatter.formatTemplate' }"
+                            class="cardTileSchedule"
+                        />
+                    </HBox>
+
+                    <HBox wrap="Wrap" alignItems="End" class="cardTileFields" visible="{ui>/selectedPersonDraft}">
+                        <VBox class="cardTileField">
+                            <Label text="{i18n>cardLimitLabel}" />
+                            <Input value="{ path: 'Limit', type: 'apps/dflc/expensemanager/util/DecimalInput' }" />
+                        </VBox>
+                        <VBox class="cardTileField">
                             <Label text="{i18n>cardCurrencyLabel}" />
-                            <Select
-                                selectedKey="{Currency_code}"
-                                enabled="{ui>/selectedPersonDraft}"
-                                forceSelection="false"
-                                width="100%"
-                            >
-                                <layoutData>
-                                    <FlexItemData minWidth="10rem" maxWidth="12rem" />
-                                </layoutData>
-                                <core:Item key="BRL" text="Real brasileiro (BRL)" />
-                                <core:Item key="USD" text="Dólar americano (USD)" />
+                            <Select selectedKey="{Currency_code}" forceSelection="false" width="100%">
+                                <core:Item key="BRL" text="Real (BRL)" />
+                                <core:Item key="USD" text="Dólar (USD)" />
                             </Select>
                         </VBox>
-                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                        <VBox class="cardTileField">
                             <Label text="{i18n>cardsClosingLabel}" />
-                            <Input
-                                value="{ path: 'ClosingDay', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
-                                enabled="{ui>/selectedPersonDraft}"
-                                width="100%"
-                            >
-                                <layoutData>
-                                    <FlexItemData minWidth="4.5rem" maxWidth="5.5rem" />
-                                </layoutData>
-                            </Input>
+                            <Input value="{ path: 'ClosingDay', type: 'apps/dflc/expensemanager/util/DecimalInput' }" />
                         </VBox>
-                        <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                        <VBox class="cardTileField">
                             <Label text="{i18n>cardsDueLabel}" />
-                            <Input
-                                value="{ path: 'DueDay', type: 'apps/dflc/expensemanager/util/DecimalInput' }"
-                                enabled="{ui>/selectedPersonDraft}"
-                                width="100%"
-                            >
-                                <layoutData>
-                                    <FlexItemData minWidth="4.5rem" maxWidth="5.5rem" />
-                                </layoutData>
-                            </Input>
+                            <Input value="{ path: 'DueDay', type: 'apps/dflc/expensemanager/util/DecimalInput' }" />
                         </VBox>
                     </HBox>
                 </VBox>
