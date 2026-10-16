@@ -53,6 +53,27 @@
     --sapButton_Lite_Active_BorderColor: var(--teal-700);
     --sapButton_Lite_Active_TextColor: var(--ink);
     --sapList_Hover_Background: #1a302d;
+    --sapBrandColor: var(--teal-600);
+    --sapSelectedColor: var(--teal-600);
+    --sapHighlightColor: var(--teal-600);
+    --sapContent_Selected_ForegroundColor: var(--teal-600);
+    --sapContent_Selected_TextColor: var(--teal-600);
+    --sapLinkColor: var(--teal-600);
+}
+
+[data-theme="dark"] .sectionTabs .sapMITBSelected .sapMITBText,
+[data-theme="dark"] .sectionTabs .sapMITBSelected .sapMITHTextContent,
+[data-theme="dark"] .sectionTabs .sapMITBSelected .sapMITBSelectItemIcon { color: var(--teal-600) !important; }
+[data-theme="dark"] .sectionTabs .sapMITBSelected .sapMITBContentArrow::after { background-color: var(--teal-600) !important; }
+
+[data-theme="dark"] .sapMMsgStrip.sapMMsgStripInformation {
+    background: var(--teal-100);
+    border-color: var(--line-soft);
+}
+
+[data-theme="dark"] .sapMMsgStrip.sapMMsgStripInformation .sapMMsgStripIcon,
+[data-theme="dark"] .sapMMsgStrip.sapMMsgStripInformation .sapUiIcon {
+    color: var(--teal-600);
 }
 
 /* ---------- Fundos dos cards (--white no claro = card) ---------- */
@@ -61,6 +82,7 @@
 [data-theme="dark"] .loginCard,
 [data-theme="dark"] .categoryManagerCard,
 [data-theme="dark"] .cardManagerCard,
+[data-theme="dark"] .cardTileList .sapMLIB.cardTile,
 [data-theme="dark"] .liabilityList .sapMLIB,
 [data-theme="dark"] .periodNav,
 [data-theme="dark"] .shareEntityTable .sapMListTblRow {

@@ -136,7 +136,55 @@
 .cardManagerList { background: transparent; max-height: 24rem; overflow-y: auto; }
 .tabPage .cardManagerList,
 .tabPage .categoryManagerList { max-height: none; overflow: visible; }
-.tabPage .cardManagerRow > .sapMFlexItem { min-width: 0 !important; }
+
+/* ---------- Páginas das abas ---------- */
+.sectionTabs { border-radius: 1rem; overflow: hidden; }
+.sectionTabs .sapMITBSelected .sapMITBText,
+.sectionTabs .sapMITBSelected .sapMITHTextContent,
+.sectionTabs .sapMITBSelected .sapMITBSelectItemIcon { color: var(--teal-800) !important; }
+.sectionTabs .sapMITBSelected .sapMITBContentArrow::after { background-color: var(--teal-700) !important; }
+.sectionTabs .sapMITBFilter:hover .sapMITBText { color: var(--teal-800); }
+.tabPage { gap: 1.25rem; }
+.tabPageHeader { gap: 1rem; }
+.tabPageTitle { font-size: 1.35rem !important; font-weight: 700; color: var(--ink); }
+
+/* Novo cartão */
+.cardAddPanel { flex: 0 0 auto; gap: .85rem; }
+.cardAddHeader { gap: .6rem; }
+.cardAddIcon { color: var(--teal-700); font-size: 1.1rem; }
+.cardAddFields { display: grid !important; grid-template-columns: 2fr 1fr 1.4fr .8fr .8fr auto; gap: .75rem; align-items: end; }
+.cardAddFields > .sapMFlexItem { min-width: 0; }
+.cardAddFields .sapMInputBase, .cardAddFields .sapMSlt { width: 100% !important; }
+
+/* Cartões em blocos */
+.cardTileList { background: transparent; }
+.cardTileList .sapMListUl { display: grid; grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); gap: 1rem; }
+.cardTileList .sapMLIB.cardTile { border: 1px solid var(--line); border-radius: 1.1rem; background: var(--white); box-shadow: 0 6px 18px rgba(19, 48, 48, .06); padding: 0; transition: box-shadow .2s ease, transform .2s ease; }
+.cardTileList .sapMLIB.cardTile:hover { box-shadow: 0 10px 26px rgba(19, 48, 48, .1); transform: translateY(-1px); }
+.cardTileList .sapMListNoData { border-radius: 1rem; }
+.cardTileBody { padding: 1rem 1.1rem; gap: .9rem; width: 100%; box-sizing: border-box; }
+.cardTileHeader { gap: .75rem; }
+.cardTileHeader > .sapMFlexItem:nth-child(2) { flex: 1 1 auto; min-width: 0; }
+.cardTileAvatar { border-radius: .8rem !important; background: linear-gradient(135deg, var(--teal-800), var(--teal-600)) !important; color: #ffffff !important; }
+.cardTileTitle { min-width: 0; }
+.cardTileAvatar, .cardTileAvatar * { color: #ffffff !important; font-weight: 700; }
+.cardTileSummary { gap: .75rem; padding-top: .75rem; border-top: 1px dashed var(--line-soft); }
+.cardTileLabel { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+.cardTileAmount { color: var(--ink); font-size: 1.25rem; font-weight: 700; }
+.cardTileSchedule { color: var(--muted); font-size: .82rem; }
+.cardTileFields { display: grid !important; grid-template-columns: 1fr 1fr; gap: .6rem .75rem; }
+.cardTileFields > .sapMFlexItem { min-width: 0; }
+.cardTileFields .sapMInputBase, .cardTileFields .sapMSlt { width: 100% !important; }
+
+@media (max-width: 900px) {
+    .cardAddFields { grid-template-columns: 1fr 1fr; }
+    .cardAddFields > .sapMFlexItem:first-child { grid-column: 1 / -1; }
+    .cardAddFields > .sapMFlexItem:last-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 600px) {
+    .cardTileList .sapMListUl { grid-template-columns: 1fr; }
+}
 .cardManagerCard { border-radius: .8rem; border: 1px solid var(--line); background: var(--white); box-shadow: 0 2px 8px rgba(19, 48, 48, .05); padding: .4rem .6rem; }
 .cardManagerRow { gap: .55rem; }
 .cardManagerBody { gap: .1rem; }
