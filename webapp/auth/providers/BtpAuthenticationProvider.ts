@@ -9,6 +9,14 @@ export class BtpAuthenticationProvider implements IAuthenticationProvider {
         return Promise.resolve(this.createSession());
     }
 
+    /**
+     * On the BTP launchpad the managed app router authenticates the user,
+     * so the password form simply opens the platform session.
+     */
+    public loginWithPassword(): Promise<UserSession> {
+        return this.login();
+    }
+
     public logout(): Promise<void> {
         SessionStorage.clear();
 

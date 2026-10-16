@@ -102,6 +102,29 @@
     color: #ffffff;
 }
 
+.loginForm {
+    width: 100%;
+}
+
+.loginMessage {
+    margin-bottom: .75rem;
+}
+
+.loginLabel {
+    margin-top: .75rem;
+}
+
+.loginDivider {
+    margin-top: .5rem;
+    color: var(--muted);
+    font-size: .8rem;
+    text-transform: lowercase;
+}
+
+.loginSap {
+    font-weight: 600;
+}
+
 .loginNote {
     color: #9aabab;
     font-size: .78rem;
