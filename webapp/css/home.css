@@ -172,6 +172,8 @@ html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilter
 .cardTileTitle { min-width: 0; }
 .cardTileTitle .sapMTitle, .cardTileTitle .sapMTitle span, .shareEntityName { overflow-wrap: anywhere; word-break: break-word; }
 .cardTileList .sapMLIB.cardTile { min-width: 0; max-width: 100%; }
+.personAvatar.sapFAvatar { background: linear-gradient(135deg, var(--teal-800), var(--teal-600)) !important; }
+.personAvatar, .personAvatar * { color: #ffffff !important; font-weight: 700; }
 .cardTileAvatar, .cardTileAvatar * { color: #ffffff !important; font-weight: 700; }
 .cardTileSummary { gap: .75rem; padding-top: .75rem; border-top: 1px dashed var(--line-soft); }
 .cardTileLabel { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
