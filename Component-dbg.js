@@ -31,6 +31,18 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
       manifest: "json",
       interfaces: ["sap.ui.core.IAsyncContentCreation"]
     },
+    /**
+     * The Home controller is the workspace of the tab views: it owns the
+     * selected person, its draft lifecycle and the shared dialogs.
+     *
+     * @param {Home} workspace the Home controller
+     */
+    setWorkspace: function _setWorkspace(workspace) {
+      this._workspace = workspace;
+    },
+    getWorkspace: function _getWorkspace() {
+      return this._workspace;
+    },
     init: async function _init() {
       BaseComponent.prototype.init.call(this);
       ensureThemeApplied();
@@ -151,7 +163,7 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
       const target = event.getParameter("name") ?? "";
       const session = AuthenticationService.getSession();
       const authenticated = !!session?.accessToken && session.expiresAt > Date.now();
-      if (target === "Home" && !authenticated) {
+      if (target !== "Login" && !authenticated) {
         if (!AuthenticationService.isAuthErrorPending()) {
           this.getRouter().navTo("Login");
         }

@@ -1,4 +1,4 @@
-sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox", "./BaseController", "../auth/AuthenticationService", "../service/ODataService", "sap/ui/core/format/DateFormat", "sap/base/strings/formatMessage", "sap/m/library", "sap/ui/core/library", "../util/choiceDialog", "../service/InvoiceService", "../service/PeriodService", "../service/MediaService", "../service/DashboardRenderer", "sap/ui/model/Filter", "sap/ui/model/FilterOperator", "../util/expenseApi", "../util/http", "../util/theme", "../util/feedback", "../util/draftDialogFlow"], function (MessageToast, Fragment, MessageBox, ___BaseController, ___auth_AuthenticationService, ___service_ODataService, DateFormat, formatMessage, sap_m_library, sap_ui_core_library, ___util_choiceDialog, ___service_InvoiceService, ___service_PeriodService, ___service_MediaService, ___service_DashboardRenderer, Filter, FilterOperator, ___util_expenseApi, ___util_http, ___util_theme, ___util_feedback, ___util_draftDialogFlow) {
+sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox", "./BaseController", "../auth/AuthenticationService", "../service/ODataService", "sap/ui/core/format/DateFormat", "sap/base/strings/formatMessage", "sap/m/library", "sap/ui/core/library", "../util/choiceDialog", "../service/PeriodService", "../service/MediaService", "../util/http", "../util/theme", "../util/feedback", "../util/personEvents"], function (MessageToast, Fragment, MessageBox, ___BaseController, ___auth_AuthenticationService, ___service_ODataService, DateFormat, formatMessage, sap_m_library, sap_ui_core_library, ___util_choiceDialog, ___service_PeriodService, ___service_MediaService, ___util_http, ___util_theme, ___util_feedback, ___util_personEvents) {
   "use strict";
 
   const BaseController = ___BaseController["BaseController"];
@@ -11,18 +11,16 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
   const ButtonType = sap_m_library["ButtonType"];
   const ValueState = sap_ui_core_library["ValueState"];
   const chooseAction = ___util_choiceDialog["chooseAction"];
-  const InvoiceService = ___service_InvoiceService["InvoiceService"];
   const PeriodService = ___service_PeriodService["PeriodService"];
   const MediaService = ___service_MediaService["MediaService"];
-  const DashboardRenderer = ___service_DashboardRenderer["DashboardRenderer"];
-  const getTransactionsByCategory = ___util_expenseApi["getTransactionsByCategory"];
   const isSessionExpiredError = ___util_http["isSessionExpiredError"];
   const isBackendUnavailableError = ___util_http["isBackendUnavailableError"];
   const applyThemePreference = ___util_theme["applyThemePreference"];
   const applyStoredTheme = ___util_theme["ensureThemeApplied"];
   const isDarkTheme = ___util_theme["isDarkTheme"];
   const getBackendErrorMessage = ___util_feedback["getBackendErrorMessage"];
-  const runExclusiveAction = ___util_draftDialogFlow["runExclusiveAction"];
+  const PERSON_CHANNEL = ___util_personEvents["PERSON_CHANNEL"];
+  const PERSON_SELECTED = ___util_personEvents["PERSON_SELECTED"];
   /**
    * Orchestrates the Home dashboard. Loading, selection and image/media state
    * is delegated to focused services (PeriodService, MediaService,
@@ -35,6 +33,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     _draftsHandled = new Set();
     periodService = new PeriodService();
     onInit() {
+      this.getOwnerComponent().setWorkspace(this);
       this.applyShareOptionTexts();
       this.syncThemeState();
       void this.initView();
@@ -114,9 +113,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         }
         if (!this._odata || this._serviceModelRef !== model) {
           this._odata = new ODataService(model);
-          this._invoiceService = new InvoiceService(this._odata);
           this._mediaService = new MediaService(this._odata, this.getUiModel());
-          this._renderer = new DashboardRenderer(this._invoiceService, this.getUiModel(), (key, parameters) => this.getText(key, parameters));
           this._serviceModelRef = model;
         }
         await this.refreshPersonSelector();
@@ -152,84 +149,6 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         console.error("[logout]", error);
       }
       this.navTo("Login");
-    }
-    onPreviousMonth() {
-      this.navigateMonth(-1);
-    }
-    onNextMonth() {
-      this.navigateMonth(1);
-    }
-    onThisMonth() {
-      const period = this.periodService.current();
-      this.getUiModel().setProperty("/period", period);
-      this.applyPeriodData();
-    }
-    onHomeYearChanged() {
-      const ui = this.getUiModel();
-      const period = this.currentPeriod();
-      period.year = Number(ui.getProperty("/periodSelector/year")) || period.year;
-      ui.setProperty("/period", period);
-      this.applyPeriodData();
-    }
-    onHomeMonthChanged() {
-      const ui = this.getUiModel();
-      const period = this.currentPeriod();
-      period.month = Number(ui.getProperty("/periodSelector/month")) || period.month;
-      ui.setProperty("/period", period);
-      this.applyPeriodData();
-    }
-    async onSendInvoices() {
-      await runExclusiveAction("sendInvoices", async () => {
-        const period = this.currentPeriod();
-        if (!this._invoiceService) {
-          return;
-        }
-        const ui = this.getUiModel();
-        ui.setProperty("/busy", true);
-        try {
-          const personId = ui.getProperty("/selectedPersonId") || "";
-          const sent = await this._invoiceService.sendInvoices(personId, period);
-          if (sent) {
-            MessageToast.show(this.getText("sendInvoicesSuccess"));
-          } else {
-            MessageBox.error(this.getText("sendInvoicesNoData"));
-          }
-        } catch (error) {
-          if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
-            const detail = getBackendErrorMessage(error);
-            MessageBox.error(detail ? `${this.getText("sendInvoicesError")}\n\n${detail}` : this.getText("sendInvoicesError"));
-          }
-        } finally {
-          ui.setProperty("/busy", false);
-        }
-      });
-    }
-
-    /**
-     * Filters the local (JSON) transaction list by date, description, category
-     * or card. The search text is matched against `SearchText` (description +
-     * category + card + formatted date) assembled by the DashboardRenderer, so a
-     * query such as "mercado", "Nubank" or "15/08" finds the matching rows client-side.
-     *
-     * @returns {void}
-     */
-    onTransactionSearch() {
-      const search = this.byId("transactionsSearch");
-      const list = this.byId("transactionsList");
-      const binding = list?.getBinding("items");
-      const query = search?.getValue()?.trim() || "";
-      if (!binding) {
-        return;
-      }
-      if (!query) {
-        binding.filter([]);
-        return;
-      }
-      binding.filter([new Filter({
-        path: "SearchText",
-        operator: FilterOperator.Contains,
-        value1: query
-      })]);
     }
     onOpenExpenseDialog() {
       this.prepareExpenseDialogState();
@@ -604,6 +523,9 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
      * Opens the category-picker dialog for the transaction whose Identifier is
      * stored in `ui>/transactionCategory/selectedIdentifier`.
      */
+    openCategoryDetailDialog() {
+      return this.openPreparedDialog("CategoryDetail", dialog => dialog.open());
+    }
     openTransactionCategoryDialog() {
       void this.openPreparedDialog("TransactionCategory", dialog => dialog.open()).catch(error => this.handleError(error, "invoicesOpenError"));
     }
@@ -618,64 +540,9 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     onRestoreBackup() {
       void this.openPreparedDialog("Backup", dialog => dialog.open()).catch(error => this.handleError(error, "dialogOpenError"));
     }
-    onCategoryPress(oEvent) {
-      const source = oEvent.getSource();
-      const bindingContext = source?.getBindingContext("ui");
-      const category = bindingContext?.getObject();
-      if (!category) {
-        return;
-      }
-      const ui = this.getUiModel();
-      const personId = ui.getProperty("/selectedPersonId");
-      const period = this.currentPeriod();
-      ui.setProperty("/busy", true);
-      void getTransactionsByCategory(this.getServiceModel(), personId, category.ID, false, period.year, period.month).then(result => {
-        ui.setProperty("/categoryDetail", result);
-        return this.openPreparedDialog("CategoryDetail", dialog => dialog.open());
-      }).catch(error => this.handleError(error, "errorLoadCategoryDetail")).finally(() => ui.setProperty("/busy", false));
-    }
-
-    /**
-     * Opens the category picker for the transaction whose action button was
-     * pressed, mirroring the selected Identifier and its current category into
-     * the ui model (same contract used by the invoice dialog).
-     *
-     * @param {Event} oEvent the press event
-     * @returns {void}
-     */
-    onTransactionCategoryPress(oEvent) {
-      const source = oEvent.getSource();
-      const transaction = source?.getBindingContext("ui")?.getObject();
-      if (!transaction?.Identifier) {
-        return;
-      }
-      const ui = this.getUiModel();
-      ui.setProperty("/transactionCategory/selectedIdentifier", transaction.Identifier);
-      ui.setProperty("/transactionCategory/currentCategoryId", transaction.Category?.ID || "");
-      ui.setProperty("/transactionCategory/currentCategoryName", transaction.Category?.Name || "");
-      this.openTransactionCategoryDialog();
-    }
-
-    /**
-     * Opens the batch-exclusion dialog for the transaction whose action button
-     * was pressed, mirroring the selected Identifier into the ui model (same
-     * contract used by the invoice dialog).
-     *
-     * @param {Event} oEvent the press event
-     * @returns {void}
-     */
-    onTransactionDeletePress(oEvent) {
-      const source = oEvent.getSource();
-      const transaction = source?.getBindingContext("ui")?.getObject();
-      if (!transaction?.Identifier) {
-        return;
-      }
-      this.getUiModel().setProperty("/deleteTransactions/selectedIdentifier", transaction.Identifier);
-      this.openDeleteTransactionsDialog();
-    }
     onOpenSimulationDialog() {
       const ui = this.getUiModel();
-      const period = this.currentPeriod();
+      const period = this.periodService.currentOrDefault(ui.getProperty("/period"));
       if (!ui.getProperty("/simulation")) {
         ui.setProperty("/simulation", {
           month: String(period.month),
@@ -691,14 +558,6 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       }
       ui.setProperty("/simulationResult", null);
       void this.openPreparedDialog("Simulation", dialog => dialog.open()).catch(error => this.handleError(error, "dialogOpenError"));
-    }
-    refresh() {
-      const cardsList = this.byId("cardsListItems");
-      const binding = cardsList?.getBinding("items");
-      if (binding) {
-        binding.refresh();
-      }
-      void this.loadDashboard();
     }
 
     /**
@@ -801,7 +660,6 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     }
     applyPersonSelection(id) {
       const ui = this.getUiModel();
-      this.bindPersonContext(id);
       this._currentPersonId = id;
       if (!id) {
         ui.setProperty("/selectedPersonId", "");
@@ -812,6 +670,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         ui.setProperty("/selectedPersonLockedBy", "");
         ui.setProperty("/selectedPersonLockedAt", "");
         ui.setProperty("/selectedPersonAbandonedBy", "");
+        this.announcePersonSelected();
         return;
       }
       const person = this.getPersonsFromSource().find(candidate => candidate.ID === id);
@@ -832,27 +691,13 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       if (person) {
         void this._mediaService?.resolvePersonImage(person, person?.hasDraft === true);
       }
-      this.applyPeriodData();
+      this.announcePersonSelected();
       if (person?.hasDraft) {
         this.offerDraftResume(id, person.draftChangedAt);
       }
     }
-
-    /**
-     * Binds the person-scoped sections (`personDetails`, `cardsList`) to the
-     * selected person context using the derived OData path. The path is built
-     * from the stored person metadata instead of the Select's binding context,
-     * which may not be hydrated yet during startup.
-     *
-     * @param {string} id the person id; empty when the selection is cleared
-     */
-    bindPersonContext(id) {
-      const path = this.personPathFor(id);
-      this.byId("personDetails")?.setModel(this.getView()?.getModel());
-      this.byId("personDetails")?.bindObject(path);
-      this.byId("cardsList")?.bindObject(path);
-      this.byId("metricsGrid")?.bindObject(path);
-      this.byId("liabilitiesList")?.bindObject(path);
+    announcePersonSelected() {
+      this.getOwnerComponent()?.getEventBus().publish(PERSON_CHANNEL, PERSON_SELECTED);
     }
     personPathFor(id) {
       if (!id) {
@@ -985,87 +830,6 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
     // ---------------------------------------------------------------------------
     // Dashboard loading
     // ---------------------------------------------------------------------------
-
-    applyPeriodData() {
-      const ui = this.getUiModel();
-      const period = this.currentPeriod();
-      ui.setProperty("/period", period);
-      ui.setProperty("/monthLabel", this.presentPeriodLabel(period));
-      ui.setProperty("/periodSelector/year", String(period.year));
-      ui.setProperty("/periodSelector/month", String(period.month));
-      this.resetTransactionSearch();
-      void this.loadDashboard();
-    }
-
-    /**
-     * Clears the local transaction search field and removes the filter applied
-     * to the JSON transaction list. Called whenever the period or person
-     * changes, so a stale query does not hide the freshly loaded rows.
-     *
-     * @returns {void}
-     */
-    resetTransactionSearch() {
-      const search = this.byId("transactionsSearch");
-      const list = this.byId("transactionsList");
-      const binding = list?.getBinding("items");
-      if (search) {
-        search.setValue("");
-      }
-      binding?.filter([]);
-    }
-    navigateMonth(delta) {
-      const period = this.currentPeriod();
-      this.getUiModel().setProperty("/period", this.periodService.shift(period, delta));
-      this.applyPeriodData();
-    }
-    currentPeriod() {
-      return this.periodService.currentOrDefault(this.getUiModel().getProperty("/period"));
-    }
-    presentPeriodLabel(period) {
-      return this.periodService.label(period.year, period.month);
-    }
-    async loadDashboard() {
-      const ui = this.getUiModel();
-      const personId = this.getSelectedPersonId();
-      const period = this.currentPeriod();
-      const invoiceService = this._invoiceService;
-      const renderer = this._renderer;
-      if (!personId || !invoiceService || !renderer) {
-        return;
-      }
-      ui.setProperty("/busy", true);
-      try {
-        const invoice = await invoiceService.getCompleteInvoice(personId, period);
-        const expenses = Number(invoice.TotalAmount) || 0;
-        const transactions = renderer.renderInvoice(invoice, this.selectedPerson());
-        const preferDraft = ui.getProperty("/selectedPersonDraft") === true;
-        void this._mediaService?.resolveCategoryImages(transactions, preferDraft);
-        void renderer.loadTrend(personId, period, expenses);
-
-        // The person-scoped metrics (Income, ExpenseTarget, TotalExpenses*)
-        // are bound directly to the OData V4 model via metricsGrid.
-        const cards = await this._odata?.requestEntitySet("Cards", {
-          select: ["ID", "Name"],
-          filters: [new Filter({
-            path: "Person/ID",
-            operator: FilterOperator.EQ,
-            value1: personId
-          })],
-          filterExpression: DRAFT_FILTER,
-          expand: DRAFT_EXPAND
-        });
-        if (cards) {
-          void this._mediaService?.resolveCardImages(cards, preferDraft);
-        }
-      } catch (error) {
-        this.handleLoadError(error, "backendUnavailableLogin");
-      } finally {
-        ui.setProperty("/busy", false);
-      }
-    }
-    selectedPerson() {
-      return this.getUiModel().getProperty("/selectedPerson") || {};
-    }
 
     // ---------------------------------------------------------------------------
     // Fragment dialogs

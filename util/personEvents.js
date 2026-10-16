@@ -1,0 +1,2 @@
+sap.ui.define([],function(){"use strict";const e="expenseManager.person";const n="selected";var s={__esModule:true};s.PERSON_CHANNEL=e;s.PERSON_SELECTED=n;return s});
+//# sourceMappingURL=personEvents.js.map
