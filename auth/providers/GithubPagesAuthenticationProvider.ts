@@ -37,6 +37,10 @@ export class GithubPagesAuthenticationProvider implements IAuthenticationProvide
         }
     }
 
+    public async loginWithPassword(username: string, password: string): Promise<UserSession> {
+        return XsuaaAuthHelper.createSession(await XsuaaAuthHelper.loginWithPassword(username, password));
+    }
+
     public logout(): Promise<void> {
         SessionStorage.clear();
         return Promise.resolve();

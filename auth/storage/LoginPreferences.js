@@ -1,0 +1,2 @@
+sap.ui.define(["sap/ui/util/Storage"],function(e){"use strict";const t="loginEmail";const a=new e(e.Type.local,"expenseManager");class s{static loadEmail(){return a.get(t)??""}static saveEmail(e){a.put(t,e)}}var i={__esModule:true};i.LoginPreferences=s;return i});
+//# sourceMappingURL=LoginPreferences.js.map

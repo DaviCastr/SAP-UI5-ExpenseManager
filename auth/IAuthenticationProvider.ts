@@ -4,6 +4,8 @@ export interface IAuthenticationProvider {
 
     login(): Promise<UserSession>;
 
+    loginWithPassword(username: string, password: string): Promise<UserSession>;
+
     logout(): Promise<void>;
 
     isAuthenticated(): Promise<boolean>;

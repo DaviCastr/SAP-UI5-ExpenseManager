@@ -13,6 +13,10 @@ sap.ui.define(["./storage/SessionStorage"], function (___storage_SessionStorage)
       const session = await this.provider.login();
       SessionStorage.save(session);
     }
+    static async loginWithPassword(username, password) {
+      const session = await this.provider.loginWithPassword(username, password);
+      SessionStorage.save(session);
+    }
     static async logout() {
       SessionStorage.clear();
       await this.provider.logout();

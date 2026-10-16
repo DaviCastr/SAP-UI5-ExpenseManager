@@ -35,6 +35,9 @@ sap.ui.define(["../AuthenticationService", "../storage/SessionStorage", "./Xsuaa
         return Promise.resolve(session);
       }
     }
+    async loginWithPassword(username, password) {
+      return XsuaaAuthHelper.createSession(await XsuaaAuthHelper.loginWithPassword(username, password));
+    }
     logout() {
       SessionStorage.clear();
       return Promise.resolve();

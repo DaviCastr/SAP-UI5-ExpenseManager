@@ -10,6 +10,13 @@ sap.ui.define(["../AuthenticationService"], function (___AuthenticationService) 
         userName: "Davi"
       });
     }
+    loginWithPassword(username) {
+      return Promise.resolve({
+        accessToken: "mock-token",
+        expiresAt: Date.now() + 3600000,
+        userName: username
+      });
+    }
     async logout() {
       await AuthenticationService.logout();
     }

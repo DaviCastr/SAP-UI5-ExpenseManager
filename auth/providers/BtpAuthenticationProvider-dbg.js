@@ -7,6 +7,14 @@ sap.ui.define(["../storage/SessionStorage", "../AuthenticationService"], functio
     login() {
       return Promise.resolve(this.createSession());
     }
+
+    /**
+     * On the BTP launchpad the managed app router authenticates the user,
+     * so the password form simply opens the platform session.
+     */
+    loginWithPassword() {
+      return this.login();
+    }
     logout() {
       SessionStorage.clear();
       if (typeof window !== "undefined") {

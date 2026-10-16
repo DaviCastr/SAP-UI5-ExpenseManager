@@ -18,6 +18,8 @@ O mesmo código de frontend roda nos dois ambientes; o que muda é o **provedor 
 | URL do serviço OData | **Absoluta** (do `runtime-config.json`) | **Relativa**, com o contexto do app no launchpad |
 | Quem adiciona o `Authorization` | O app (`Bearer <token>`) | O managed app router (`ForwardAuthToken`) |
 
+No GitHub Pages a tela de login tem um formulário de email e senha (`POST /auth/password` no CAP, sem sair do app) e, como alternativa, o link para a página de login da SAP (fluxo Authorization Code). No launchpad do BTP o login continua sendo feito pela plataforma.
+
 ## 1. Detecção do ambiente
 
 `webapp/util/Environment.ts` decide o ambiente pelo hostname da página:
@@ -149,7 +151,8 @@ Browser ──> launchpad/<contexto>/api/service/ExpenseManager/$metadata
 - `webapp/auth/providers/AuthenticatedProviderFactory.ts` — escolhe o provider por ambiente.
 - `webapp/auth/providers/BtpAuthenticationProvider.ts` — provider BTP (sessão da plataforma).
 - `webapp/auth/providers/GithubPagesAuthenticationProvider.ts` — provider GitHub Pages (OAuth direto).
-- `webapp/auth/providers/XsuaaAuthHelper.ts` — config de runtime e montagem da URL de autorização.
+- `webapp/auth/providers/XsuaaAuthHelper.ts` — config de runtime, montagem da URL de autorização e login por senha.
+- `webapp/auth/storage/LoginPreferences.ts` — lembra o último email usado no login (nunca a senha).
 - `webapp/util/http.ts` — chamadas `fetch` autenticadas (CSRF, headers).
 - `webapp/Component.ts` — `getLaunchpadAppBasePath()` / `prepareBtpServiceModel()` (BTP) e criação do modelo.
 - `webapp/config/runtime-config.json` — URL absoluta do serviço e endpoints OAuth.

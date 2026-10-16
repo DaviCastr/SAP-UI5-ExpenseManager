@@ -12,6 +12,14 @@ export class MockAuthenticationProvider implements IAuthenticationProvider {
         });
     }
 
+    public loginWithPassword(username: string): Promise<UserSession> {
+        return Promise.resolve({
+            accessToken: "mock-token",
+            expiresAt: Date.now() + 3600000,
+            userName: username
+        });
+    }
+
     public async logout(): Promise<void> {
         await AuthenticationService.logout();
     }

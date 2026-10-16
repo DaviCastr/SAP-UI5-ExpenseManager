@@ -26,6 +26,14 @@ export class AuthenticationService {
 
     }
 
+    public static async loginWithPassword(username: string, password: string): Promise<void> {
+
+        const session = await this.provider.loginWithPassword(username, password);
+
+        SessionStorage.save(session);
+
+    }
+
     public static async logout(): Promise<void> {
 
         SessionStorage.clear();

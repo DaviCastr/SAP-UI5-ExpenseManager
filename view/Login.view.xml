@@ -84,6 +84,8 @@
                         id="loginCard"
                         class="loginCard"
                         alignItems="Center"
+                        busy="{login>/busy}"
+                        busyIndicatorDelay="0"
                     >
                         <HBox alignItems="Center" class="loginBrand sapUiMediumMarginBottom">
                             <Image
@@ -116,15 +118,55 @@
                             class="loginSubtitle sapUiMediumMarginBottom"
                         />
 
-                        <Button
-                            id="loginButton"
-                            text="{i18n>loginButton}"
-                            icon="sap-icon://log"
-                            press=".onLogin"
-                            type="Emphasized"
-                            width="100%"
-                            class="loginPrimary sapUiMediumMarginBottom"
-                        />
+                        <VBox width="100%" class="loginForm">
+                            <MessageStrip
+                                text="{login>/error}"
+                                type="Error"
+                                showIcon="true"
+                                visible="{= !!${login>/error} }"
+                                class="loginMessage"
+                            />
+                            <Label text="{i18n>loginEmail}" labelFor="loginEmail" required="true" />
+                            <Input
+                                id="loginEmail"
+                                value="{login>/email}"
+                                type="Email"
+                                placeholder="{i18n>loginEmailPlaceholder}"
+                                valueState="{login>/emailState}"
+                                valueStateText="{i18n>loginEmailRequired}"
+                                maxLength="256"
+                                submit=".onPasswordLogin"
+                                width="100%"
+                            />
+                            <Label text="{i18n>loginPassword}" labelFor="loginPassword" required="true" class="loginLabel" />
+                            <Input
+                                id="loginPassword"
+                                value="{login>/password}"
+                                type="{= ${login>/showPassword} ? 'Text' : 'Password' }"
+                                placeholder="{i18n>loginPasswordPlaceholder}"
+                                valueState="{login>/passwordState}"
+                                valueStateText="{i18n>loginPasswordRequired}"
+                                showValueHelp="true"
+                                valueHelpIconSrc="{= ${login>/showPassword} ? 'sap-icon://hide' : 'sap-icon://show' }"
+                                valueHelpRequest=".onTogglePassword"
+                                maxLength="256"
+                                submit=".onPasswordLogin"
+                                width="100%"
+                            />
+                            <Button
+                                id="loginButton"
+                                text="{i18n>loginButton}"
+                                icon="sap-icon://log"
+                                press=".onPasswordLogin"
+                                type="Emphasized"
+                                width="100%"
+                                class="loginPrimary"
+                            />
+                        </VBox>
+
+                        <Text text="{i18n>loginOr}" textAlign="Center" class="loginDivider" />
+
+                        <Link text="{i18n>loginWithSap}" press=".onLogin" class="loginSap" />
 
                         <Text
                             text="{i18n>loginNote}"

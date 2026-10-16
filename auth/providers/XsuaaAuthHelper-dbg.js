@@ -1,6 +1,18 @@
 sap.ui.define([], function () {
   "use strict";
 
+  /**
+   * Failure returned by the CAP authentication endpoints, keeping the OAuth error code
+   * (e.g. invalid_credentials, too_many_attempts) so the UI can show a precise message.
+   */
+  class AuthRequestError extends Error {
+    constructor(code, message, status) {
+      super(message);
+      this.code = code;
+      this.status = status;
+      this.name = "AuthRequestError";
+    }
+  }
   let runtimeConfig = {
     btpHost: "",
     odataService: ""
@@ -17,6 +29,7 @@ sap.ui.define([], function () {
       if (runtimeConfig.auth) {
         runtimeConfig.auth.tokenEndpoint = "/auth/login";
         runtimeConfig.auth.refreshEndpoint = "/auth/refresh";
+        runtimeConfig.auth.passwordEndpoint = "/auth/password";
         runtimeConfig.auth.redirectUri = "";
       }
     }
@@ -57,6 +70,33 @@ sap.ui.define([], function () {
       const payload = await response.json();
       if (!response.ok || payload.error) {
         throw new Error(payload.error_description ?? payload.error ?? "Token exchange failed");
+      }
+      return payload;
+    }
+    static async loginWithPassword(username, password) {
+      const config = this.getConfig().auth;
+      const endpoint = config?.passwordEndpoint ?? config?.tokenEndpoint.replace(/\/login$/, "/password");
+      if (!endpoint) {
+        throw new Error("Password endpoint is not configured");
+      }
+      let response;
+      try {
+        response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            username,
+            password
+          })
+        });
+      } catch {
+        throw new AuthRequestError("backend_unavailable", "Authentication service is unreachable", 0);
+      }
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.error) {
+        throw new AuthRequestError(payload.error ?? "login_failed", payload.error_description ?? "Login failed", response.status);
       }
       return payload;
     }
@@ -149,6 +189,7 @@ sap.ui.define([], function () {
   var __exports = {
     __esModule: true
   };
+  __exports.AuthRequestError = AuthRequestError;
   __exports.XsuaaAuthHelper = XsuaaAuthHelper;
   return __exports;
 });
