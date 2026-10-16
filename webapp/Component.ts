@@ -14,6 +14,7 @@ import Environment, { EnvironmentType } from "./util/Environment";
 import { isSessionExpiredError, isBackendUnavailableError } from "./util/http";
 import { getBackendErrorMessage } from "./util/feedback";
 import { ensureThemeApplied } from "./util/theme";
+import type Home from "./controller/Home.controller";
 
 /**
  * @namespace apps.dflc.expensemanager
@@ -31,6 +32,21 @@ export default class Component extends BaseComponent {
     private _serviceModelPromise: Promise<ODataModel | null> | null = null;
     private _modelToken = "";
     private _unexpectedErrorShown = false;
+    private _workspace?: Home;
+
+    /**
+     * The Home controller is the workspace of the tab views: it owns the
+     * selected person, its draft lifecycle and the shared dialogs.
+     *
+     * @param {Home} workspace the Home controller
+     */
+    public setWorkspace(workspace: Home): void {
+        this._workspace = workspace;
+    }
+
+    public getWorkspace(): Home | undefined {
+        return this._workspace;
+    }
 
     public async init(): Promise<void> {
         super.init();
@@ -183,7 +199,7 @@ export default class Component extends BaseComponent {
         const session = AuthenticationService.getSession();
         const authenticated = !!session?.accessToken && session.expiresAt > Date.now();
 
-        if (target === "Home" && !authenticated) {
+        if (target !== "Login" && !authenticated) {
             if (!AuthenticationService.isAuthErrorPending()) {
                 this.getRouter().navTo("Login");
             }

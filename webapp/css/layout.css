@@ -1,6 +1,7 @@
 .financePage, .financePage .sapMPageBgStandard { background: radial-gradient(circle at 83% -10%, #d8fff0 0, transparent 30rem), var(--surface); }
 
 .financeShell { max-width: 76rem; margin: 0 auto; padding: 1.5rem 2rem 3rem; gap: 1.25rem; }
+.overviewTab { gap: 1.25rem; }
 .topBar { min-height: 3.5rem; }
 .brandGroup { gap: .75rem; }
 .brandLogo { border-radius: .75rem; box-shadow: 0 4px 14px rgba(7, 61, 58, .18); }

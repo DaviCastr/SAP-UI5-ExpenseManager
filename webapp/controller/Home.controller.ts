@@ -19,10 +19,9 @@ import formatMessage from "sap/base/strings/formatMessage";
 import { ButtonType } from "sap/m/library";
 import { ValueState } from "sap/ui/core/library";
 import { chooseAction } from "../util/choiceDialog";
-import { InvoiceService, type Period } from "../service/InvoiceService";
+import type { Period } from "../service/InvoiceService";
 import { PeriodService } from "../service/PeriodService";
 import { MediaService } from "../service/MediaService";
-import { DashboardRenderer } from "../service/DashboardRenderer";
 import type ListBinding from "sap/ui/model/ListBinding";
 import Filter from "sap/ui/model/Filter";
 import FilterOperator from "sap/ui/model/FilterOperator";
@@ -36,6 +35,8 @@ import { applyThemePreference, ensureThemeApplied as applyStoredTheme, isDarkThe
 import { getBackendErrorMessage } from "../util/feedback";
 import { runExclusiveAction } from "../util/draftDialogFlow";
 import type { UiPerson } from "../model/UiModel";
+import type Component from "../Component";
+import { PERSON_CHANNEL, PERSON_SELECTED } from "../util/personEvents";
 
 interface CardRow {
     ID: string;
@@ -49,9 +50,7 @@ interface CardRow {
  */
 export default class Home extends BaseController {
     private _odata?: ODataService;
-    private _invoiceService?: InvoiceService;
     private _mediaService?: MediaService;
-    private _renderer?: DashboardRenderer;
     private _serviceModelRef?: ODataModel;
 
     private _dialogs = new Map<string, Promise<Dialog>>();
@@ -62,6 +61,7 @@ export default class Home extends BaseController {
     private readonly periodService = new PeriodService();
 
     public onInit(): void {
+        (this.getOwnerComponent() as unknown as Component).setWorkspace(this);
         this.applyShareOptionTexts();
         this.syncThemeState();
         void this.initView();
@@ -124,9 +124,7 @@ export default class Home extends BaseController {
 
             if (!this._odata || this._serviceModelRef !== model) {
                 this._odata = new ODataService(model);
-                this._invoiceService = new InvoiceService(this._odata);
                 this._mediaService = new MediaService(this._odata, this.getUiModel());
-                this._renderer = new DashboardRenderer(this._invoiceService, this.getUiModel(), (key, parameters) => this.getText(key, parameters));
                 this._serviceModelRef = model;
             }
 
@@ -169,96 +167,6 @@ export default class Home extends BaseController {
             console.error("[logout]", error);
         }
         this.navTo("Login");
-    }
-
-    public onPreviousMonth(): void {
-        this.navigateMonth(-1);
-    }
-
-    public onNextMonth(): void {
-        this.navigateMonth(1);
-    }
-
-    public onThisMonth(): void {
-        const period = this.periodService.current();
-        this.getUiModel().setProperty("/period", period);
-        this.applyPeriodData();
-    }
-
-    public onHomeYearChanged(): void {
-        const ui = this.getUiModel();
-        const period = this.currentPeriod();
-        period.year = Number(ui.getProperty("/periodSelector/year")) || period.year;
-        ui.setProperty("/period", period);
-        this.applyPeriodData();
-    }
-
-    public onHomeMonthChanged(): void {
-        const ui = this.getUiModel();
-        const period = this.currentPeriod();
-        period.month = Number(ui.getProperty("/periodSelector/month")) || period.month;
-        ui.setProperty("/period", period);
-        this.applyPeriodData();
-    }
-
-    public async onSendInvoices(): Promise<void> {
-        await runExclusiveAction("sendInvoices", async () => {
-            const period = this.currentPeriod();
-
-            if (!this._invoiceService) {
-                return;
-            }
-
-            const ui = this.getUiModel();
-            ui.setProperty("/busy", true);
-
-            try {
-                const personId =
-                    (ui.getProperty("/selectedPersonId") as string) || "";
-                const sent =
-                    await this._invoiceService.sendInvoices(personId, period);
-                if (sent) {
-                    MessageToast.show(this.getText("sendInvoicesSuccess"));
-                } else {
-                    MessageBox.error(this.getText("sendInvoicesNoData"));
-                }
-            } catch (error) {
-                if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
-                    const detail = getBackendErrorMessage(error);
-                    MessageBox.error(
-                        detail ? `${this.getText("sendInvoicesError")}\n\n${detail}` : this.getText("sendInvoicesError")
-                    );
-                }
-            } finally {
-                ui.setProperty("/busy", false);
-            }
-        });
-    }
-
-    /**
-     * Filters the local (JSON) transaction list by date, description, category
-     * or card. The search text is matched against `SearchText` (description +
-     * category + card + formatted date) assembled by the DashboardRenderer, so a
-     * query such as "mercado", "Nubank" or "15/08" finds the matching rows client-side.
-     *
-     * @returns {void}
-     */
-    public onTransactionSearch(): void {
-        const search = this.byId("transactionsSearch") as SearchField | undefined;
-        const list = this.byId("transactionsList") as List | undefined;
-        const binding = list?.getBinding("items") as ListBinding | undefined;
-        const query = search?.getValue()?.trim() || "";
-
-        if (!binding) {
-            return;
-        }
-
-        if (!query) {
-            binding.filter([]);
-            return;
-        }
-
-        binding.filter([new Filter({ path: "SearchText", operator: FilterOperator.Contains, value1: query })]);
     }
 
     public onOpenExpenseDialog(): void {
@@ -644,6 +552,10 @@ export default class Home extends BaseController {
      * Opens the category-picker dialog for the transaction whose Identifier is
      * stored in `ui>/transactionCategory/selectedIdentifier`.
      */
+    public openCategoryDetailDialog(): Promise<void> {
+        return this.openPreparedDialog("CategoryDetail", (dialog) => dialog.open());
+    }
+
     public openTransactionCategoryDialog(): void {
         void this.openPreparedDialog("TransactionCategory", (dialog) => dialog.open())
             .catch((error) => this.handleError(error, "invoicesOpenError"));
@@ -663,80 +575,9 @@ export default class Home extends BaseController {
             .catch((error) => this.handleError(error, "dialogOpenError"));
     }
 
-    public onCategoryPress(oEvent: Event): void {
-        const source = oEvent.getSource<Control>();
-        const bindingContext = source?.getBindingContext("ui") as Context | undefined;
-        const category = bindingContext?.getObject() as CategoryBreakdownItem | undefined;
-
-        if (!category) {
-            return;
-        }
-
-        const ui = this.getUiModel();
-        const personId = ui.getProperty("/selectedPersonId") as string;
-        const period = this.currentPeriod();
-
-        ui.setProperty("/busy", true);
-
-        void getTransactionsByCategory(this.getServiceModel(), personId, category.ID, false, period.year, period.month)
-            .then((result: CategoryTransactionsProperties) => {
-                ui.setProperty("/categoryDetail", result);
-                return this.openPreparedDialog("CategoryDetail", (dialog) => dialog.open());
-            })
-            .catch((error) => this.handleError(error, "errorLoadCategoryDetail"))
-            .finally(() => ui.setProperty("/busy", false));
-    }
-
-    /**
-     * Opens the category picker for the transaction whose action button was
-     * pressed, mirroring the selected Identifier and its current category into
-     * the ui model (same contract used by the invoice dialog).
-     *
-     * @param {Event} oEvent the press event
-     * @returns {void}
-     */
-    public onTransactionCategoryPress(oEvent: Event): void {
-        const source = oEvent.getSource<Control>();
-        const transaction = source?.getBindingContext("ui")?.getObject() as
-            | { Identifier?: string; Category?: { ID?: string; Name?: string } | null }
-            | undefined;
-
-        if (!transaction?.Identifier) {
-            return;
-        }
-
-        const ui = this.getUiModel();
-        ui.setProperty("/transactionCategory/selectedIdentifier", transaction.Identifier);
-        ui.setProperty("/transactionCategory/currentCategoryId", transaction.Category?.ID || "");
-        ui.setProperty("/transactionCategory/currentCategoryName", transaction.Category?.Name || "");
-        this.openTransactionCategoryDialog();
-    }
-
-    /**
-     * Opens the batch-exclusion dialog for the transaction whose action button
-     * was pressed, mirroring the selected Identifier into the ui model (same
-     * contract used by the invoice dialog).
-     *
-     * @param {Event} oEvent the press event
-     * @returns {void}
-     */
-    public onTransactionDeletePress(oEvent: Event): void {
-        const source = oEvent.getSource<Control>();
-        const transaction = source?.getBindingContext("ui")?.getObject() as
-            | { Identifier?: string }
-            | undefined;
-
-        if (!transaction?.Identifier) {
-            return;
-        }
-
-        this.getUiModel().setProperty("/deleteTransactions/selectedIdentifier", transaction.Identifier);
-        this.openDeleteTransactionsDialog();
-    }
-
     public onOpenSimulationDialog(): void {
         const ui = this.getUiModel();
-        const period = this.currentPeriod();
+        const period = this.periodService.currentOrDefault(ui.getProperty("/period") as Period | undefined);
 
         if (!ui.getProperty("/simulation")) {
             ui.setProperty("/simulation", { month: String(period.month), year: String(period.year) });
@@ -749,15 +590,6 @@ export default class Home extends BaseController {
 
         void this.openPreparedDialog("Simulation", (dialog) => dialog.open())
             .catch((error) => this.handleError(error, "dialogOpenError"));
-    }
-
-    public refresh(): void {
-        const cardsList = this.byId("cardsListItems") as List | undefined;
-        const binding = cardsList?.getBinding("items");
-        if (binding) {
-            binding.refresh();
-        }
-        void this.loadDashboard();
     }
 
     /**
@@ -885,8 +717,6 @@ export default class Home extends BaseController {
     private applyPersonSelection(id: string): void {
         const ui = this.getUiModel();
 
-        this.bindPersonContext(id);
-
         this._currentPersonId = id;
 
         if (!id) {
@@ -898,6 +728,7 @@ export default class Home extends BaseController {
             ui.setProperty("/selectedPersonLockedBy", "");
             ui.setProperty("/selectedPersonLockedAt", "");
             ui.setProperty("/selectedPersonAbandonedBy", "");
+            this.announcePersonSelected();
             return;
         }
 
@@ -922,31 +753,18 @@ export default class Home extends BaseController {
             void this._mediaService?.resolvePersonImage(person, person?.hasDraft === true);
         }
 
-        this.applyPeriodData();
+        this.announcePersonSelected();
 
         if (person?.hasDraft) {
             this.offerDraftResume(id, person.draftChangedAt);
         }
     }
 
-    /**
-     * Binds the person-scoped sections (`personDetails`, `cardsList`) to the
-     * selected person context using the derived OData path. The path is built
-     * from the stored person metadata instead of the Select's binding context,
-     * which may not be hydrated yet during startup.
-     *
-     * @param {string} id the person id; empty when the selection is cleared
-     */
-    private bindPersonContext(id: string): void {
-        const path = this.personPathFor(id);
-        this.byId("personDetails")?.setModel(this.getView()?.getModel() as ODataModel);
-        this.byId("personDetails")?.bindObject(path);
-        this.byId("cardsList")?.bindObject(path);
-        this.byId("metricsGrid")?.bindObject(path);
-        this.byId("liabilitiesList")?.bindObject(path);
+    private announcePersonSelected(): void {
+        this.getOwnerComponent()?.getEventBus().publish(PERSON_CHANNEL, PERSON_SELECTED);
     }
 
-    private personPathFor(id: string): string {
+    public personPathFor(id: string): string {
         if (!id) {
             return "";
         }
@@ -1084,95 +902,6 @@ export default class Home extends BaseController {
     // ---------------------------------------------------------------------------
     // Dashboard loading
     // ---------------------------------------------------------------------------
-
-    private applyPeriodData(): void {
-        const ui = this.getUiModel();
-        const period = this.currentPeriod();
-        ui.setProperty("/period", period);
-        ui.setProperty("/monthLabel", this.presentPeriodLabel(period));
-        ui.setProperty("/periodSelector/year", String(period.year));
-        ui.setProperty("/periodSelector/month", String(period.month));
-        this.resetTransactionSearch();
-        void this.loadDashboard();
-    }
-
-    /**
-     * Clears the local transaction search field and removes the filter applied
-     * to the JSON transaction list. Called whenever the period or person
-     * changes, so a stale query does not hide the freshly loaded rows.
-     *
-     * @returns {void}
-     */
-    private resetTransactionSearch(): void {
-        const search = this.byId("transactionsSearch") as SearchField | undefined;
-        const list = this.byId("transactionsList") as List | undefined;
-        const binding = list?.getBinding("items") as ListBinding | undefined;
-        if (search) {
-            search.setValue("");
-        }
-        binding?.filter([]);
-    }
-
-    private navigateMonth(delta: number): void {
-        const period = this.currentPeriod();
-        this.getUiModel().setProperty("/period", this.periodService.shift(period, delta));
-        this.applyPeriodData();
-    }
-
-    private currentPeriod(): Period {
-        return this.periodService.currentOrDefault(
-            this.getUiModel().getProperty("/period") as Period | undefined
-        );
-    }
-
-    private presentPeriodLabel(period: Period): string {
-        return this.periodService.label(period.year, period.month);
-    }
-
-    private async loadDashboard(): Promise<void> {
-        const ui = this.getUiModel();
-        const personId = this.getSelectedPersonId();
-        const period = this.currentPeriod();
-        const invoiceService = this._invoiceService;
-        const renderer = this._renderer;
-
-        if (!personId || !invoiceService || !renderer) {
-            return;
-        }
-
-        ui.setProperty("/busy", true);
-
-        try {
-            const invoice = await invoiceService.getCompleteInvoice(personId, period);
-            const expenses = Number(invoice.TotalAmount) || 0;
-            const transactions = renderer.renderInvoice(invoice, this.selectedPerson());
-
-            const preferDraft = ui.getProperty("/selectedPersonDraft") === true;
-
-            void this._mediaService?.resolveCategoryImages(transactions, preferDraft);
-            void renderer.loadTrend(personId, period, expenses);
-
-            // The person-scoped metrics (Income, ExpenseTarget, TotalExpenses*)
-            // are bound directly to the OData V4 model via metricsGrid.
-            const cards = await this._odata?.requestEntitySet<CardRow & { IsActiveEntity?: boolean }>("Cards", {
-                select: ["ID", "Name"],
-                filters: [new Filter({ path: "Person/ID", operator: FilterOperator.EQ, value1: personId })],
-                filterExpression: DRAFT_FILTER,
-                expand: DRAFT_EXPAND
-            });
-            if (cards) {
-                void this._mediaService?.resolveCardImages(cards, preferDraft);
-            }
-        } catch (error) {
-            this.handleLoadError(error, "backendUnavailableLogin");
-        } finally {
-            ui.setProperty("/busy", false);
-        }
-    }
-
-    private selectedPerson(): { Income?: number; ExpenseTarget?: number; Currency?: unknown } {
-        return (this.getUiModel().getProperty("/selectedPerson") as UiPerson) || {};
-    }
 
     // ---------------------------------------------------------------------------
     // Fragment dialogs

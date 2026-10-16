@@ -123,7 +123,9 @@
         {
           "name": "Home",
           "pattern": "",
-          "target": "Home"
+          "target": [
+            "Overview"
+          ]
         },
         {
           "name": "Login",
@@ -139,6 +141,14 @@
         "Home": {
           "id": "Home",
           "name": "Home"
+        },
+        "Overview": {
+          "id": "Overview",
+          "name": "Overview",
+          "parent": "Home",
+          "controlId": "tabContent",
+          "controlAggregation": "items",
+          "clearControlAggregation": true
         }
       }
     },
