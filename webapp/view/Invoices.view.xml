@@ -144,9 +144,11 @@
                             <Avatar
                                 src="{ parts: [ { path: 'Category/ID' }, { path: 'ui>/invoice/transactionImages' } ], formatter: 'formatter.cardImageValue' }"
                                 initials="{ path: 'Category/Name', formatter: 'formatter.initials' }"
+                                displaySize="Custom"
+                                customDisplaySize="2.6rem"
                                 displayShape="Circle"
                                 tooltip="{ path: 'Category/Name' }"
-                                class="invoiceTxAvatar sapUiTinyMarginEnd"
+                                class="cardTileAvatar sapUiSmallMarginEnd"
                             />
                             <VBox>
                                 <Text text="{Description}" class="transactionTitle" />

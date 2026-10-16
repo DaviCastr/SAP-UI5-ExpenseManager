@@ -129,35 +129,35 @@
         },
         {
           "name": "Cards",
-          "pattern": "cartoes",
+          "pattern": "cards",
           "target": [
             "Cards"
           ]
         },
         {
           "name": "Categories",
-          "pattern": "categorias",
+          "pattern": "categories",
           "target": [
             "Categories"
           ]
         },
         {
           "name": "Invoices",
-          "pattern": "faturas",
+          "pattern": "invoices",
           "target": [
             "Invoices"
           ]
         },
         {
           "name": "Liabilities",
-          "pattern": "dividas",
+          "pattern": "debts",
           "target": [
             "Liabilities"
           ]
         },
         {
           "name": "Shares",
-          "pattern": "compartilhar",
+          "pattern": "shares",
           "target": [
             "Shares"
           ]
