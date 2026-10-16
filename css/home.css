@@ -161,7 +161,7 @@ html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilter
 
 /* Cartões em blocos */
 .cardTileList { background: transparent; }
-.cardTileList .sapMListUl { display: grid; grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); gap: 1rem; }
+.cardTileList .sapMListUl { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr)); gap: 1rem; }
 .cardTileList .sapMLIB.cardTile { border: 1px solid var(--line); border-radius: 1.1rem; background: var(--white); box-shadow: 0 6px 18px rgba(19, 48, 48, .06); padding: 0; transition: box-shadow .2s ease, transform .2s ease; }
 .cardTileList .sapMLIB.cardTile:hover { box-shadow: 0 10px 26px rgba(19, 48, 48, .1); transform: translateY(-1px); }
 .cardTileList .sapMListNoData { border-radius: 1rem; }
@@ -170,6 +170,8 @@ html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilter
 .cardTileHeader > .sapMFlexItem:nth-child(2) { flex: 1 1 auto; min-width: 0; }
 .cardTileAvatar { border-radius: .8rem !important; background: linear-gradient(135deg, var(--teal-800), var(--teal-600)) !important; color: #ffffff !important; }
 .cardTileTitle { min-width: 0; }
+.cardTileTitle .sapMTitle, .cardTileTitle .sapMTitle span, .shareEntityName { overflow-wrap: anywhere; word-break: break-word; }
+.cardTileList .sapMLIB.cardTile { min-width: 0; max-width: 100%; }
 .cardTileAvatar, .cardTileAvatar * { color: #ffffff !important; font-weight: 700; }
 .cardTileSummary { gap: .75rem; padding-top: .75rem; border-top: 1px dashed var(--line-soft); }
 .cardTileLabel { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
@@ -181,7 +183,7 @@ html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilter
 
 .tabPage .surfaceCard { flex: 0 0 auto; }
 .sapMVBox.tabPageHeader { gap: .2rem; }
-.invoiceCardTiles .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; }
+.invoiceCardTiles .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr)); gap: .75rem; }
 .invoiceCardTiles .sapMLIB.cardTile { cursor: pointer; }
 .invoiceCardTiles .sapMLIB.cardTile.sapMLIBSelected { border-color: var(--teal-700); box-shadow: 0 0 0 2px var(--teal-700), 0 10px 26px rgba(19, 48, 48, .1); background: var(--teal-050); }
 .invoiceSummaryBar { gap: 1rem; }
@@ -190,11 +192,11 @@ html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilter
 .invoiceTransactionsPanel .invoiceTransactionList { max-height: none; overflow: visible; }
 .liabilityAddFields { grid-template-columns: 2fr 1fr 1.4fr 1fr; }
 .liabilityAddFields > .liabilityAddDescription { grid-column: 1 / 4; }
-.liabilityTileList .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)); }
+.liabilityTileList .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr)); }
 .liabilityTileSummary { gap: .65rem; }
 .liabilityTileFigures { gap: 1.25rem; flex-wrap: wrap; }
 .liabilityTileFields > .liabilityFieldWide { grid-column: 1 / -1; }
-.shareTileList .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr)); }
+.shareTileList .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(min(24rem, 100%), 1fr)); }
 .shareEntities { gap: .4rem; padding-top: .75rem; border-top: 1px dashed var(--line-soft); }
 .shareEntityList { background: transparent; }
 .shareEntityList .sapMLIB { background: transparent; padding: 0; min-height: auto !important; height: auto !important; border-bottom-color: var(--line) !important; }
@@ -205,7 +207,7 @@ html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilter
 .shareEntityName { font-weight: 600; color: var(--ink); }
 .shareEntityAdd { gap: .5rem; padding-top: .35rem; }
 .categoryAddFields { grid-template-columns: minmax(0, 24rem) auto; justify-content: start; }
-.categoryTileList .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; }
+.categoryTileList .sapMListUl { grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr)); gap: .75rem; }
 .categoryTileList .cardTileBody { padding: .75rem .9rem; }
 
 @media (max-width: 900px) {
