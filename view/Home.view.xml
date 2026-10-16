@@ -11,6 +11,8 @@
         id="homePage"
         showHeader="false"
         enableScrolling="true"
+        showFooter="{= ${ui>/selectedPersonDraft} &amp;&amp; !${ui>/personsEmpty} }"
+        floatingFooter="true"
         class="financePage"
         busy="{ui>/busy}"
     >
@@ -81,7 +83,7 @@
                                 items="{
                                     path: '/Persons',
                                     parameters: {
-                                        $select: 'ID,Name,Income,ExpenseTarget,Currency,ImageType,IsActiveEntity',
+                                        $select: 'ID,Name,Income,ExpenseTarget,Currency,ImageType,IsActiveEntity,HasDraftEntity',
                                         $expand: 'DraftAdministrativeData($select=DraftUUID,InProcessByUser)',
                                         $filter: '(IsActiveEntity eq false or SiblingEntity/IsActiveEntity eq null)'
                                     }
@@ -94,8 +96,7 @@
                             >
                                 <core:Item
                                     key="{ID}"
-                                    text="{= ${Name} + (${IsActiveEntity} === false ? ' (rascunho)' : '')
-                                           }"
+                                    text="{= ${Name} + (${path: 'IsActiveEntity', targetType: 'any'} === false ? ' ' + ${i18n>personDraftSuffix} : (${path: 'HasDraftEntity', targetType: 'any'} === true ? ' ' + ${i18n>personLockedSuffix} : '')) }"
                                 />
                             </Select>
                             <HBox
@@ -146,48 +147,27 @@
                         </HBox>
                     </HBox>
                     <VBox id="personDetails">
-                        <!-- Card de rascunho: aviso suave com ações de descartar/efetivar -->
-                        <HBox
+                        <MessageStrip
+                            text="{parts: ['i18n>personDraftInfo', 'ui>/selectedPersonDraftChangedAt'], formatter: '.formatMessage'}"
+                            type="Information"
+                            showIcon="true"
                             visible="{= ${ui>/selectedPersonDraft} &amp;&amp; !${ui>/personsEmpty} }"
-                            alignItems="Center"
-                            justifyContent="SpaceBetween"
-                            wrap="Wrap"
-                            width="100%"
-                            class="sapUiTinyMarginBottom personDraftBanner"
-                        >
-                            <HBox alignItems="Center" class="personDraftBannerMain">
-                                <core:Icon
-                                    src="sap-icon://edit-outline"
-                                    class="personDraftBannerIcon"
-                                />
-                                <VBox class="personDraftBannerCopy">
-                                    <ObjectStatus
-                                        text="{i18n>personDraftBadge}"
-                                        state="Warning"
-                                        class="personDraftBadge"
-                                    />
-                                    <Text
-                                        text="{i18n>personDraftBanner}"
-                                        class="personDraftBannerText"
-                                        wrapping="true"
-                                    />
-                                </VBox>
-                            </HBox>
-                            <HBox class="personDraftBannerActions">
-                                <Button
-                                    text="{i18n>personDiscardButton}"
-                                    icon="sap-icon://delete"
-                                    type="Reject"
-                                    press=".onDiscardPersonDraft"
-                                />
-                                <Button
-                                    text="{i18n>personSaveDraftButton}"
-                                    icon="sap-icon://save"
-                                    type="Success"
-                                    press=".onSavePersonDraft"
-                                />
-                            </HBox>
-                        </HBox>
+                            class="sapUiSmallMarginBottom personDraftStrip"
+                        />
+                        <MessageStrip
+                            text="{parts: ['i18n>personLockedInfo', 'ui>/selectedPersonLockedBy', 'ui>/selectedPersonLockedAt'], formatter: '.formatMessage'}"
+                            type="Warning"
+                            showIcon="true"
+                            visible="{= !!${ui>/selectedPersonLockedBy} &amp;&amp; !${ui>/personsEmpty} }"
+                            class="sapUiSmallMarginBottom personDraftStrip"
+                        />
+                        <MessageStrip
+                            text="{parts: ['i18n>personAbandonedInfo', 'ui>/selectedPersonAbandonedBy', 'ui>/selectedPersonLockedAt'], formatter: '.formatMessage'}"
+                            type="Warning"
+                            showIcon="true"
+                            visible="{= !!${ui>/selectedPersonAbandonedBy} &amp;&amp; !${ui>/personsEmpty} }"
+                            class="sapUiSmallMarginBottom personDraftStrip"
+                        />
                         <HBox
                             class="balanceHero"
                             justifyContent="SpaceBetween"
@@ -1244,5 +1224,12 @@
                 </HBox>
             </VBox>
         </content>
+        <footer>
+            <OverflowToolbar class="personDraftFooter">
+                <ToolbarSpacer />
+                <Button text="{i18n>personDiscardButton}" type="Reject" press=".onDiscardPersonDraft" />
+                <Button text="{i18n>personSaveDraftButton}" type="Emphasized" icon="sap-icon://save" press=".onSavePersonDraft" />
+            </OverflowToolbar>
+        </footer>
     </Page>
 </mvc:View>

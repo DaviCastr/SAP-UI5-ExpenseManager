@@ -1,16 +1,17 @@
-sap.ui.define(["./feedback"], function (___feedback) {
+sap.ui.define(["./feedback", "../service/ODataService"], function (___feedback, ___service_ODataService) {
   "use strict";
 
   const getBackendErrorMessage = ___feedback["getBackendErrorMessage"];
   const handleActionError = ___feedback["handleActionError"];
   const showWarning = ___feedback["showWarning"];
+  const DraftEditCancelledError = ___service_ODataService["DraftEditCancelledError"];
+  const DraftLockedError = ___service_ODataService["DraftLockedError"];
   /**
    * Shared flow for the manager dialogs that open in read-only mode (bound to
    * the active entity) and switch to the person draft only when the user acts
    * (add/edit/remove). Used today by the Liabilities and LiabilityTransactions
    * dialogs; meant to be reused by Cards, Categories and Shares.
    */
-
   const DRAFT_PATH_MARKER = "IsActiveEntity=false";
   function isDraftPath(path) {
     return !!path && path.includes(DRAFT_PATH_MARKER);
@@ -28,7 +29,7 @@ sap.ui.define(["./feedback"], function (___feedback) {
    * @param {string} errorKey i18n key shown when no backend message exists
    */
   function reportActionFailure(view, error, errorKey) {
-    if (!getBackendErrorMessage(error)) {
+    if (error instanceof DraftLockedError || error instanceof DraftEditCancelledError || !getBackendErrorMessage(error)) {
       handleActionError(view, error, errorKey);
     }
   }

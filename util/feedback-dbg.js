@@ -1,9 +1,11 @@
-sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "./i18n", "./http"], function (MessageBox, MessageToast, ___i18n, ___http) {
+sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "./i18n", "./http", "../service/ODataService"], function (MessageBox, MessageToast, ___i18n, ___http, ___service_ODataService) {
   "use strict";
 
   const getText = ___i18n["getText"];
   const isSessionExpiredError = ___http["isSessionExpiredError"];
   const isBackendUnavailableError = ___http["isBackendUnavailableError"];
+  const DraftEditCancelledError = ___service_ODataService["DraftEditCancelledError"];
+  const DraftLockedError = ___service_ODataService["DraftLockedError"];
   /**
    * Centralized user feedback for fragment controllers (which are plain object
    * literals and therefore cannot extend BaseController). Keeps the repeated
@@ -57,7 +59,11 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "./i18n", "./http"], fu
    * @returns {boolean} true when the error was handled (so callers can `return`)
    */
   function handleActionError(view, error, messageKey) {
-    if (isSessionExpiredError(error) || isBackendUnavailableError(error)) {
+    if (isSessionExpiredError(error) || isBackendUnavailableError(error) || error instanceof DraftEditCancelledError) {
+      return true;
+    }
+    if (error instanceof DraftLockedError) {
+      MessageBox.warning(getText(view, "personLockedByOther", [error.user]));
       return true;
     }
     const detail = getBackendErrorMessage(error);

@@ -1,6 +1,9 @@
-sap.ui.define(["sap/ui/core/mvc/Controller", "sap/ui/core/UIComponent", "sap/m/MessageBox", "../auth/storage/SessionStorage", "../util/http", "../util/feedback"], function (Controller, UIComponent, MessageBox, ___auth_storage_SessionStorage, ___util_http, ___util_feedback) {
+sap.ui.define(["../service/ODataService", "sap/ui/core/mvc/Controller", "sap/ui/core/UIComponent", "sap/m/MessageBox", "../auth/storage/SessionStorage", "../util/http", "../util/feedback"], function (___service_ODataService, Controller, UIComponent, MessageBox, ___auth_storage_SessionStorage, ___util_http, ___util_feedback) {
   "use strict";
 
+  /// <reference types="@sapui5/types" />
+  const DraftEditCancelledError = ___service_ODataService["DraftEditCancelledError"];
+  const DraftLockedError = ___service_ODataService["DraftLockedError"];
   const SessionStorage = ___auth_storage_SessionStorage["SessionStorage"];
   const isSessionExpiredError = ___util_http["isSessionExpiredError"];
   const isBackendUnavailableError = ___util_http["isBackendUnavailableError"];
@@ -92,11 +95,15 @@ sap.ui.define(["sap/ui/core/mvc/Controller", "sap/ui/core/UIComponent", "sap/m/M
      * @returns {boolean} true when the error was handled (so callers can `return`)
      */
     handleError(error, messageKey) {
-      if (isSessionExpiredError(error)) {
+      if (isSessionExpiredError(error) || error instanceof DraftEditCancelledError) {
         return true;
       }
       if (isBackendUnavailableError(error)) {
         this.showErrorMessage("backendUnavailable");
+        return true;
+      }
+      if (error instanceof DraftLockedError) {
+        this.showWarningMessage("personLockedByOther", [error.user]);
         return true;
       }
       this.showErrorMessage(messageKey);

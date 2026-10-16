@@ -53,6 +53,10 @@ sap.ui.define(["sap/ui/model/json/JSONModel", "../util/liabilityRules"], functio
         selectedPersonId: "",
         selectedPersonImage: "",
         selectedPersonDraft: false,
+        selectedPersonDraftChangedAt: "",
+        selectedPersonLockedBy: "",
+        selectedPersonLockedAt: "",
+        selectedPersonAbandonedBy: "",
         summary: {
           available: "",
           expenses: "",
