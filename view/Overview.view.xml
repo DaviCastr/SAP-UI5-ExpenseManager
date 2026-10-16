@@ -50,27 +50,6 @@
                                         class="primaryAction"
                                     />
                                     <Button
-                                        text="{i18n>actionAddCard}"
-                                        icon="sap-icon://credit-card"
-                                        type="Transparent"
-                                        press=".onOpenCardManagerDialog"
-                                        class="secondaryAction"
-                                    />
-                                    <Button
-                                        text="{i18n>actionManageCategories}"
-                                        icon="sap-icon://tags"
-                                        type="Transparent"
-                                        press=".onOpenCategoryManagerDialog"
-                                        class="secondaryAction"
-                                    />
-                                    <Button
-                                        text="{i18n>actionInvoices}"
-                                        icon="sap-icon://monitor-payments"
-                                        type="Transparent"
-                                        press=".onOpenInvoicesDialog"
-                                        class="secondaryAction"
-                                    />
-                                    <Button
                                         text="{i18n>actionRestoreBackup}"
                                         icon="sap-icon://upload-to-cloud"
                                         type="Transparent"
@@ -309,7 +288,7 @@
                                 text="{i18n>metricSavingsLabel}"
                                 class="metricLabel"
                             />
-                            <core:Icon src="sap-icon://savings" />
+                            <core:Icon src="sap-icon://wallet" />
                         </HBox>
                         <ObjectNumber
                             number="{ui>/summary/savings}"
@@ -329,7 +308,7 @@
                                 text="{i18n>metricTargetLabel}"
                                 class="metricLabel"
                             />
-                            <core:Icon src="sap-icon://target" />
+                            <core:Icon src="sap-icon://goal" />
                         </HBox>
                         <ObjectNumber
                             number="{
@@ -442,7 +421,7 @@
                                 text="{i18n>metricLiabilitiesLabel}"
                                 class="metricLabel"
                             />
-                            <core:Icon src="sap-icon://payment" />
+                            <core:Icon src="sap-icon://loan" />
                         </HBox>
                         <ObjectNumber
                             number="{
@@ -469,7 +448,7 @@
                                 text="{i18n>metricTotalExpensesLabel}"
                                 class="metricLabel"
                             />
-                            <core:Icon src="sap-icon://request-quote" />
+                            <core:Icon src="sap-icon://expense-report" />
                         </HBox>
                         <ObjectNumber
                             number="{
@@ -789,10 +768,11 @@
                                                     }],
                                                     formatter: 'formatter.cardImageValue'
                                                 }"
-                                                displaySize="XS"
-                                                customDisplaySize="2.75rem"
-                                                displayShape="Circle"
-                                                initials="{Name}"
+                                                displaySize="Custom"
+                                                customDisplaySize="2.4rem"
+                                                displayShape="Square"
+                                                initials="{ path: 'Name', formatter: 'formatter.initials' }"
+                                                class="cardTileAvatar"
                                             />
                                         </HBox>
                                         <Text
