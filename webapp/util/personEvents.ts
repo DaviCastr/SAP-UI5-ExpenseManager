@@ -5,3 +5,5 @@
 export const PERSON_CHANNEL = "expenseManager.person";
 
 export const PERSON_SELECTED = "selected";
+
+export const PERSON_DRAFT_CLOSING = "draftClosing";

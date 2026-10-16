@@ -128,6 +128,13 @@
           ]
         },
         {
+          "name": "Cards",
+          "pattern": "cartoes",
+          "target": [
+            "Cards"
+          ]
+        },
+        {
           "name": "Login",
           "pattern": "login",
           "target": "Login"
@@ -145,6 +152,14 @@
         "Overview": {
           "id": "Overview",
           "name": "Overview",
+          "parent": "Home",
+          "controlId": "tabContent",
+          "controlAggregation": "items",
+          "clearControlAggregation": true
+        },
+        "Cards": {
+          "id": "Cards",
+          "name": "Cards",
           "parent": "Home",
           "controlId": "tabContent",
           "controlAggregation": "items",

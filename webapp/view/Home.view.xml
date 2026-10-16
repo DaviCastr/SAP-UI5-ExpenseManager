@@ -208,6 +208,22 @@
                         />
                     </HBox>
                 </VBox>
+                <IconTabBar
+                    id="sectionTabs"
+                    selectedKey="{ui>/tab}"
+                    select=".onTabSelect"
+                    headerMode="Inline"
+                    expandable="false"
+                    applyContentPadding="false"
+                    backgroundDesign="Transparent"
+                    visible="{= !${ui>/personsEmpty} }"
+                    class="sectionTabs"
+                >
+                    <items>
+                        <IconTabFilter key="Home" icon="sap-icon://home" text="{i18n>tabOverview}" />
+                        <IconTabFilter key="Cards" icon="sap-icon://credit-card" text="{i18n>tabCards}" />
+                    </items>
+                </IconTabBar>
                 <VBox id="tabContent" class="tabContent" visible="{= !${ui>/personsEmpty} }" />
             </VBox>
         </content>

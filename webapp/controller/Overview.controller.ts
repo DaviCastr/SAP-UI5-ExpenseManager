@@ -25,7 +25,7 @@ import {
 import { isSessionExpiredError, isBackendUnavailableError } from "../util/http";
 import { getBackendErrorMessage } from "../util/feedback";
 import { runExclusiveAction } from "../util/draftDialogFlow";
-import { PERSON_CHANNEL, PERSON_SELECTED } from "../util/personEvents";
+import { PERSON_CHANNEL, PERSON_DRAFT_CLOSING, PERSON_SELECTED } from "../util/personEvents";
 import type { UiPerson } from "../model/UiModel";
 
 interface CardRow {
@@ -49,6 +49,7 @@ export default class Overview extends BaseController {
 
     public onInit(): void {
         this.getOwnerComponent()?.getEventBus().subscribe(PERSON_CHANNEL, PERSON_SELECTED, this.onPersonSelected);
+        this.getOwnerComponent()?.getEventBus().subscribe(PERSON_CHANNEL, PERSON_DRAFT_CLOSING, this.onDraftClosing);
 
         if (this.getSelectedPersonId()) {
             this.onPersonSelected();
@@ -57,6 +58,7 @@ export default class Overview extends BaseController {
 
     public onExit(): void {
         this.getOwnerComponent()?.getEventBus().unsubscribe(PERSON_CHANNEL, PERSON_SELECTED, this.onPersonSelected);
+        this.getOwnerComponent()?.getEventBus().unsubscribe(PERSON_CHANNEL, PERSON_DRAFT_CLOSING, this.onDraftClosing);
     }
 
     public onOpenExpenseDialog(): void {
@@ -64,7 +66,7 @@ export default class Overview extends BaseController {
     }
 
     public onOpenCardManagerDialog(): void {
-        this.workspace()?.onOpenCardManagerDialog();
+        this.navTo("Cards");
     }
 
     public onOpenCategoryManagerDialog(): void {
@@ -260,6 +262,10 @@ export default class Overview extends BaseController {
                 this.applyPeriodData();
             }
         });
+    };
+
+    private readonly onDraftClosing = (): void => {
+        ["personDetails", "cardsList", "metricsGrid", "liabilitiesList"].forEach((id) => this.byId(id)?.unbindObject());
     };
 
     private async ensureServices(): Promise<boolean> {
