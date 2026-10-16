@@ -186,18 +186,6 @@
     background: #322818; border: 1px solid #57451d; color: #e6b84a;
 }
 
-/* ---------- Banner de rascunho (âmbar escurecido p/ contraste) ---------- */
-[data-theme="dark"] .personDraftBanner {
-    background: linear-gradient(120deg, #2a2313, #322818);
-    border: 1px solid #57451d;
-}
-[data-theme="dark"] .personDraftBannerIcon {
-    color: #e6b84a; background: #3a2f14;
-}
-[data-theme="dark"] .personDraftBadge .sapMObjStatusText {
-    background: #3a2f14; border: 1px solid #57451d; color: #e6b84a;
-}
-
 /* ---------- Topo: fundo da página (luz suave no canto superior direito) ---------- */
 [data-theme="dark"] .financePage,
 [data-theme="dark"] .financePage .sapMPageBgStandard {

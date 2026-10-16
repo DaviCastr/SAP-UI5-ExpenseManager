@@ -13,7 +13,12 @@ import MessageBox from "sap/m/MessageBox";
 import type ODataModel from "sap/ui/model/odata/v4/ODataModel";
 import { BaseController } from "./BaseController";
 import { AuthenticationService } from "../auth/AuthenticationService";
-import { ODataService, DRAFT_FILTER, DRAFT_EXPAND } from "../service/ODataService";
+import { ODataService, DRAFT_FILTER, DRAFT_EXPAND, DraftEditCancelledError, DraftLockedError } from "../service/ODataService";
+import DateFormat from "sap/ui/core/format/DateFormat";
+import formatMessage from "sap/base/strings/formatMessage";
+import { ButtonType } from "sap/m/library";
+import { ValueState } from "sap/ui/core/library";
+import { chooseAction } from "../util/choiceDialog";
 import { InvoiceService, type Period } from "../service/InvoiceService";
 import { PeriodService } from "../service/PeriodService";
 import { MediaService } from "../service/MediaService";
@@ -51,6 +56,8 @@ export default class Home extends BaseController {
 
     private _dialogs = new Map<string, Promise<Dialog>>();
     private _persons: UiPerson[] = [];
+    private _currentPersonId = "";
+    private readonly _draftsHandled = new Set<string>();
 
     private readonly periodService = new PeriodService();
 
@@ -132,10 +139,30 @@ export default class Home extends BaseController {
     public onPersonChange(): void {
         const selectPersons = this.byId("personSelect") as Select;
         const id = (selectPersons.getSelectedItem() as { getKey?: () => string } | undefined)?.getKey?.() || "";
+        const previousId = this._currentPersonId;
+
+        if (previousId && previousId !== id && this.getUiModel().getProperty("/selectedPersonDraft") === true) {
+            selectPersons.setSelectedKey(previousId);
+            this.confirmLeaveDraft(previousId, () => {
+                this.getUiModel().setProperty("/selectedPersonId", id);
+                this.reload();
+            });
+            return;
+        }
+
         this.applyPersonSelection(id);
     }
 
-    public async onLogout(): Promise<void> {
+    public onLogout(): void {
+        if (this._currentPersonId && this.getUiModel().getProperty("/selectedPersonDraft") === true) {
+            this.confirmLeaveDraft(this._currentPersonId, () => void this.logout());
+            return;
+        }
+
+        void this.logout();
+    }
+
+    private async logout(): Promise<void> {
         try {
             await AuthenticationService.logout();
         } catch (error) {
@@ -256,10 +283,8 @@ export default class Home extends BaseController {
     }
 
     /**
-     * Publishes the open draft of the currently selected person after a
-     * confirmation (the "Efetivar salvamento" action in the draft banner), then
-     * reloads the dashboard. Pending edits are flushed first so every two-way
-     * bound change reaches the draft before it is activated.
+     * Publishes the open draft of the currently selected person (footer
+     * "Salvar alterações"), then reloads the dashboard.
      */
     public onSavePersonDraft(): void {
         const personId = this.getSelectedPersonId();
@@ -268,52 +293,16 @@ export default class Home extends BaseController {
             return;
         }
 
-        MessageBox.confirm(this.getText("personSaveDraftConfirm"), {
-            title: this.getText("personSaveDraftTitle"),
-            onClose: (action) => {
-                if (action !== MessageBox.Action.OK || !this._odata) {
-                    return;
-                }
-                void this.saveSelectedPersonDraft();
+        void this.publishPersonDraft(personId).then((saved) => {
+            if (saved) {
+                this.reload();
             }
         });
     }
 
-    private async saveSelectedPersonDraft(): Promise<void> {
-        const ui = this.getUiModel();
-        const personId = this.getSelectedPersonId();
-
-        if (!personId || !this._odata) {
-            return;
-        }
-
-        ui.setProperty("/busy", true);
-
-        try {
-            this.releasePersonDetailDraftBinding();
-            await this._odata.submitPending();
-            await this._odata.prepareDraft("Persons", personId);
-            await this._odata.activateDraft("Persons", personId);
-            ui.setProperty("/selectedPersonDraft", false);
-            MessageToast.show(this.getText("personDraftSaved"));
-            this.reload();
-        } catch (error) {
-            if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
-                const detail = getBackendErrorMessage(error);
-                MessageBox.error(
-                    detail ? `${this.getText("errorSavePersonDraft")}\n\n${detail}` : this.getText("errorSavePersonDraft")
-                );
-            }
-        } finally {
-            ui.setProperty("/busy", false);
-        }
-    }
-
     /**
      * Discards the open draft of the currently selected person after a
-     * confirmation, then reloads the dashboard. The edit dialog (when bound to
-     * that person) is released first so the model refresh does not re-read the
-     * just-deleted draft and fail with a 404.
+     * confirmation, then reloads the dashboard.
      */
     public onDiscardPersonDraft(): void {
         const personId = this.getSelectedPersonId();
@@ -325,20 +314,66 @@ export default class Home extends BaseController {
         MessageBox.confirm(this.getText("personDraftDiscardConfirm"), {
             title: this.getText("personDraftDiscardTitle"),
             onClose: (action) => {
-                if (action !== MessageBox.Action.OK || !this._odata) {
+                if (action !== MessageBox.Action.OK) {
                     return;
                 }
-                void this.discardSelectedPersonDraft();
+                void this.discardPersonDraft(personId).then((discarded) => {
+                    if (discarded) {
+                        this.reload();
+                    }
+                });
             }
         });
     }
 
-    private async discardSelectedPersonDraft(): Promise<void> {
+    /**
+     * Publishes the draft of the given person. Pending edits are flushed first
+     * so every two-way bound change reaches the draft before it is activated.
+     * The edit dialog is released first so the following refresh does not
+     * re-read the published draft and fail with a 404.
+     *
+     * @param {string} personId the person whose draft is published
+     * @returns {Promise<boolean>} whether the draft was saved
+     */
+    private async publishPersonDraft(personId: string): Promise<boolean> {
         const ui = this.getUiModel();
-        const personId = this.getSelectedPersonId();
 
-        if (!personId || !this._odata) {
-            return;
+        if (!this._odata) {
+            return false;
+        }
+
+        ui.setProperty("/busy", true);
+
+        try {
+            this.releasePersonDetailDraftBinding();
+            await this._odata.publishPersonDraft(personId);
+            ui.setProperty("/selectedPersonDraft", false);
+            MessageToast.show(this.getText("personDraftSaved"));
+            return true;
+        } catch (error) {
+            if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
+                const detail = getBackendErrorMessage(error);
+                MessageBox.error(
+                    detail ? `${this.getText("errorSavePersonDraft")}\n\n${detail}` : this.getText("errorSavePersonDraft")
+                );
+            }
+            return false;
+        } finally {
+            ui.setProperty("/busy", false);
+        }
+    }
+
+    /**
+     * Discards the draft of the given person without touching its active data.
+     *
+     * @param {string} personId the person whose draft is discarded
+     * @returns {Promise<boolean>} whether the draft was discarded
+     */
+    private async discardPersonDraft(personId: string): Promise<boolean> {
+        const ui = this.getUiModel();
+
+        if (!this._odata) {
+            return false;
         }
 
         ui.setProperty("/busy", true);
@@ -348,14 +383,92 @@ export default class Home extends BaseController {
             await this._odata.discardDraft("Persons", personId);
             ui.setProperty("/selectedPersonDraft", false);
             MessageToast.show(this.getText("personDraftDiscarded"));
-            this.reload();
+            return true;
         } catch (error) {
             if (!isSessionExpiredError(error) && !isBackendUnavailableError(error)) {
                 this.showErrorMessage("errorDiscardPersonDraft");
             }
+            return false;
         } finally {
             ui.setProperty("/busy", false);
         }
+    }
+
+    /**
+     * Asks what to do with the open draft before leaving the person (switching
+     * person or logging out): save, keep it for later, discard or stay.
+     *
+     * @param {string} personId the person whose draft is open
+     * @param {Function} proceed continues the navigation once the draft was handled
+     */
+    private confirmLeaveDraft(personId: string, proceed: () => void): void {
+        void chooseAction({
+            title: this.getText("personDraftLeaveTitle"),
+            message: this.getText("personDraftLeaveMessage"),
+            choices: [
+                { key: "save", text: this.getText("personSaveDraftButton"), type: ButtonType.Emphasized },
+                { key: "keep", text: this.getText("personDraftLeaveKeep") },
+                { key: "discard", text: this.getText("personDiscardButton"), type: ButtonType.Reject }
+            ],
+            cancelText: this.getText("personCancelButton")
+        })
+            .then((choice) => this.applyLeaveChoice(choice, personId))
+            .then((leave) => {
+                if (leave) {
+                    proceed();
+                }
+            });
+    }
+
+    private async applyLeaveChoice(choice: string | null, personId: string): Promise<boolean> {
+        switch (choice) {
+            case "keep":
+                return true;
+            case "save":
+                return this.publishPersonDraft(personId);
+            case "discard":
+                return this.discardPersonDraft(personId);
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Offers to continue or discard a draft left open in a previous session.
+     * Asked once per person and session; drafts opened in this session are
+     * registered in `_draftsHandled` and never trigger the question.
+     *
+     * @param {string} personId the selected person
+     * @param {string} [changedAt] when the draft was last changed
+     */
+    private offerDraftResume(personId: string, changedAt?: string): void {
+        if (this._draftsHandled.has(personId)) {
+            return;
+        }
+
+        this._draftsHandled.add(personId);
+
+        void chooseAction({
+            title: this.getText("personDraftResumeTitle"),
+            message: this.getText("personDraftResumeMessage", [this.formatDateTime(changedAt)]),
+            state: ValueState.Information,
+            choices: [
+                { key: "resume", text: this.getText("personDraftResumeContinue"), type: ButtonType.Emphasized },
+                { key: "discard", text: this.getText("personDraftResumeDiscard"), type: ButtonType.Reject }
+            ]
+        }).then(async (choice) => {
+            if (choice === "discard" && await this.discardPersonDraft(personId)) {
+                this.reload();
+            }
+        });
+    }
+
+    public formatMessage(pattern: string, ...values: string[]): string {
+        return formatMessage(pattern, values);
+    }
+
+    private formatDateTime(value?: string): string {
+        return value ? DateFormat.getDateTimeInstance({ style: "short" }).format(new Date(value)) : "";
     }
 
     /**
@@ -685,7 +798,11 @@ export default class Home extends BaseController {
         // Do NOT pass $select here: a "$select" that includes the key property is
         // rejected on draft bindings; omitting it returns every property (incl. ID).
         try {
-            const result = await this._odata.requestEntitySet<UiPerson & { IsActiveEntity?: boolean }>("/Persons", {
+            const result = await this._odata.requestEntitySet<UiPerson & {
+                IsActiveEntity?: boolean;
+                HasDraftEntity?: boolean;
+                DraftAdministrativeData?: { InProcessByUser?: string; LastChangedByUser?: string; LastChangeDateTime?: string } | null;
+            }>("/Persons", {
                 filterExpression: DRAFT_FILTER,
                 expand: DRAFT_EXPAND
             });
@@ -704,15 +821,21 @@ export default class Home extends BaseController {
                 .filter((person) => !!person.ID)
                 .map((person) => {
                     const hasDraft = person.IsActiveEntity === false || openDraftIds.includes(person.ID);
+                    const otherUserDraft = !hasDraft && person.HasDraftEntity === true;
+                    const lockedBy = otherUserDraft ? person.DraftAdministrativeData?.InProcessByUser ?? "" : "";
+                    const abandonedBy = otherUserDraft && !lockedBy ? person.DraftAdministrativeData?.LastChangedByUser ?? "" : "";
                     return {
                         ID: person.ID,
-                        Name: person.Name + (hasDraft ? " (rascunho)" : ""),
+                        Name: person.Name,
                         Income: person.Income,
                         ExpenseTarget: person.ExpenseTarget,
                         Currency: person.Currency,
                         ImageType: person.ImageType,
                         IsActiveEntity: person.IsActiveEntity,
-                        hasDraft
+                        hasDraft,
+                        lockedBy,
+                        abandonedBy,
+                        draftChangedAt: person.DraftAdministrativeData?.LastChangeDateTime
                     };
                 });
         } catch (error) {
@@ -764,11 +887,17 @@ export default class Home extends BaseController {
 
         this.bindPersonContext(id);
 
+        this._currentPersonId = id;
+
         if (!id) {
             ui.setProperty("/selectedPersonId", "");
             ui.setProperty("/selectedPerson", {});
             ui.setProperty("/selectedPersonImage", "");
             ui.setProperty("/selectedPersonDraft", false);
+            ui.setProperty("/selectedPersonDraftChangedAt", "");
+            ui.setProperty("/selectedPersonLockedBy", "");
+            ui.setProperty("/selectedPersonLockedAt", "");
+            ui.setProperty("/selectedPersonAbandonedBy", "");
             return;
         }
 
@@ -776,6 +905,10 @@ export default class Home extends BaseController {
 
         ui.setProperty("/selectedPersonId", id);
         ui.setProperty("/selectedPersonDraft", person?.hasDraft === true);
+        ui.setProperty("/selectedPersonDraftChangedAt", this.formatDateTime(person?.draftChangedAt));
+        ui.setProperty("/selectedPersonLockedBy", person?.lockedBy ?? "");
+        ui.setProperty("/selectedPersonLockedAt", person?.lockedBy || person?.abandonedBy ? this.formatDateTime(person.draftChangedAt) : "");
+        ui.setProperty("/selectedPersonAbandonedBy", person?.abandonedBy ?? "");
         ui.setProperty("/selectedPerson", {
             ID: person?.ID,
             Name: person?.Name,
@@ -790,6 +923,10 @@ export default class Home extends BaseController {
         }
 
         this.applyPeriodData();
+
+        if (person?.hasDraft) {
+            this.offerDraftResume(id, person.draftChangedAt);
+        }
     }
 
     /**
@@ -889,11 +1026,55 @@ export default class Home extends BaseController {
         }
 
         if (this._odata) {
-            await this._odata.enableDraftEdit("Persons", personId);
+            await this.openPersonDraft(this._odata, personId);
         }
 
+        this._draftsHandled.add(personId);
         ui.setProperty("/selectedPersonDraft", true);
+        ui.setProperty("/selectedPersonDraftChangedAt", this.formatDateTime(new Date().toISOString()));
         return true;
+    }
+
+    /**
+     * Opens the draft of the person according to who holds it right now:
+     * blocked while another user is editing, taken over (after confirmation)
+     * when that user's lock expired, created or resumed otherwise.
+     *
+     * @param {ODataService} odata the OData service
+     * @param {string} personId the person to edit
+     * @returns {Promise<void>} resolves once the draft belongs to the current user
+     */
+    private async openPersonDraft(odata: ODataService, personId: string): Promise<void> {
+        const ui = this.getUiModel();
+        const state = await odata.inspectDraft("Persons", personId);
+
+        if (state.kind === "locked") {
+            ui.setProperty("/selectedPersonLockedBy", state.user);
+            throw new DraftLockedError(state.user);
+        }
+
+        if (state.kind === "expired") {
+            if (!(await this.confirmDraftTakeOver(state.user))) {
+                throw new DraftEditCancelledError();
+            }
+            await odata.takeOverDraft("Persons", personId);
+            ui.setProperty("/selectedPersonAbandonedBy", "");
+            ui.setProperty("/selectedPersonLockedBy", "");
+            return;
+        }
+
+        await odata.enableDraftEdit("Persons", personId);
+    }
+
+    private async confirmDraftTakeOver(user: string): Promise<boolean> {
+        const choice = await chooseAction({
+            title: this.getText("personTakeOverTitle"),
+            message: this.getText("personTakeOverMessage", [user]),
+            choices: [{ key: "takeOver", text: this.getText("personTakeOverButton"), type: ButtonType.Emphasized }],
+            cancelText: this.getText("personCancelButton")
+        });
+
+        return choice === "takeOver";
     }
 
     private getSelectedPersonId(): string {

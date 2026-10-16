@@ -6,6 +6,7 @@ import type Context from "sap/ui/model/odata/v4/Context";
 import type ODataListBinding from "sap/ui/model/odata/v4/ODataListBinding";
 import { getBackendErrorMessage, handleActionError, showWarning } from "./feedback";
 import type Home from "../controller/Home.controller";
+import { DraftEditCancelledError, DraftLockedError } from "../service/ODataService";
 
 /**
  * Shared flow for the manager dialogs that open in read-only mode (bound to
@@ -32,7 +33,7 @@ function isDraftPath(path?: string): boolean {
  * @param {string} errorKey i18n key shown when no backend message exists
  */
 function reportActionFailure(view: XMLView, error: unknown, errorKey: string): void {
-    if (!getBackendErrorMessage(error)) {
+    if (error instanceof DraftLockedError || error instanceof DraftEditCancelledError || !getBackendErrorMessage(error)) {
         handleActionError(view, error, errorKey);
     }
 }

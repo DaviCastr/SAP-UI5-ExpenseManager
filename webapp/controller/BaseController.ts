@@ -1,4 +1,5 @@
 /// <reference types="@sapui5/types" />
+import { DraftEditCancelledError, DraftLockedError } from "../service/ODataService";
 import Controller from "sap/ui/core/mvc/Controller";
 import UIComponent from "sap/ui/core/UIComponent";
 import Router from "sap/ui/core/routing/Router";
@@ -112,11 +113,15 @@ export abstract class BaseController extends Controller {
      * @returns {boolean} true when the error was handled (so callers can `return`)
      */
     protected handleError(error: unknown, messageKey: string): boolean {
-        if (isSessionExpiredError(error)) {
+        if (isSessionExpiredError(error) || error instanceof DraftEditCancelledError) {
             return true;
         }
         if (isBackendUnavailableError(error)) {
             this.showErrorMessage("backendUnavailable");
+            return true;
+        }
+        if (error instanceof DraftLockedError) {
+            this.showWarningMessage("personLockedByOther", [error.user]);
             return true;
         }
         this.showErrorMessage(messageKey);

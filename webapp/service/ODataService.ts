@@ -25,7 +25,40 @@ function unwrapControllerResult(value: unknown): unknown {
  * sibling, without duplicating entities that exist in both versions.
  */
 export const DRAFT_FILTER = "(IsActiveEntity eq false or SiblingEntity/IsActiveEntity eq null)";
-export const DRAFT_EXPAND = "DraftAdministrativeData($select=DraftUUID,InProcessByUser)";
+export const DRAFT_EXPAND = "DraftAdministrativeData($select=DraftUUID,InProcessByUser,LastChangedByUser,LastChangeDateTime)";
+
+/**
+ * Raised when the entity is being edited by another user: the backend keeps a
+ * single draft per entity, so this user cannot open one until it is saved or
+ * discarded.
+ */
+export class DraftLockedError extends Error {
+    public constructor(public readonly user: string) {
+        super(`Draft locked by ${user}`);
+        this.name = "DraftLockedError";
+    }
+}
+
+/**
+ * Raised when the user declines to take over a draft abandoned by another
+ * user; the action is simply cancelled, without any error message.
+ */
+export class DraftEditCancelledError extends Error {
+    public constructor() {
+        super("Draft edit cancelled");
+        this.name = "DraftEditCancelledError";
+    }
+}
+
+/**
+ * Who holds the draft of an entity: nobody, the current user, another user
+ * still editing it (locked) or another user whose lock already expired
+ * (the draft can be taken over, discarding those changes).
+ */
+export interface DraftState {
+    kind: "none" | "own" | "locked" | "expired";
+    user: string;
+}
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -246,7 +279,78 @@ export class ODataService {
             if (!this.isDraftAlreadyExistsError(error)) {
                 throw error;
             }
+            const state = await this.inspectDraft(entitySet, id);
+            if (state.kind === "locked" || state.kind === "expired") {
+                throw new DraftLockedError(state.user);
+            }
         }
+    }
+
+    /**
+     * Whether the current user owns the open draft of the entity. Drafts of
+     * other users are not readable, so the draft read answers 404 for them.
+     * Read outside the OData model on purpose: a failed model read would be
+     * reported as an error message by the open dialog's rejected-change guard.
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @param {string} id the entity key
+     * @returns {Promise<boolean>} whether the draft belongs to the current user
+     */
+    private async hasOwnDraft(entitySet: string, id: string): Promise<boolean> {
+        const response = await request(`${this.entityPath(entitySet, id, false)}?$select=ID`);
+        return response.ok;
+    }
+
+    /**
+     * Tells who holds the draft of the entity right now, read from the draft
+     * administrative data of the active entity (outside the OData model, see
+     * `hasOwnDraft`). The backend clears `InProcessByUser` once the draft lock
+     * expires; `LastChangedByUser` still names who left the changes.
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @param {string} id the entity key
+     * @returns {Promise<DraftState>} the current draft state
+     */
+    public async inspectDraft(entitySet: string, id: string): Promise<DraftState> {
+        const response = await request(
+            `${this.entityPath(entitySet, id, true)}?$select=ID,HasDraftEntity` +
+            "&$expand=DraftAdministrativeData($select=InProcessByUser,LastChangedByUser)"
+        );
+
+        if (!response.ok) {
+            return { kind: "none", user: "" };
+        }
+
+        const entity = await response.json() as {
+            HasDraftEntity?: boolean;
+            DraftAdministrativeData?: { InProcessByUser?: string; LastChangedByUser?: string } | null;
+        };
+
+        if (!entity.HasDraftEntity) {
+            return { kind: "none", user: "" };
+        }
+
+        if (await this.hasOwnDraft(entitySet, id)) {
+            return { kind: "own", user: "" };
+        }
+
+        const admin = entity.DraftAdministrativeData;
+
+        return admin?.InProcessByUser
+            ? { kind: "locked", user: admin.InProcessByUser }
+            : { kind: "expired", user: admin?.LastChangedByUser ?? "" };
+    }
+
+    /**
+     * Opens a new draft discarding the expired draft another user left behind
+     * (draftEdit with PreserveChanges=false).
+     *
+     * @param {string} entitySet the draft-enabled entity set, e.g. "Persons"
+     * @param {string} id the entity key
+     * @returns {Promise<void>} resolves once the draft belongs to the current user
+     */
+    public async takeOverDraft(entitySet: string, id: string): Promise<void> {
+        await this.invokeBoundAction(entitySet, id, true, "draftEdit", { PreserveChanges: false });
     }
 
     /**

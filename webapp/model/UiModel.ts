@@ -10,6 +10,9 @@ export interface UiPerson {
     ImageType?: string;
     IsActiveEntity?: boolean;
     hasDraft?: boolean;
+    lockedBy?: string;
+    abandonedBy?: string;
+    draftChangedAt?: string;
 }
 
 export interface UiPeriod {
@@ -132,6 +135,14 @@ export interface IUiState {
     selectedPersonImage: string;
 
     selectedPersonDraft: boolean;
+
+    selectedPersonDraftChangedAt: string;
+
+    selectedPersonLockedBy: string;
+
+    selectedPersonLockedAt: string;
+
+    selectedPersonAbandonedBy: string;
 
     summary: UiSummary;
 
@@ -268,6 +279,14 @@ export default class UiModel extends JSONModel {
             selectedPersonImage: "",
 
             selectedPersonDraft: false,
+
+            selectedPersonDraftChangedAt: "",
+
+            selectedPersonLockedBy: "",
+
+            selectedPersonLockedAt: "",
+
+            selectedPersonAbandonedBy: "",
 
             summary: {
                 available: "",

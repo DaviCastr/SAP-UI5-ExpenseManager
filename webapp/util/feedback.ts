@@ -3,6 +3,7 @@ import MessageToast from "sap/m/MessageToast";
 import type XMLView from "sap/ui/core/mvc/XMLView";
 import { getText } from "./i18n";
 import { isSessionExpiredError, isBackendUnavailableError } from "./http";
+import { DraftEditCancelledError, DraftLockedError } from "../service/ODataService";
 
 /**
  * Centralized user feedback for fragment controllers (which are plain object
@@ -69,7 +70,12 @@ export function getBackendErrorMessage(error: unknown): string | undefined {
  * @returns {boolean} true when the error was handled (so callers can `return`)
  */
 export function handleActionError(view: XMLView, error: unknown, messageKey: string): boolean {
-    if (isSessionExpiredError(error) || isBackendUnavailableError(error)) {
+    if (isSessionExpiredError(error) || isBackendUnavailableError(error) || error instanceof DraftEditCancelledError) {
+        return true;
+    }
+
+    if (error instanceof DraftLockedError) {
+        MessageBox.warning(getText(view, "personLockedByOther", [error.user]));
         return true;
     }
 
