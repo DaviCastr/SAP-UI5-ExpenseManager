@@ -158,6 +158,7 @@
                                             id="editPersonCurrency"
                                             selectedKey="{Currency_code}"
                                             enabled="{ui>/managerDialogInDraft}"
+                                            forceSelection="false"
                                         >
                                             <core:Item
                                                 key="BRL"
@@ -258,19 +259,26 @@
         <buttons>
             <!-- Salvar/Descartar só existem durante a edição (rascunho aberto) -->
             <Button
-                text="{i18n>personSaveButtonEdit}"
+                text="{i18n>personDetailSave}"
                 icon="sap-icon://accept"
                 type="Emphasized"
                 visible="{ui>/managerDialogInDraft}"
                 press="handler.onSavePerson"
-            />
+            >
+                <layoutData>
+                    <OverflowToolbarLayoutData priority="NeverOverflow" />
+                </layoutData>
+            </Button>
             <Button
-                text="{i18n>personDiscardButton}"
-                icon="sap-icon://delete"
+                text="{i18n>personDetailDiscard}"
                 type="Reject"
                 visible="{ui>/managerDialogInDraft}"
                 press="handler.onDiscardDraft"
-            />
+            >
+                <layoutData>
+                    <OverflowToolbarLayoutData priority="NeverOverflow" />
+                </layoutData>
+            </Button>
             <!-- Edita sob demanda: cria/usa o rascunho da pessoa (só fora da edição) -->
             <Button
                 text="{i18n>personEditInsideButton}"
@@ -282,11 +290,14 @@
             />
             <!-- Alterado para tipo Transparent para diminuir a poluição visual -->
             <Button
-                text="{i18n>personCancelButton}"
-                icon="sap-icon://decline"
+                text="{i18n>personDetailClose}"
                 type="Transparent"
                 press="handler.onCancelEdit"
-            />
+            >
+                <layoutData>
+                    <OverflowToolbarLayoutData priority="NeverOverflow" />
+                </layoutData>
+            </Button>
         </buttons>
     </Dialog>
 </core:FragmentDefinition>

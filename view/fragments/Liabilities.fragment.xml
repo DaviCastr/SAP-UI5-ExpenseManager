@@ -509,6 +509,7 @@
                                             <Select
                                                 selectedKey="{Currency_code}"
                                                 width="100%"
+                                                forceSelection="false"
                                             >
                                                 <core:Item
                                                     key="BRL"

@@ -143,7 +143,10 @@
 .sectionTabs .sapMITBSelected .sapMITHTextContent,
 .sectionTabs .sapMITBSelected .sapMITBSelectItemIcon { color: var(--teal-800) !important; }
 .sectionTabs .sapMITBSelected .sapMITBContentArrow::after { background-color: var(--teal-700) !important; }
-.sectionTabs .sapMITBFilter:hover .sapMITBText { color: var(--teal-800); }
+.sectionTabs .sapMITBFilter:hover .sapMITBText,
+.sectionTabs .sapMITBFilter:active .sapMITBText,
+html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:hover .sapMITBFilterWrapper .sapMITBInlineIcon.sapUiIcon,
+html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilterWrapper .sapMITBInlineIcon.sapUiIcon { color: var(--teal-800) !important; }
 .tabPage { gap: 1.25rem; }
 .tabPageHeader { gap: 1rem; }
 .tabPageTitle { font-size: 1.35rem !important; font-weight: 700; color: var(--ink); }
