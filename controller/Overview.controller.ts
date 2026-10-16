@@ -70,7 +70,7 @@ export default class Overview extends BaseController {
     }
 
     public onOpenCategoryManagerDialog(): void {
-        this.workspace()?.onOpenCategoryManagerDialog();
+        this.navTo("Categories");
     }
 
     public onOpenInvoicesDialog(): void {

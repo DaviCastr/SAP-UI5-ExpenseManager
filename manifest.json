@@ -144,6 +144,13 @@
 					]
 				},
 				{
+					"name": "Categories",
+					"pattern": "categorias",
+					"target": [
+						"Categories"
+					]
+				},
+				{
 					"name": "Login",
 					"pattern": "login",
 					"target": "Login"
@@ -169,6 +176,14 @@
 				"Cards": {
 					"id": "Cards",
 					"name": "Cards",
+					"parent": "Home",
+					"controlId": "tabContent",
+					"controlAggregation": "items",
+					"clearControlAggregation": true
+				},
+				"Categories": {
+					"id": "Categories",
+					"name": "Categories",
 					"parent": "Home",
 					"controlId": "tabContent",
 					"controlAggregation": "items",

@@ -18,7 +18,7 @@
                 text="{i18n>cardsEditTooltip}"
                 icon="sap-icon://edit"
                 type="Emphasized"
-                press=".onToggleCardsEdit"
+                press=".onToggleEdit"
                 visible="{= !${ui>/selectedPersonDraft} }"
             />
         </HBox>
@@ -69,7 +69,7 @@
                     text="{i18n>cardsAddLabel}"
                     icon="sap-icon://add"
                     type="Emphasized"
-                    press=".onAddCard"
+                    press=".onAdd"
                     class="cardAddButton"
                 />
             </HBox>
@@ -117,7 +117,7 @@
                             sendXHR="true"
                             httpRequestMethod="PUT"
                             useMultipart="false"
-                            change=".onCardPhotoChanged"
+                            change=".onPhotoChanged"
                             visible="{ui>/selectedPersonDraft}"
                             class="cardManagerPhoto"
                         />
@@ -125,7 +125,7 @@
                             icon="sap-icon://delete"
                             type="Transparent"
                             tooltip="{i18n>cardsRemoveTooltip}"
-                            press=".onRemoveCard"
+                            press=".onRemove"
                         />
                     </HBox>
 

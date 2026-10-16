@@ -42,7 +42,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/m/MessageBox", "sap/ui/model/Filter", 
       this.navTo("Cards");
     }
     onOpenCategoryManagerDialog() {
-      this.workspace()?.onOpenCategoryManagerDialog();
+      this.navTo("Categories");
     }
     onOpenInvoicesDialog() {
       this.workspace()?.onOpenInvoicesDialog();
