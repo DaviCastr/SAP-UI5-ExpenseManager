@@ -74,7 +74,7 @@ export default class Overview extends BaseController {
     }
 
     public onOpenInvoicesDialog(): void {
-        this.workspace()?.onOpenInvoicesDialog();
+        this.navTo("Invoices");
     }
 
     public onOpenLiabilitiesDialog(): void {

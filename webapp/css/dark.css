@@ -87,6 +87,7 @@ html[data-theme="dark"] body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:ac
 [data-theme="dark"] .categoryManagerCard,
 [data-theme="dark"] .cardManagerCard,
 [data-theme="dark"] .cardTileList .sapMLIB.cardTile,
+[data-theme="dark"] .invoiceCardTiles .sapMLIB.cardTile.sapMLIBSelected,
 [data-theme="dark"] .liabilityList .sapMLIB,
 [data-theme="dark"] .periodNav,
 [data-theme="dark"] .shareEntityTable .sapMListTblRow {

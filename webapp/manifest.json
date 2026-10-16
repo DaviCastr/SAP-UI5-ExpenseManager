@@ -142,6 +142,13 @@
           ]
         },
         {
+          "name": "Invoices",
+          "pattern": "faturas",
+          "target": [
+            "Invoices"
+          ]
+        },
+        {
           "name": "Login",
           "pattern": "login",
           "target": "Login"
@@ -175,6 +182,14 @@
         "Categories": {
           "id": "Categories",
           "name": "Categories",
+          "parent": "Home",
+          "controlId": "tabContent",
+          "controlAggregation": "items",
+          "clearControlAggregation": true
+        },
+        "Invoices": {
+          "id": "Invoices",
+          "name": "Invoices",
           "parent": "Home",
           "controlId": "tabContent",
           "controlAggregation": "items",
