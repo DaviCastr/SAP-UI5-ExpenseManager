@@ -136,11 +136,11 @@
                 items="{ path: 'Transactions', sorter: { path: 'Date', descending: true }, parameters: { $expand: 'Category,Currency', $select: 'Identifier,Currency_code' } }"
                 showSeparators="None"
                 noDataText="{i18n>invoiceTransactionsNoData}"
-                class="invoiceTransactionList"
+                class="invoiceTransactionList txTileList"
             >
-                <CustomListItem>
-                    <HBox width="100%" alignItems="Center" justifyContent="SpaceBetween" class="transactionItem invoiceTransactionItem">
-                        <HBox alignItems="Center">
+                <CustomListItem class="txTile">
+                    <VBox class="txTileBody invoiceTransactionItem">
+                        <HBox alignItems="Center" class="txTileHeader">
                             <Avatar
                                 src="{ parts: [ { path: 'Category/ID' }, { path: 'ui>/invoice/transactionImages' } ], formatter: 'formatter.cardImageValue' }"
                                 initials="{ path: 'Category/Name', formatter: 'formatter.initials' }"
@@ -148,19 +148,16 @@
                                 customDisplaySize="2.6rem"
                                 displayShape="Circle"
                                 tooltip="{ path: 'Category/Name' }"
-                                class="cardTileAvatar sapUiSmallMarginEnd"
+                                class="categoryItemAvatar txTileAvatar"
                             />
-                            <VBox>
+                            <VBox class="txTileTitle">
                                 <Text text="{Description}" class="transactionTitle" />
-                                <Text text="{Category/Name}" class="invoiceTxCategory" />
                                 <Text
                                     text="{ parts: [ { path: 'Date' }, { path: 'Installment' }, { path: 'TotalInstallments' } ], formatter: 'formatter.transactionSubtitle' }"
                                     class="transactionDate"
                                 />
                             </VBox>
-                        </HBox>
-                        <HBox alignItems="Center">
-                            <VBox alignItems="End" class="sapUiTinyMarginEnd">
+                            <VBox alignItems="End" class="txTileAmount">
                                 <ObjectNumber
                                     number="{ parts: [ { path: 'Amount' }, { path: 'Currency/code' }, { path: 'ui>/invoice/header/CurrencyCode' } ], formatter: 'formatter.formatTransactionAmount', useRawValues: true }"
                                     class="transactionAmount invoiceTxAmount"
@@ -171,12 +168,20 @@
                                     visible="{ parts: [ { path: 'TotalAmount' }, { path: 'Amount' } ], formatter: 'formatter.hasTotalAmount', useRawValues: true }"
                                 />
                             </VBox>
-                            <HBox class="invoiceTxActions">
+                        </HBox>
+                        <HBox alignItems="Center" justifyContent="SpaceBetween" class="txTileFooter">
+                            <HBox alignItems="Center" wrap="Wrap" class="txTileChips">
+                                <HBox alignItems="Center" class="txChip" visible="{= !!${ path: 'Category/Name', targetType: 'any' } }">
+                                    <core:Icon src="sap-icon://tag" />
+                                    <Text text="{Category/Name}" class="invoiceTxCategory" />
+                                </HBox>
+                            </HBox>
+                            <HBox class="txTileActions invoiceTxActions">
                                 <Button icon="sap-icon://puzzle" type="Transparent" tooltip="{i18n>invoiceEditCategoryTooltip}" press=".onEditCategoryPress" />
                                 <Button icon="sap-icon://delete" type="Transparent" tooltip="{i18n>invoiceDeleteTooltip}" press=".onDeletePress" />
                             </HBox>
                         </HBox>
-                    </HBox>
+                    </VBox>
                 </CustomListItem>
             </List>
         </VBox>
