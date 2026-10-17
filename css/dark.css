@@ -263,3 +263,8 @@ html[data-theme="dark"] body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:ac
 [data-theme="dark"] .metricCard:hover {
     box-shadow: 0 10px 26px rgba(0, 0, 0, .5);
 }
+
+[data-theme="dark"] .txTileList .sapMLIB.txTile { background: #162826; border-color: #24413c; box-shadow: none; }
+[data-theme="dark"] .txTileFooter { border-top-color: #2b4a45; }
+[data-theme="dark"] .txChip { background: rgba(20, 165, 130, .14); }
+[data-theme="dark"] .txChip .sapMText, [data-theme="dark"] .txChip .sapUiIcon { color: #7fdcc0 !important; }
