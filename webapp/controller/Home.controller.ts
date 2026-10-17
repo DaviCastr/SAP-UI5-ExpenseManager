@@ -57,6 +57,7 @@ export default class Home extends BaseController {
     private _dialogs = new Map<string, Promise<Dialog>>();
     private _persons: UiPerson[] = [];
     private _currentPersonId = "";
+    private _initializing?: Promise<void>;
     private readonly _draftsHandled = new Set<string>();
 
     private readonly periodService = new PeriodService();
@@ -67,6 +68,9 @@ export default class Home extends BaseController {
             const route = event.getParameter("name");
             if (route && route !== "Login") {
                 this.getUiModel().setProperty("/tab", route);
+                if (this.isServiceOutdated()) {
+                    void this.initView();
+                }
             }
         });
         this.applyShareOptionTexts();
@@ -122,7 +126,25 @@ export default class Home extends BaseController {
         button.setTooltip(this.getText(isDark ? "themeLightTooltip" : "themeDarkTooltip"));
     }
 
-    private async initView(): Promise<void> {
+    /**
+     * Whether the workspace still has to load (or reload) its data: the Home
+     * view may be created before the login (the app starts on its route and
+     * is redirected), so it initializes again once a session model exists.
+     *
+     * @returns {boolean} whether the service model changed since the last load
+     */
+    private isServiceOutdated(): boolean {
+        return !this._odata || this._serviceModelRef !== this.getOwnerComponent()?.getModel();
+    }
+
+    private initView(): Promise<void> {
+        this._initializing ??= this.loadWorkspace().finally(() => {
+            this._initializing = undefined;
+        });
+        return this._initializing;
+    }
+
+    private async loadWorkspace(): Promise<void> {
         try {
             const model = await this.ensureServiceModel();
 

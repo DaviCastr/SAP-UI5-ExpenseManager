@@ -125,6 +125,15 @@
     font-weight: 600;
 }
 
+.loginSap.sapMLnk,
+.loginSap.sapMLnk:visited {
+    color: var(--teal-700);
+}
+
+.loginSap.sapMLnk:hover {
+    color: var(--teal-800);
+}
+
 .loginNote {
     color: #9aabab;
     font-size: .78rem;
