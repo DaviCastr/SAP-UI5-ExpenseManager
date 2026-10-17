@@ -1,0 +1,57 @@
+/* Gráficos da visão geral: cores por papel, com passos próprios para o tema escuro */
+.emChartArea {
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --series-4: #eda100;
+    --series-5: #e87ba4;
+    --series-other: #9aa5a4;
+    --bar: #9fd6c4;
+    --bar-current: var(--teal-700);
+    --chart-grid: var(--line);
+    --chart-text: var(--muted);
+    --chart-strong: var(--ink);
+}
+
+[data-theme="dark"] .emChartArea {
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-other: #6d7f7c;
+    --bar: #2b6a5c;
+    --bar-current: var(--teal-600);
+    --chart-grid: #24413c;
+}
+
+.emChart { display: block; width: 100%; height: auto; overflow: visible; font-family: inherit; }
+.emDonut { max-width: 13rem; margin: 0 auto; }
+.emArc { fill: none; transition: opacity .15s ease; }
+.emDonut:hover .emArc { opacity: .45; }
+.emDonut .emArc:hover { opacity: 1; }
+.emArcEmpty { fill: none; stroke: var(--chart-grid); }
+.emSeries1 { stroke: var(--series-1); background: var(--series-1); }
+.emSeries2 { stroke: var(--series-2); background: var(--series-2); }
+.emSeries3 { stroke: var(--series-3); background: var(--series-3); }
+.emSeries4 { stroke: var(--series-4); background: var(--series-4); }
+.emSeries5 { stroke: var(--series-5); background: var(--series-5); }
+.emSeriesOther { stroke: var(--series-other); background: var(--series-other); }
+.emDonutValue { fill: var(--chart-strong); font-size: 17px; font-weight: 700; }
+.emDonutLabel { fill: var(--chart-text); font-size: 11px; }
+
+.emGrid { stroke: var(--chart-grid); stroke-width: 1; }
+.emAxis { fill: var(--chart-text); font-size: 11px; }
+.emAxisCurrent { fill: var(--chart-strong); font-weight: 700; }
+.emBar { fill: var(--bar); transition: opacity .15s ease; }
+.emBarCurrent { fill: var(--bar-current); }
+.emHit { fill: transparent; }
+.emBarGroup:hover .emBar { opacity: .75; }
+.emReference { stroke: var(--chart-strong); stroke-width: 1.5; stroke-dasharray: 5 4; opacity: .55; }
+.emReferenceLabel { fill: var(--chart-text); font-size: 11px; font-weight: 600; }
+
+.categorySwatch { display: inline-block; vertical-align: middle; width: .75rem; height: .75rem; border-radius: 50%; flex-shrink: 0; }
+
+@media (max-width: 600px) {
+    .emColumns .emAxis, .emColumns .emReferenceLabel { font-size: 18px; }
+}

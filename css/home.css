@@ -473,3 +473,37 @@ html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilter
     }
 }
 
+/* Visão geral: período no destaque, indicadores principais + faixa compacta e gráficos */
+.heroPeriod { gap: .5rem; margin-top: .75rem; padding: .3rem .45rem; align-self: flex-start; border-radius: .9rem; background: rgba(0,0,0,.14); border: 1px solid rgba(255,255,255,.16); }
+.heroPeriod .periodNavButtons .sapMBtnInner,
+.heroPeriod .periodNavButtons .sapUiIcon,
+.heroPeriod .periodNavLabel .sapMBtnInner { color: #fff !important; background: transparent; border-color: transparent; }
+.heroPeriod .periodNavButtons .sapMBtn:hover .sapMBtnInner { background: rgba(255,255,255,.14) !important; }
+.heroPeriod .periodNavLabel .sapMBtnContent { font-weight: 700; }
+.heroPeriod .periodSelectors { gap: .4rem; }
+.heroPeriod .sapMSlt { border-radius: .6rem; border-color: transparent; }
+.metricsArea { gap: .85rem; }
+.metricPrimaryGrid .metricCard { flex: 1 1 13rem; padding: 1.3rem; }
+.metricPrimaryGrid .metricCard .sapMObjectNumberText { font-size: 1.6rem; }
+.metricStrip { gap: .75rem; }
+.metricCompact { flex: 1 1 10.5rem; padding: .75rem .9rem; border-top-width: 1px; border-left: 3px solid var(--line); box-shadow: none; }
+.metricCompact .sapUiIcon { padding: .3rem; font-size: .8rem; }
+.metricCompact.metricCard .sapMObjectNumberText { font-size: 1.05rem; }
+.paidMetric.metricCompact { border-left-color: #2fa98a; }
+.payMetric.metricCompact { border-left-color: #e8737f; }
+.closedMetric.metricCompact { border-left-color: #8aa5bd; }
+.totalMetric.metricCompact { border-left-color: #e0a63f; }
+.liabilitiesMetric.metricCompact { border-left-color: #b07fd4; }
+.metricProgress { margin: .55rem 0 0; height: .45rem; }
+.metricProgress .sapMPIBar { border-radius: .5rem; }
+.chartsGrid .categoriesPanel { flex: 6 1 24rem; }
+.historyPanel { flex: 7 1 24rem; }
+.historyPanel .emColumns { margin-top: .75rem; }
+.categoryChartBody { gap: 1.25rem; align-items: center; }
+.balanceTrend .sapMText, .balanceTrend .sapUiIcon { color: rgba(255,255,255,.88) !important; }
+.categoryChartBody > .sapMFlexItem:first-child { flex: 0 0 12rem; margin: 0 auto; }
+.categoryChartBody > .sapMFlexItem:last-child { flex: 1 1 16rem; min-width: 0; }
+.categoryChartBody .categoryList { max-height: 18rem; }
+.categoryChartBody .categoryItemMain { gap: .6rem; min-width: 0; }
+.categoryLegendAmount .sapMObjectNumberText { font-size: .9rem; font-weight: 700; color: var(--ink); }
+[data-theme="dark"] .categoryLegendAmount .sapMObjectNumberText { color: inherit; }

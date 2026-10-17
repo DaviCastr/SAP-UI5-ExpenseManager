@@ -18,6 +18,12 @@ sap.ui.define(["./PeriodService", "../util/format"], function (___PeriodService,
       this.ui = ui;
       this.text = text;
     }
+    targetState(percent) {
+      if (percent > 100) {
+        return "Error";
+      }
+      return percent >= 80 ? "Warning" : "Success";
+    }
     renderInvoice(invoice, person) {
       const expenses = Number(invoice.TotalAmount) || 0;
       const income = Number(person.Income) || 0;
@@ -36,6 +42,9 @@ sap.ui.define(["./PeriodService", "../util/format"], function (___PeriodService,
         savings: formatCurrency(available, currency),
         expenseHint: target > 0 ? this.text("summaryExpenseHintMeta", [String(targetPercent)]) : this.text("summaryExpenseHintSpent", [String(Math.round(expenses))]),
         targetHint: target > 0 ? this.text("summaryTargetHintPlanned") : this.text("summaryTargetHintEmpty"),
+        hasTarget: target > 0,
+        targetPercent: Math.min(targetPercent, 100),
+        targetState: this.targetState(targetPercent),
         trendText: this.text("trendCalculating"),
         trendIcon: "sap-icon://trend-up"
       });

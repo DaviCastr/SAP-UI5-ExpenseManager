@@ -123,6 +123,9 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
       year: "numeric"
     });
   }
+  function seriesSwatch(colorClass) {
+    return colorClass ? `<span class="categorySwatch ${colorClass}"></span>` : "<span></span>";
+  }
   function formatCardTitle(name, total, currency) {
     const formatted = formatCurrency(total, currency);
     return `${name} • ${formatted}`;
@@ -366,6 +369,7 @@ sap.ui.define(["../auth/providers/XsuaaAuthHelper"], function (___auth_providers
   __exports.formatDate = formatDate;
   __exports.imageUrl = imageUrl;
   __exports.formatMonth = formatMonth;
+  __exports.seriesSwatch = seriesSwatch;
   __exports.formatCardTitle = formatCardTitle;
   __exports.personImage = personImage;
   __exports.transactionSubtle = transactionSubtle;
