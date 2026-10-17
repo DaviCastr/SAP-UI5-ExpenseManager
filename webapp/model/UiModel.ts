@@ -150,6 +150,9 @@ export interface IUiState {
 
     categories: unknown[];
 
+    /** SVG markup of the overview charts (category donut, monthly history). */
+    charts: { categories: string; history: string };
+
     categoryDetail: unknown;
 
     cardImages: Record<string, string>;
@@ -301,6 +304,8 @@ export default class UiModel extends JSONModel {
             transactions: [],
 
             categories: [],
+
+            charts: { categories: "", history: "" },
 
             categoryDetail: null,
 

@@ -45,6 +45,13 @@ export class DashboardRenderer {
         this.text = text;
     }
 
+    private targetState(percent: number): string {
+        if (percent > 100) {
+            return "Error";
+        }
+        return percent >= 80 ? "Warning" : "Success";
+    }
+
     public renderInvoice(invoice: CompleteInvoice, person: { Income?: number; ExpenseTarget?: number; Currency?: unknown }): TransactionRow[] {
         const expenses = Number(invoice.TotalAmount) || 0;
         const income = Number(person.Income) || 0;
@@ -72,6 +79,9 @@ export class DashboardRenderer {
             targetHint: target > 0
                 ? this.text("summaryTargetHintPlanned")
                 : this.text("summaryTargetHintEmpty"),
+            hasTarget: target > 0,
+            targetPercent: Math.min(targetPercent, 100),
+            targetState: this.targetState(targetPercent),
             trendText: this.text("trendCalculating"),
             trendIcon: "sap-icon://trend-up"
         });

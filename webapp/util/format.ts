@@ -125,6 +125,10 @@ export function formatMonth(year: number, month: number): string {
     return new Date(year, month - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 }
 
+export function seriesSwatch(colorClass?: string): string {
+    return colorClass ? `<span class="categorySwatch ${colorClass}"></span>` : "<span></span>";
+}
+
 export function formatCardTitle(name: string, total: number, currency: string): string {
     const formatted = formatCurrency(total, currency);
     return `${name} • ${formatted}`;

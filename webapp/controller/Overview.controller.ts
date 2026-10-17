@@ -26,7 +26,12 @@ import { isSessionExpiredError, isBackendUnavailableError } from "../util/http";
 import { getBackendErrorMessage } from "../util/feedback";
 import { runExclusiveAction } from "../util/draftDialogFlow";
 import { PERSON_CHANNEL, PERSON_DRAFT_CLOSING, PERSON_SELECTED } from "../util/personEvents";
+import { columnChart, donutChart, foldSlices, seriesClass, type ChartBar } from "../util/charts";
+import { currencyCode, formatCurrency, formatMonth } from "../util/format";
+import Localization from "sap/base/i18n/Localization";
 import type { UiPerson } from "../model/UiModel";
+
+const HISTORY_MONTHS = 6;
 
 interface CardRow {
     ID: string;
@@ -364,6 +369,8 @@ export default class Overview extends BaseController {
 
             void this._mediaService?.resolveCategoryImages(transactions, preferDraft);
             void renderer.loadTrend(personId, period, expenses);
+            this.renderCategoryChart();
+            void this.renderHistoryChart(personId, period, expenses);
 
             // The person-scoped metrics (Income, ExpenseTarget, TotalExpenses*)
             // are bound directly to the OData V4 model via metricsGrid.
@@ -381,6 +388,73 @@ export default class Overview extends BaseController {
         } finally {
             ui.setProperty("/busy", false);
         }
+    }
+
+    /**
+     * Colors the category list like the donut slices and draws the donut of
+     * the spending by category (largest categories, the rest as "others").
+     */
+    private renderCategoryChart(): void {
+        const ui = this.getUiModel();
+        const categories = (ui.getProperty("/categories") as { Name: string; Total: number }[] | undefined) ?? [];
+
+        categories.forEach((_, index) => ui.setProperty(`/categories/${index}/ColorClass`, seriesClass(index)));
+
+        const slices = foldSlices(categories.map((category) => ({ label: category.Name, value: category.Total })), this.getText("chartOthers"));
+        ui.setProperty("/charts/categories", donutChart(slices, (value) => this.money(value), this.getText("chartTotalSpent")));
+    }
+
+    /**
+     * Draws the spending of the last months (the shown one included), with
+     * the monthly target as a reference line. Months that cannot be loaded
+     * count as zero instead of breaking the chart.
+     *
+     * @param {string} personId the selected person
+     * @param {Period} period the period being shown
+     * @param {number} expenses the spending of the shown period
+     */
+    private async renderHistoryChart(personId: string, period: Period, expenses: number): Promise<void> {
+        const periods = Array.from({ length: HISTORY_MONTHS }, (_, index) => this.periodService.shift(period, index - HISTORY_MONTHS + 1));
+        const locale = Localization.getLanguage();
+
+        const values = await Promise.all(periods.map(async (month, index) => {
+            if (index === HISTORY_MONTHS - 1) {
+                return expenses;
+            }
+            try {
+                return Number((await this._invoiceService?.getCompleteInvoice(personId, month))?.TotalAmount) || 0;
+            } catch {
+                return 0;
+            }
+        }));
+
+        if (this.getSelectedPersonId() !== personId) {
+            return;
+        }
+
+        const bars: ChartBar[] = periods.map((month, index) => ({
+            label: new Date(month.year, month.month - 1, 1).toLocaleDateString(locale, { month: "short" }).replace(".", ""),
+            hint: formatMonth(month.year, month.month),
+            value: values[index],
+            current: index === HISTORY_MONTHS - 1
+        }));
+        const target = Number(this.selectedPerson().ExpenseTarget) || 0;
+        const compact = new Intl.NumberFormat(locale, { style: "currency", currency: this.currency(), notation: "compact", maximumFractionDigits: 1 });
+
+        this.getUiModel().setProperty("/charts/history", columnChart(
+            bars,
+            (value) => this.money(value),
+            (value) => compact.format(value),
+            { value: target, label: this.getText("chartTargetLine", [this.money(target)]) }
+        ));
+    }
+
+    private money(value: number): string {
+        return formatCurrency(value, this.currency());
+    }
+
+    private currency(): string {
+        return currencyCode(this.selectedPerson().Currency);
     }
 
     private selectedPerson(): { Income?: number; ExpenseTarget?: number; Currency?: unknown } {
