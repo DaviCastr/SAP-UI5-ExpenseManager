@@ -249,8 +249,9 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
     handleAuthError: function _handleAuthError(message) {
       const bundle = this.getModel("i18n")?.getResourceBundle();
       const prefix = bundle?.getText("authErrorPrefix") ?? "Erro ao autenticar, motivo";
+      const reason = /failed to fetch|networkerror|load failed/i.test(message) ? bundle?.getText("authUnreachable") ?? message : message;
       this._sessionExpiredShown = true;
-      MessageBox.error(`${prefix}: ${message}`, {
+      MessageBox.error(`${prefix}: ${reason}`, {
         onClose: () => {
           this._sessionExpiredShown = false;
           AuthenticationService.clearAuthError();

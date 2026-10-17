@@ -27,6 +27,28 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "./i18n", "./http", "..
    * @param {unknown} error the caught error
    * @returns {string | undefined} the backend message, or `undefined` when none
    */
+  const MAX_DETAILS = 6;
+  /**
+   * Turns the OData error details (e.g. a "Multiple errors occurred" batch
+   * answer) into readable lines: one per distinct message and field, so the
+   * user sees what failed instead of only the generic summary.
+   *
+   * @param {ErrorDetail[]} details the `error.details` array of the response
+   * @returns {string[]} the readable lines
+   */
+  function describeDetails(details) {
+    const lines = new Set();
+    details.forEach(detail => {
+      if (typeof detail.message !== "string" || !detail.message.trim()) {
+        return;
+      }
+      const segments = typeof detail.target === "string" ? detail.target.split("/").map(segment => segment.replace(/\(.*\)$/, "")).filter(segment => segment && segment !== "in") : [];
+      const field = segments.slice(-2).join(" › ");
+      lines.add(field ? `• ${detail.message} (${field})` : `• ${detail.message}`);
+    });
+    const all = Array.from(lines);
+    return all.length > MAX_DETAILS ? [...all.slice(0, MAX_DETAILS), `• … +${all.length - MAX_DETAILS}`] : all;
+  }
   function getBackendErrorMessage(error) {
     const GENERIC = /^(Communication error|Network error)/i;
     const visited = new Set();
@@ -36,7 +58,8 @@ sap.ui.define(["sap/m/MessageBox", "sap/m/MessageToast", "./i18n", "./http", "..
       const cause = current;
       const parsed = cause.error?.message;
       if (typeof parsed === "string" && parsed.trim()) {
-        return parsed;
+        const details = describeDetails(cause.error?.details ?? []);
+        return details.length ? [parsed, ...details].join("\n") : parsed;
       }
       if (typeof cause.message === "string" && cause.message.trim() && !GENERIC.test(cause.message)) {
         return cause.message;

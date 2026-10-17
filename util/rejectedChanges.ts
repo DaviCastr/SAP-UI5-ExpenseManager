@@ -131,12 +131,13 @@ export function createRejectedChangeGuard(): RejectedChangeGuard {
         if (!Array.isArray(newMessages) || !newMessages.length || !view) {
             return;
         }
-        const failure = newMessages.find((message) => message.getType() === MessageType.Error);
+        const failures = newMessages.filter((message) => message.getType() === MessageType.Error);
+        const failure = failures[0];
         if (!failure) {
             return;
         }
         rejected = true;
-        const detail = failure.getMessage();
+        const detail = Array.from(new Set(failures.map((message) => message.getMessage()).filter(Boolean))).join("\n");
         handleActionError(view, detail ? new Error(detail) : new Error(), errorKey);
         const model = failure.getMessageProcessor() as ODataModel | undefined;
         if (model) {

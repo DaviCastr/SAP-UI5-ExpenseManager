@@ -39,6 +39,9 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
         const route = event.getParameter("name");
         if (route && route !== "Login") {
           this.getUiModel().setProperty("/tab", route);
+          if (this.isServiceOutdated()) {
+            void this.initView();
+          }
         }
       });
       this.applyShareOptionTexts();
@@ -112,7 +115,24 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       button.setIcon(isDark ? "sap-icon://dark-mode" : "sap-icon://light-mode");
       button.setTooltip(this.getText(isDark ? "themeLightTooltip" : "themeDarkTooltip"));
     }
-    async initView() {
+
+    /**
+     * Whether the workspace still has to load (or reload) its data: the Home
+     * view may be created before the login (the app starts on its route and
+     * is redirected), so it initializes again once a session model exists.
+     *
+     * @returns {boolean} whether the service model changed since the last load
+     */
+    isServiceOutdated() {
+      return !this._odata || this._serviceModelRef !== this.getOwnerComponent()?.getModel();
+    }
+    initView() {
+      this._initializing ??= this.loadWorkspace().finally(() => {
+        this._initializing = undefined;
+      });
+      return this._initializing;
+    }
+    async loadWorkspace() {
       try {
         const model = await this.ensureServiceModel();
         if (!model) {

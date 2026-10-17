@@ -28,6 +28,39 @@ export function showToast(view: XMLView, messageKey: string, parameters?: string
  * @param {unknown} error the caught error
  * @returns {string | undefined} the backend message, or `undefined` when none
  */
+const MAX_DETAILS = 6;
+
+interface ErrorDetail {
+    message?: unknown;
+    target?: unknown;
+}
+
+/**
+ * Turns the OData error details (e.g. a "Multiple errors occurred" batch
+ * answer) into readable lines: one per distinct message and field, so the
+ * user sees what failed instead of only the generic summary.
+ *
+ * @param {ErrorDetail[]} details the `error.details` array of the response
+ * @returns {string[]} the readable lines
+ */
+function describeDetails(details: ErrorDetail[]): string[] {
+    const lines = new Set<string>();
+
+    details.forEach((detail) => {
+        if (typeof detail.message !== "string" || !detail.message.trim()) {
+            return;
+        }
+        const segments = typeof detail.target === "string"
+            ? detail.target.split("/").map((segment) => segment.replace(/\(.*\)$/, "")).filter((segment) => segment && segment !== "in")
+            : [];
+        const field = segments.slice(-2).join(" › ");
+        lines.add(field ? `• ${detail.message} (${field})` : `• ${detail.message}`);
+    });
+
+    const all = Array.from(lines);
+    return all.length > MAX_DETAILS ? [...all.slice(0, MAX_DETAILS), `• … +${all.length - MAX_DETAILS}`] : all;
+}
+
 export function getBackendErrorMessage(error: unknown): string | undefined {
     const GENERIC = /^(Communication error|Network error)/i;
     const visited = new Set<unknown>();
@@ -36,7 +69,7 @@ export function getBackendErrorMessage(error: unknown): string | undefined {
     while (current && !visited.has(current)) {
         visited.add(current);
         const cause = current as {
-            error?: { message?: unknown };
+            error?: { message?: unknown; details?: ErrorDetail[] };
             message?: unknown;
             responseText?: string;
             cause?: unknown;
@@ -44,7 +77,8 @@ export function getBackendErrorMessage(error: unknown): string | undefined {
 
         const parsed = cause.error?.message;
         if (typeof parsed === "string" && parsed.trim()) {
-            return parsed;
+            const details = describeDetails(cause.error?.details ?? []);
+            return details.length ? [parsed, ...details].join("\n") : parsed;
         }
 
         if (typeof cause.message === "string" && cause.message.trim() && !GENERIC.test(cause.message)) {
