@@ -4,14 +4,12 @@
 .overviewTab { gap: 1.25rem; }
 .topBar { min-height: 2.5rem; gap: .5rem; }
 
-/* Header fixo da Home: gruda no topo da área de rolagem da página, com fundo
-   translúcido desfocado sobre o conteúdo que passa por baixo. */
+/* Header fixo da Home: gruda no topo da área de rolagem da página. A cor
+   (--header-bg) é a mesma do body/theme-color, então no PWA ele continua
+   pela barra de status como num app nativo. */
 .appHeader {
     position: sticky; top: 0; z-index: 5;
-    background: var(--surface);
-    background: color-mix(in srgb, var(--surface) 82%, transparent);
-    -webkit-backdrop-filter: saturate(1.6) blur(14px);
-    backdrop-filter: saturate(1.6) blur(14px);
+    background: var(--header-bg);
     border-bottom: 1px solid var(--line);
     box-shadow: 0 6px 18px rgba(19, 48, 48, .05);
 }

@@ -15,8 +15,8 @@ sap.ui.define(["sap/ui/core/Core", "sap/ui/util/Storage"], function (Core, Stora
   }
   function setHtmlTheme(dark) {
     document.documentElement.setAttribute("data-theme", dark ? "dark" : "");
-    // Pinta a barra de status (PWA/navegador) com o fundo do tema ativo.
-    document.querySelector("meta[name='theme-color']")?.setAttribute("content", dark ? "#0c1a19" : "#f4f7f8");
+    // Pinta a barra de status (PWA/navegador) na cor do header do tema ativo.
+    document.querySelector("meta[name='theme-color']")?.setAttribute("content", dark ? "#142422" : "#ffffff");
   }
   function applyThemePreference(dark) {
     THEME_STORAGE.put(THEME_KEY, dark ? "dark" : "light");

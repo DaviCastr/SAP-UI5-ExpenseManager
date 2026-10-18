@@ -7,7 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#f4f7f8">
+    <meta name="theme-color" content="#ffffff">
     <title>Expense Manager</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
@@ -37,12 +37,27 @@
         /* Com viewport-fit=cover o app ocupa a tela física inteira, ficando
            debaixo do notch/Dynamic Island e da barra de gestos (iPhone em tela
            cheia). Reservamos as safe areas no body para o conteúdo começar
-           abaixo da câmera e terminar acima da barra; o fundo do body (mesma
-           cor da página) preenche essas faixas. Fora do PWA o env() vale 0. */
+           abaixo da câmera e terminar acima da barra. Fora do PWA o env() vale 0.
+           O iOS 26 pinta a barra de status com a cor de fundo do body (não usa
+           mais o theme-color), por isso o body tem a cor do header e só a faixa
+           de baixo recebe a cor do fundo da página (body::after). */
+        html, html body {
+            background: var(--header-bg, #ffffff) !important;
+        }
         html body {
             box-sizing: border-box;
             padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
                 env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+        }
+        html body::after {
+            content: "";
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: env(safe-area-inset-bottom, 0px);
+            background: var(--surface, #f4f7f8);
+            pointer-events: none;
         }
         body > div, #container, #container-uiarea {
             height: 100%;
@@ -92,7 +107,7 @@
                 }
                 if (stored === "dark") {
                     document.documentElement.setAttribute("data-theme", "dark");
-                    document.querySelector("meta[name='theme-color']").setAttribute("content", "#0c1a19");
+                    document.querySelector("meta[name='theme-color']").setAttribute("content", "#142422");
                 }
             } catch (e) { /* sessionStorage indisponível (ex.: modo privado) */ }
         })();
