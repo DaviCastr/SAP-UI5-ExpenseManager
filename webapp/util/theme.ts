@@ -16,8 +16,8 @@ export function isDarkTheme(): boolean {
 
 export function setHtmlTheme(dark: boolean): void {
     document.documentElement.setAttribute("data-theme", dark ? "dark" : "");
-    // Pinta a barra de status (PWA/navegador) com o fundo do tema ativo.
-    document.querySelector("meta[name='theme-color']")?.setAttribute("content", dark ? "#0c1a19" : "#f4f7f8");
+    // Pinta a barra de status (PWA/navegador) na cor do header do tema ativo.
+    document.querySelector("meta[name='theme-color']")?.setAttribute("content", dark ? "#142422" : "#ffffff");
 }
 
 export function applyThemePreference(dark: boolean): void {

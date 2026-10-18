@@ -22,6 +22,7 @@
     --ink: #e3efec;
     --muted: #8ba7a1;
     --surface: #0c1a19;
+    --header-bg: #142422;
     --line: #24413c;
     --line-soft: #2d4f49;
 
@@ -213,6 +214,12 @@ html[data-theme="dark"] body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:ac
 }
 [data-theme="dark"] .liabilityStatus:not(.sapMObjStatusSuccess):not(.sapMObjStatusWarning):not(.sapMObjStatusError):not(.sapMObjStatusInformation) .sapMObjStatusText {
     background: #322818; border: 1px solid #57451d; color: #e6b84a;
+}
+
+/* ---------- Header fixo da Home (fundo via --header-bg) ---------- */
+[data-theme="dark"] .appHeader.sapMBar {
+    border-bottom-color: var(--line);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .35);
 }
 
 /* ---------- Topo: fundo da página (luz suave no canto superior direito) ---------- */

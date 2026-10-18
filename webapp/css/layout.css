@@ -2,7 +2,25 @@
 
 .financeShell { max-width: 76rem; margin: 0 auto; padding: 1.5rem 2rem 3rem; gap: 1.25rem; }
 .overviewTab { gap: 1.25rem; }
-.topBar { min-height: 3.5rem; }
+.topBar { min-height: 2.5rem; }
+
+/* Header fixo da Home: marca à esquerda, tema/sair à direita, alinhados à
+   mesma largura máxima do conteúdo (.financeShell). */
+.appHeader.sapMBar {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 4rem; box-sizing: border-box;
+    padding: 0 max(2rem, calc((100% - 76rem) / 2 + 2rem));
+    background: var(--header-bg); border-bottom: 1px solid var(--line);
+    box-shadow: 0 2px 12px rgba(19, 48, 48, .06);
+}
+.appHeader.sapMBar .sapMBarLeft,
+.appHeader.sapMBar .sapMBarRight {
+    position: static; display: flex; align-items: center; gap: .25rem;
+    height: 100%; width: auto; float: none;
+}
+.appHeader.sapMBar .sapMBarMiddle { display: none; }
+.appHeader.sapMBar .sapMBarChild { margin: 0; }
+.financePage.sapMPageWithHeader > section { top: 4rem; }
 .brandGroup { gap: .75rem; }
 .brandLogo { border-radius: .75rem; box-shadow: 0 4px 14px rgba(7, 61, 58, .18); }
 .brandTitle { color: var(--ink); font-weight: 700; }
