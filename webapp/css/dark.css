@@ -215,6 +215,13 @@ html[data-theme="dark"] body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:ac
     background: #322818; border: 1px solid #57451d; color: #e6b84a;
 }
 
+/* ---------- Header fixo da Home (--white overloaded no seletor) ---------- */
+[data-theme="dark"] .appHeader { box-shadow: 0 6px 18px rgba(0, 0, 0, .3); }
+[data-theme="dark"] .personPicker { background: #142422; border-color: var(--line); }
+[data-theme="dark"] .personPicker .personSelect,
+[data-theme="dark"] .personPicker .personSelect .sapMSlt,
+[data-theme="dark"] .personPicker .personSelect .sapMSltInner { border: 0; background: transparent; }
+
 /* ---------- Topo: fundo da página (luz suave no canto superior direito) ---------- */
 [data-theme="dark"] .financePage,
 [data-theme="dark"] .financePage .sapMPageBgStandard {

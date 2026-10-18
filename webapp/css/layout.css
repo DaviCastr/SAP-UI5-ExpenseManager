@@ -2,12 +2,33 @@
 
 .financeShell { max-width: 76rem; margin: 0 auto; padding: 1.5rem 2rem 3rem; gap: 1.25rem; }
 .overviewTab { gap: 1.25rem; }
-.topBar { min-height: 3.5rem; }
+.topBar { min-height: 2.5rem; gap: .5rem; }
+
+/* Header fixo da Home: gruda no topo da área de rolagem da página, com fundo
+   translúcido desfocado sobre o conteúdo que passa por baixo. */
+.appHeader {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 82%, transparent);
+    -webkit-backdrop-filter: saturate(1.6) blur(14px);
+    backdrop-filter: saturate(1.6) blur(14px);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 6px 18px rgba(19, 48, 48, .05);
+}
+.appHeaderInner { width: 100%; max-width: 76rem; margin: 0 auto; padding: .6rem 2rem; gap: .75rem; box-sizing: border-box; }
+.appHeaderActions { gap: .35rem; min-width: 0; }
+.personPicker {
+    gap: .4rem; min-width: 0; padding: .2rem .25rem .2rem .3rem;
+    border-radius: 999px; background: var(--white); border: 1px solid var(--line-soft);
+    box-shadow: 0 2px 8px rgba(19, 48, 48, .05);
+}
+.personPicker .personSelect { width: 13rem !important; max-width: 100%; }
+.personPicker .personSelect .sapMSltInner,
+.personPicker .personSelect.sapMSlt { border: 0; background: transparent; box-shadow: none; }
 .brandGroup { gap: .75rem; }
 .brandLogo { border-radius: .75rem; box-shadow: 0 4px 14px rgba(7, 61, 58, .18); }
 .brandTitle { color: var(--ink); font-weight: 700; }
 .topActions, .heroActions { gap: .5rem; align-items: center; }
-.personLabel { color: var(--muted); font-size: .8rem; }
 .personAvatar .sapFAvatar { background: var(--teal-050) !important; color: var(--teal-700); border: 1px solid #d8f7ed; }
 .personSelect { background: var(--white); border-radius: .7rem; }
 .personSelect .sapMSltInner { border-radius: .7rem; border-color: var(--line-soft); background: var(--white); color: var(--ink); }
