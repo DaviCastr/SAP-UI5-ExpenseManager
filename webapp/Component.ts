@@ -298,7 +298,8 @@ export default class Component extends BaseComponent {
                 this._sessionExpiredShown = false;
                 // Mesmo motivo do logout: recarregar descarta o model OData e o
                 // estado em memória da sessão expirada antes do próximo login.
-                window.location.replace(`${window.location.pathname}#/login`);
+                window.history.replaceState(null, "", `${window.location.pathname}#/login`);
+                window.location.reload();
             }
         });
     }
