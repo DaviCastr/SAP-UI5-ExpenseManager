@@ -6,6 +6,27 @@
 >
     <Page id="loginPage" showHeader="false" backgroundDesign="List" class="loginPage">
         <content>
+            <!-- No celular, o mesmo header da Home: em tela cheia ele continua
+                 pela barra de status, na cor da marca. -->
+            <HBox class="appHeader" visible="{device>/system/phone}">
+                <HBox
+                    class="appHeaderInner"
+                    alignItems="Center"
+                >
+                    <Image
+                        src="img/logo.svg"
+                        width="2.25rem"
+                        height="2.25rem"
+                        decorative="true"
+                        class="brandLogo sapUiSmallMarginEnd"
+                    />
+                    <Title
+                        text="{i18n>brandTitle}"
+                        level="H2"
+                        class="appHeaderTitle"
+                    />
+                </HBox>
+            </HBox>
             <HBox
                 id="loginShell"
                 class="loginShell"

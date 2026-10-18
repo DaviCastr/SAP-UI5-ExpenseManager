@@ -18,25 +18,6 @@ export function isDarkTheme(): boolean {
 
 export function setHtmlTheme(dark: boolean): void {
     document.documentElement.setAttribute("data-theme", dark ? "dark" : "");
-    // A cor fixada pelo pré-boot (index.html) daria o header escuro no claro.
-    document.documentElement.style.removeProperty("--header-bg");
-    applyStatusBarColor(dark ? "#142422" : "#ffffff");
-}
-
-/**
- * Pinta a barra de status (PWA/navegador) na cor do header. O iOS usa a cor de
- * fundo do body e não repinta só porque a variável CSS mudou: a cor vai inline
- * no html/body e a meta theme-color é recriada, que é o que o WebKit observa.
- */
-function applyStatusBarColor(color: string): void {
-    document.documentElement.style.setProperty("background-color", color, "important");
-    document.body?.style.setProperty("background-color", color, "important");
-
-    document.querySelector("meta[name='theme-color']")?.remove();
-    const meta = document.createElement("meta");
-    meta.name = "theme-color";
-    meta.content = color;
-    document.head.appendChild(meta);
 }
 
 export function applyThemePreference(dark: boolean): void {

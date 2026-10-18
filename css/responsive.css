@@ -13,6 +13,8 @@
     .financePage .sapMPageEnableScrolling { overflow-x: hidden; }
     .loginCard { padding: 1.8rem 1.3rem; gap: .75rem; }
     .loginShell { padding: 1rem; }
+    /* Desconta o header do celular (logo + nome) para o login caber na tela. */
+    .appHeader.sapMFlexBox ~ .loginShell { min-height: calc(100vh - 3.5rem); }
     .loginBrandLogo { width: 2rem !important; height: 2rem !important; }
     .periodNav { flex-direction: column; align-items: stretch; }
     .periodNavActions { flex-direction: column; align-items: stretch; }
