@@ -34,6 +34,20 @@
             }
         }
 
+        /* Com viewport-fit=cover o app ocupa a tela física inteira, ficando
+           debaixo do notch/Dynamic Island e da barra de gestos (iPhone em tela
+           cheia). Reservamos as safe areas no body para o conteúdo começar
+           abaixo da câmera e terminar acima da barra; o fundo do body (mesma
+           cor da página) preenche essas faixas. Fora do PWA o env() vale 0. */
+        html body {
+            box-sizing: border-box;
+            padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+                env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+        }
+        body > div, #container, #container-uiarea {
+            height: 100%;
+        }
+
         /* Previne o auto-zoom do iOS/webview ao tocar em campos de texto. */
         @supports (-webkit-touch-callout: none) {
             input, textarea, select {
