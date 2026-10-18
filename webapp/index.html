@@ -9,7 +9,7 @@
          usa a barra de status própria ou as cores fixas do manifest. Sem elas
          (como no Bendita Look) a barra herda a cor do body, que é a do header
          e acompanha o tema claro/escuro. -->
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#0b5d52">
     <title>Expense Manager</title>
     <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="img/favicon-32.png" type="image/png" sizes="32x32">
@@ -43,7 +43,7 @@
            mais o theme-color), por isso o body tem a cor do header e só a faixa
            de baixo recebe a cor do fundo da página (body::after). */
         html, html body {
-            background: var(--header-bg, #ffffff) !important;
+            background: var(--header-bg, #0b5d52) !important;
         }
         html body {
             box-sizing: border-box;
@@ -109,10 +109,6 @@
                 }
                 if (stored === "dark") {
                     document.documentElement.setAttribute("data-theme", "dark");
-                    // O dark.css só chega depois, com o UI5: a cor do header já
-                    // vai aqui para o body (e a barra de status) abrir escuro.
-                    document.documentElement.style.setProperty("--header-bg", "#142422");
-                    document.querySelector("meta[name='theme-color']").setAttribute("content", "#142422");
                 }
             } catch (e) { /* localStorage indisponível (ex.: modo privado) */ }
         })();

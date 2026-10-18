@@ -10,7 +10,9 @@
     --line: #e7eeee;
     --line-soft: #d5e3e1;
     --white: #ffffff;
-    --header-bg: #ffffff;
+    /* Cor da marca, igual nos dois temas: o iOS só lê a cor da barra de status
+       ao abrir o app, então header/barra não podem depender do tema. */
+    --header-bg: #0b5d52;
 
     /* Substitui o azul padrão do tema pelos tons da marca */
     --sapContent_FocusColor: var(--teal-700);

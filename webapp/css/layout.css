@@ -7,15 +7,22 @@
 /* Header fixo da Home: gruda no topo da área de rolagem da página. A cor
    (--header-bg) é a mesma do body/theme-color, então no PWA ele continua
    pela barra de status como num app nativo. */
-.appHeader {
+/* .sapMFlexBox: vence o sapMFlexBoxBGTransparent do HBox (fundo transparente). */
+.appHeader.sapMFlexBox {
     position: sticky; top: 0; z-index: 5;
     background: var(--header-bg);
-    border-bottom: 1px solid var(--line);
-    box-shadow: 0 6px 18px rgba(19, 48, 48, .05);
+    border-bottom: 1px solid rgba(0, 0, 0, .12);
+    box-shadow: 0 6px 18px rgba(19, 48, 48, .12);
 }
 .appHeaderInner { width: 100%; max-width: 76rem; margin: 0 auto; padding: .6rem 2rem; gap: .75rem; box-sizing: border-box; }
 .appHeaderActions { gap: .35rem; min-width: 0; }
-.personPicker {
+.appHeader .brandLogo { box-shadow: 0 0 0 2px rgba(255, 255, 255, .25); }
+.appHeader .appHeaderTitle { color: var(--white); font-weight: 700; }
+.appHeader .iconAction .sapMBtnInner .sapUiIcon,
+.appHeader .iconAction .sapMBtnInner .sapMBtnIcon { color: var(--white) !important; }
+.appHeader .iconAction .sapMBtnInner:hover,
+.appHeader .iconAction.sapMBtnActive .sapMBtnInner { background: rgba(255, 255, 255, .16) !important; border-color: transparent !important; }
+.personPicker.sapMFlexBox {
     gap: .4rem; min-width: 0; padding: .2rem .25rem .2rem .3rem;
     border-radius: 999px; background: var(--white); border: 1px solid var(--line-soft);
     box-shadow: 0 2px 8px rgba(19, 48, 48, .05);

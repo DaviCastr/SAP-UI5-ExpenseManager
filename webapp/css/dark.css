@@ -22,7 +22,6 @@
     --ink: #e3efec;
     --muted: #8ba7a1;
     --surface: #0c1a19;
-    --header-bg: #142422;
     --line: #24413c;
     --line-soft: #2d4f49;
 
@@ -217,8 +216,8 @@ html[data-theme="dark"] body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:ac
 }
 
 /* ---------- Header fixo da Home (--white overloaded no seletor) ---------- */
-[data-theme="dark"] .appHeader { box-shadow: 0 6px 18px rgba(0, 0, 0, .3); }
-[data-theme="dark"] .personPicker { background: #142422; border-color: var(--line); }
+[data-theme="dark"] .appHeader { box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+[data-theme="dark"] .personPicker.sapMFlexBox { background: #142422; border-color: var(--line); }
 [data-theme="dark"] .personPicker .personSelect,
 [data-theme="dark"] .personPicker .personSelect .sapMSlt,
 [data-theme="dark"] .personPicker .personSelect .sapMSltInner { border: 0; background: transparent; }
