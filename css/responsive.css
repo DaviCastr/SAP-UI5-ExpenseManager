@@ -1,8 +1,5 @@
 @media (max-width: 600px) {
     .financeShell { padding: 1rem; }
-    .appHeader.sapMBar { height: 3.5rem; padding: 0 .75rem 0 1rem; }
-    .financePage.sapMPageWithHeader > section { top: 3.5rem; }
-    .appHeader .brandLogo { width: 2rem !important; height: 2rem !important; }
     .topBar { align-items: flex-start; }
     .personLabel { display: none; }
     .primaryAction .sapMBtnContent { font-size: .78rem; }
