@@ -1,12 +1,7 @@
-sap.ui.define(["sap/ui/model/json/JSONModel", "sap/ui/Device"], function (JSONModel, Device) {
+sap.ui.define(["sap/ui/model/json/JSONModel", "sap/ui/Device", "../util/pwa"], function (JSONModel, Device, ___util_pwa) {
   "use strict";
 
-  function isStandalone() {
-    if (typeof window === "undefined" || !window.matchMedia) {
-      return window.navigator.standalone === true;
-    }
-    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-  }
+  const isStandalone = ___util_pwa["isStandalone"];
   function createDeviceModel() {
     const model = new JSONModel(Device);
     model.setProperty("/system/stretchDialogs", Device.system.phone && !isStandalone());

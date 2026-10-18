@@ -5,15 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <!-- Sem (apple-)mobile-web-app-capable, apple-mobile-web-app-status-bar-style
-         e sem web manifest: com qualquer um deles o iOS usa o modo antigo de web
-         app (barra de status própria, branca/preta, ou as cores fixas do
-         manifest). Sem eles, como no Bendita Look, a barra herda desde a
-         primeira abertura a cor do body, que é a do header (cor da marca). -->
+         e sem web manifest no iOS (o script abaixo só o inclui fora do iOS): com
+         qualquer um deles o iOS usa o modo antigo de web app (barra de status
+         própria, branca/preta, ou as cores fixas do manifest). Sem eles, como no
+         Bendita Look, a barra herda desde a primeira abertura a cor do body, que
+         é a do header (cor da marca). -->
     <meta name="theme-color" content="#0b5d52">
     <title>Expense Manager</title>
     <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="img/favicon-32.png" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+    <script>
+        // Instalação (PWA). O manifest só entra fora do iOS: no iPhone ele faria
+        // a barra de status usar as cores fixas do manifest, e sem ele a barra
+        // herda a cor do header. No Chrome/Edge (Android e PC) o manifest é o que
+        // libera "Instalar app"; o evento é guardado cedo para o botão da tela.
+        (function () {
+            var isIos = /iPad|iPhone|iPod/.test(navigator.userAgent)
+                || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+            if (!isIos) {
+                var link = document.createElement("link");
+                link.rel = "manifest";
+                link.href = "manifest.webmanifest";
+                document.head.appendChild(link);
+            }
+            window.addEventListener("beforeinstallprompt", function (event) {
+                event.preventDefault();
+                window.__emInstallPrompt = event;
+                window.dispatchEvent(new Event("em-installable"));
+            });
+        })();
+    </script>
     <style>
         /* No PWA standalone a viewport física (100vh/100%) excede a área
            visível, cortando o rodapé dos dialogs e "dando zoom" ao abri-los.

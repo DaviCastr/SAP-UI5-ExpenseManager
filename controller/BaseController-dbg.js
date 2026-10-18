@@ -1,4 +1,4 @@
-sap.ui.define(["../service/ODataService", "sap/ui/core/mvc/Controller", "sap/ui/core/UIComponent", "sap/m/MessageBox", "../auth/storage/SessionStorage", "../util/http", "../util/feedback"], function (___service_ODataService, Controller, UIComponent, MessageBox, ___auth_storage_SessionStorage, ___util_http, ___util_feedback) {
+sap.ui.define(["../service/ODataService", "sap/ui/core/mvc/Controller", "sap/ui/core/UIComponent", "sap/m/MessageBox", "../auth/storage/SessionStorage", "../util/http", "../util/feedback", "../util/pwa"], function (___service_ODataService, Controller, UIComponent, MessageBox, ___auth_storage_SessionStorage, ___util_http, ___util_feedback, ___util_pwa) {
   "use strict";
 
   /// <reference types="@sapui5/types" />
@@ -8,6 +8,7 @@ sap.ui.define(["../service/ODataService", "sap/ui/core/mvc/Controller", "sap/ui/
   const isSessionExpiredError = ___util_http["isSessionExpiredError"];
   const isBackendUnavailableError = ___util_http["isBackendUnavailableError"];
   const getBackendErrorMessage = ___util_feedback["getBackendErrorMessage"];
+  const promptInstall = ___util_pwa["promptInstall"];
   /**
    * Common behaviour for every application controller: model access, navigation
    * and a single, centralized way of turning failures into user feedback.
@@ -25,6 +26,20 @@ sap.ui.define(["../service/ODataService", "sap/ui/core/mvc/Controller", "sap/ui/
     }
     getText(key, parameters) {
       return this.getResourceBundle().getText(key, parameters) ?? key;
+    }
+
+    /**
+     * Botão "Instalar app" (visível só no navegador, model "pwa"): abre o prompt
+     * nativo do Chrome/Edge ou, no iPhone, explica o "Adicionar à Tela de Início".
+     */
+    async onInstallApp() {
+      const model = this.getOwnerComponent()?.getModel("pwa");
+      const result = await promptInstall(model);
+      if (result === "ios") {
+        MessageBox.information(this.getText("installIosMessage"), {
+          title: this.getText("installIosTitle")
+        });
+      }
     }
 
     /**

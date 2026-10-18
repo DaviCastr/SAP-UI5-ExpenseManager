@@ -76,6 +76,14 @@
                             </Select>
                         </HBox>
                         <Button
+                            icon="sap-icon://download"
+                            type="Transparent"
+                            tooltip="{i18n>installAppTooltip}"
+                            press=".onInstallApp"
+                            visible="{pwa>/canInstall}"
+                            class="iconAction"
+                        />
+                        <Button
                             id="themeToggle"
                             icon="sap-icon://light-mode"
                             type="Transparent"
