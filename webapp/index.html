@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="mobile-web-app-capable" content="yes">
-    <!-- Sem as metas apple-mobile-web-app-* e sem web manifest: com elas o iOS
-         usa a barra de status própria ou as cores fixas do manifest. Sem elas
-         (como no Bendita Look) a barra herda a cor do body, que é a do header
-         e acompanha o tema claro/escuro. -->
+    <!-- Sem (apple-)mobile-web-app-capable, apple-mobile-web-app-status-bar-style
+         e sem web manifest: com qualquer um deles o iOS usa o modo antigo de web
+         app (barra de status própria, branca/preta, ou as cores fixas do
+         manifest). Sem eles, como no Bendita Look, a barra herda desde a
+         primeira abertura a cor do body, que é a do header (cor da marca). -->
     <meta name="theme-color" content="#0b5d52">
     <title>Expense Manager</title>
     <link rel="icon" href="img/favicon.svg" type="image/svg+xml">

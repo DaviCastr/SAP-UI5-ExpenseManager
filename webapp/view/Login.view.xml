@@ -108,7 +108,12 @@
                         busy="{login>/busy}"
                         busyIndicatorDelay="0"
                     >
-                        <HBox alignItems="Center" class="loginBrand sapUiMediumMarginBottom">
+                        <!-- No celular o header já mostra o logo e o nome. -->
+                        <HBox
+                            alignItems="Center"
+                            class="loginBrand sapUiMediumMarginBottom"
+                            visible="{= !${device>/system/phone} }"
+                        >
                             <Image
                                 src="img/logo.svg"
                                 width="2.4rem"
