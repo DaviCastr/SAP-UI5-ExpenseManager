@@ -11,6 +11,7 @@ import MessageBox from "sap/m/MessageBox";
 import { SessionStorage } from "../auth/storage/SessionStorage";
 import { isSessionExpiredError, isBackendUnavailableError } from "../util/http";
 import { getBackendErrorMessage } from "../util/feedback";
+import { promptInstall } from "../util/pwa";
 
 type ServiceModelHost = UIComponent & {
     ensureServiceModel?: () => Promise<ODataModel | null>;
@@ -39,6 +40,21 @@ export abstract class BaseController extends Controller {
 
     protected getText(key: string, parameters?: string[]): string {
         return this.getResourceBundle().getText(key, parameters) ?? key;
+    }
+
+    /**
+     * Botão "Instalar app" (visível só no navegador, model "pwa"): abre o prompt
+     * nativo do Chrome/Edge ou, no iPhone, explica o "Adicionar à Tela de Início".
+     */
+    public async onInstallApp(): Promise<void> {
+        const model = this.getOwnerComponent()?.getModel("pwa") as JSONModel;
+        const result = await promptInstall(model);
+
+        if (result === "ios") {
+            MessageBox.information(this.getText("installIosMessage"), {
+                title: this.getText("installIosTitle")
+            });
+        }
     }
 
     /**

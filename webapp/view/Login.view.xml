@@ -199,6 +199,17 @@
                             textAlign="Center"
                             class="loginNote sapUiTinyMarginBottom"
                         />
+
+                        <!-- Só no navegador; some quando o app já está instalado. -->
+                        <Button
+                            text="{i18n>installAppButton}"
+                            icon="sap-icon://download"
+                            type="Transparent"
+                            width="100%"
+                            press=".onInstallApp"
+                            visible="{pwa>/canInstall}"
+                            class="loginInstall"
+                        />
                     </VBox>
                 </FlexBox>
             </HBox>

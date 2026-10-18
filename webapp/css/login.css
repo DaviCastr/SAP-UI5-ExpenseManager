@@ -68,6 +68,8 @@
     font-size: clamp(.88rem, 3.2vw, 1rem);
 }
 
+.loginInstall .sapMBtnInner { border-radius: .9rem; }
+
 .loginPrimary {
     width: 100%;
     margin-top: .35rem;
