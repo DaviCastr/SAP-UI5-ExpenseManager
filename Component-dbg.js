@@ -244,7 +244,8 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
           this._sessionExpiredShown = false;
           // Mesmo motivo do logout: recarregar descarta o model OData e o
           // estado em memória da sessão expirada antes do próximo login.
-          window.location.replace(`${window.location.pathname}#/login`);
+          window.history.replaceState(null, "", `${window.location.pathname}#/login`);
+          window.location.reload();
         }
       });
     },
