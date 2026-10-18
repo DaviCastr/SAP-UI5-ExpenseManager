@@ -17,55 +17,32 @@
         busy="{ui>/busy}"
     >
         <content>
-            <VBox class="financeShell">
-                <VBox id="personSection">
+            <!-- Header fixo (sticky no topo da rolagem): ícone do app, pessoa
+                 selecionada e tema sempre à mão, sem o conteúdo passar por
+                 baixo da barra de status no PWA em tela cheia. -->
+            <HBox class="appHeader">
+                <HBox
+                    class="appHeaderInner"
+                    justifyContent="SpaceBetween"
+                    alignItems="Center"
+                >
+                    <Image
+                        src="img/logo.svg"
+                        width="2.25rem"
+                        height="2.25rem"
+                        decorative="true"
+                        class="brandLogo"
+                    />
                     <HBox
-                        class="topBar"
-                        justifyContent="SpaceBetween"
                         alignItems="Center"
-                        wrap="Wrap"
+                        justifyContent="End"
+                        class="appHeaderActions"
                     >
                         <HBox
                             alignItems="Center"
-                            class="brandGroup"
+                            class="personPicker"
+                            visible="{= !${ui>/personsEmpty} }"
                         >
-                            <Image
-                                src="img/logo.svg"
-                                width="2.4rem"
-                                height="2.4rem"
-                                decorative="true"
-                                class="brandLogo sapUiSmallMarginEnd"
-                            />
-                            <VBox>
-                                <Title
-                                    text="{i18n>brandTitle}"
-                                    level="H2"
-                                    class="brandTitle"
-                                />
-                                <Text
-                                    text="{ui>/monthLabel}"
-                                    class="brandCaption"
-                                />
-                            </VBox>
-                        </HBox>
-                        <HBox
-                            alignItems="Center"
-                            justifyContent="End"
-                            class="topActions responsiveTopActions"
-                            wrap="Wrap"
-                        >
-                            <Button
-                                id="themeToggle"
-                                icon="sap-icon://brightness-high"
-                                type="Transparent"
-                                tooltip="{i18n>themeDarkTooltip}"
-                                press=".onToggleTheme"
-                                class="iconAction"
-                            />
-                            <Text
-                                text="{i18n>personManageLabel}"
-                                class="personLabel"
-                            />
                             <Avatar
                                 id="personImage"
                                 src="{ui>/selectedPersonImage}"
@@ -76,7 +53,6 @@
                                 displaySize="XS"
                                 displayShape="Circle"
                                 class="personAvatar"
-                                visible="{= !${ui>/personsEmpty} }"
                             />
                             <Select
                                 id="personSelect"
@@ -91,59 +67,88 @@
                                 selectedKey="{ui>/selectedPersonId}"
                                 change=".onPersonChange"
                                 class="personSelect"
-                                width="12rem"
-                                visible="{= !${ui>/personsEmpty} }"
+                                tooltip="{i18n>personManageLabel}"
                             >
                                 <core:Item
                                     key="{ID}"
                                     text="{= ${Name} + (${path: 'IsActiveEntity', targetType: 'any'} === false ? ' ' + ${i18n>personDraftSuffix} : (${path: 'HasDraftEntity', targetType: 'any'} === true ? ' ' + ${i18n>personLockedSuffix} : '')) }"
                                 />
                             </Select>
-                            <HBox
-                                alignItems="Center"
-                                justifyContent="Center"
-                                class="actionButtonsGroup"
-                            >
-                                <Button
-                                    icon="sap-icon://share-2"
-                                    type="Transparent"
-                                    tooltip="{i18n>sharesTooltip}"
-                                    press=".onOpenSharesDialog"
-                                    class="iconAction"
-                                    visible="{= !${ui>/personsEmpty} }"
-                                />
-                                <Button
-                                    icon="sap-icon://show"
-                                    type="Transparent"
-                                    tooltip="{i18n>personEditTooltip}"
-                                    press=".onOpenPersonDetailDialog"
-                                    class="iconAction"
-                                    visible="{= !${ui>/personsEmpty} }"
-                                />
-                                <Button
-                                    icon="sap-icon://delete"
-                                    type="Transparent"
-                                    tooltip="{i18n>personDeleteButton}"
-                                    press=".onDeletePerson"
-                                    class="iconAction"
-                                    visible="{= !${ui>/personsEmpty} }"
-                                />
-                                <Button
-                                    icon="sap-icon://add"
-                                    type="Transparent"
-                                    tooltip="{i18n>personAddButton}"
-                                    press=".onOpenPersonDialog"
-                                    class="iconAction"
-                                    visible="{= !${ui>/personsEmpty} }"
-                                />
-                                <Button
-                                    icon="sap-icon://log"
-                                    type="Transparent"
-                                    tooltip="{i18n>logoutTooltip}"
-                                    press=".onLogout"
-                                    class="iconAction"
-                                />
-                            </HBox>
+                        </HBox>
+                        <Button
+                            id="themeToggle"
+                            icon="sap-icon://light-mode"
+                            type="Transparent"
+                            tooltip="{i18n>themeDarkTooltip}"
+                            press=".onToggleTheme"
+                            class="iconAction"
+                        />
+                    </HBox>
+                </HBox>
+            </HBox>
+            <VBox class="financeShell">
+                <VBox id="personSection">
+                    <HBox
+                        class="topBar"
+                        justifyContent="SpaceBetween"
+                        alignItems="Center"
+                        wrap="Wrap"
+                    >
+                        <VBox>
+                            <Title
+                                text="{i18n>brandTitle}"
+                                level="H2"
+                                class="brandTitle"
+                            />
+                            <Text
+                                text="{ui>/monthLabel}"
+                                class="brandCaption"
+                            />
+                        </VBox>
+                        <HBox
+                            alignItems="Center"
+                            justifyContent="End"
+                            class="topActions actionButtonsGroup"
+                        >
+                            <Button
+                                icon="sap-icon://share-2"
+                                type="Transparent"
+                                tooltip="{i18n>sharesTooltip}"
+                                press=".onOpenSharesDialog"
+                                class="iconAction"
+                                visible="{= !${ui>/personsEmpty} }"
+                            />
+                            <Button
+                                icon="sap-icon://show"
+                                type="Transparent"
+                                tooltip="{i18n>personEditTooltip}"
+                                press=".onOpenPersonDetailDialog"
+                                class="iconAction"
+                                visible="{= !${ui>/personsEmpty} }"
+                            />
+                            <Button
+                                icon="sap-icon://delete"
+                                type="Transparent"
+                                tooltip="{i18n>personDeleteButton}"
+                                press=".onDeletePerson"
+                                class="iconAction"
+                                visible="{= !${ui>/personsEmpty} }"
+                            />
+                            <Button
+                                icon="sap-icon://add"
+                                type="Transparent"
+                                tooltip="{i18n>personAddButton}"
+                                press=".onOpenPersonDialog"
+                                class="iconAction"
+                                visible="{= !${ui>/personsEmpty} }"
+                            />
+                            <Button
+                                icon="sap-icon://log"
+                                type="Transparent"
+                                tooltip="{i18n>logoutTooltip}"
+                                press=".onLogout"
+                                class="iconAction"
+                            />
                         </HBox>
                     </HBox>
                         <MessageStrip

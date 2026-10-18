@@ -47,6 +47,18 @@
         body > div, #container, #container-uiarea {
             height: 100%;
         }
+        /* Dialogs esticados (ex.: lista dos selects no celular) são fixos na
+           viewport e ignoram o padding do body, então recebem as mesmas
+           margens de segurança. */
+        html body .sapMDialog.sapMDialogStretched {
+            top: env(safe-area-inset-top, 0px) !important;
+            bottom: env(safe-area-inset-bottom, 0px) !important;
+            left: env(safe-area-inset-left, 0px) !important;
+            right: env(safe-area-inset-right, 0px) !important;
+            width: auto !important;
+            height: auto !important;
+            max-height: none !important;
+        }
 
         /* Previne o auto-zoom do iOS/webview ao tocar em campos de texto. */
         @supports (-webkit-touch-callout: none) {

@@ -230,22 +230,6 @@ html body .sectionTabs.sapMITB .sapMITBHead .sapMITBFilter:active .sapMITBFilter
 .cardManagerAvatar .sapFAvatar { background: var(--teal-050); color: var(--teal-700); }
 .cardManagerPhoto .sapUiUnifiedFileUploader { width: auto; }
 
-.responsiveTopActions {
-    justify-content: flex-end;
-}
-
-@media (max-width: 768px) {
-    .responsiveTopActions {
-        width: 100% !important;
-        justify-content: center !important;
-        margin-top: 0.5rem;
-    }
-    
-    .responsiveTopActions > * {
-        margin-bottom: 0.25rem;
-    }
-}
-
 /* Avisos de rascunho da pessoa selecionada */
 .personDraftStrip { border-radius: .75rem; }
 .personDraftStrip .sapMMsgStripMessage,

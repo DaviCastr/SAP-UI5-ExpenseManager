@@ -1,7 +1,10 @@
 @media (max-width: 600px) {
     .financeShell { padding: 1rem; }
     .topBar { align-items: flex-start; }
-    .personLabel { display: none; }
+    .appHeaderInner { padding: .5rem 1rem; }
+    .appHeaderActions { flex: 1 1 auto; }
+    .personPicker { flex: 0 1 auto; }
+    .personPicker .personSelect { width: auto !important; min-width: 7rem; max-width: 52vw; }
     .primaryAction .sapMBtnContent { font-size: .78rem; }
     .balanceHero { padding: 1.4rem; }
     .heroTitle { font-size: 1.55rem; }
