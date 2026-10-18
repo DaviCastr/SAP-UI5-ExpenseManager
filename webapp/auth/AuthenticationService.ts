@@ -8,6 +8,8 @@ export class AuthenticationService {
 
     private static sessionExpiredHandler: (() => void) | null = null;
 
+    private static signedOutHandler: (() => void) | null = null;
+
     private static authErrorHandler: ((message: string) => void) | null = null;
 
     private static authErrorPending = false;
@@ -40,6 +42,8 @@ export class AuthenticationService {
 
         await this.provider.logout();
 
+        this.signedOutHandler?.();
+
     }
 
     public static getSession(): UserSession | null {
@@ -57,6 +61,12 @@ export class AuthenticationService {
     public static onSessionExpired(handler: () => void): void {
 
         this.sessionExpiredHandler = handler;
+
+    }
+
+    public static onSignedOut(handler: () => void): void {
+
+        this.signedOutHandler = handler;
 
     }
 

@@ -228,6 +228,22 @@ export default class UiModel extends JSONModel {
 
     constructor() {
 
+        super(UiModel.initialState());
+
+    }
+
+    /**
+     * Volta ao estado inicial, para nada do usuário anterior (pessoa
+     * selecionada, listas, dialogs) sobreviver ao logout.
+     */
+    public reset(): void {
+
+        this.setData(UiModel.initialState());
+
+    }
+
+    private static initialState(): IUiState {
+
         const now = new Date();
         const today = new Date().toISOString().slice(0, 10);
 
@@ -435,7 +451,7 @@ export default class UiModel extends JSONModel {
 
         };
 
-        super(data);
+        return data;
 
     }
 

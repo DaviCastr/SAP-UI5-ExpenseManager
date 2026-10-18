@@ -97,20 +97,24 @@
     ></script>
     <script>
         // Aplica o tema salvo antes do UI5 carregar, evitando "flash" do claro.
-        // O valor é gravado em JSON por sap/ui/util/Storage, por isso o JSON.parse.
+        // O valor é gravado em JSON por sap/ui/util/Storage (com o prefixo padrão
+        // "state.key_-" na chave), por isso a chave completa e o JSON.parse.
         (function () {
             try {
                 var stored = null;
                 try {
-                    stored = JSON.parse(sessionStorage.getItem("expensemanager-theme"));
+                    stored = JSON.parse(localStorage.getItem("state.key_-expensemanager-theme"));
                 } catch (e) {
                     stored = null;
                 }
                 if (stored === "dark") {
                     document.documentElement.setAttribute("data-theme", "dark");
+                    // O dark.css só chega depois, com o UI5: a cor do header já
+                    // vai aqui para o body (e a barra de status) abrir escuro.
+                    document.documentElement.style.setProperty("--header-bg", "#142422");
                     document.querySelector("meta[name='theme-color']").setAttribute("content", "#142422");
                 }
-            } catch (e) { /* sessionStorage indisponível (ex.: modo privado) */ }
+            } catch (e) { /* localStorage indisponível (ex.: modo privado) */ }
         })();
     </script>
 </head>
