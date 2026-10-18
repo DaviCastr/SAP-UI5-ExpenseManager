@@ -178,14 +178,7 @@ sap.ui.define(["sap/m/MessageToast", "sap/ui/core/Fragment", "sap/m/MessageBox",
       } catch (error) {
         console.error("[logout]", error);
       }
-      // Recarrega a página na tela de login para descartar todo o estado em
-      // memória da conta anterior: model OData (com o token antigo no header
-      // e o cache), model "ui", abas e dialogs. Sem isso, outra conta entrava
-      // vendo os dados da anterior. Trocar só o hash (#/login) não recarrega,
-      // por isso o reload explícito; sem a query string, um "?code=" do OAuth
-      // não é reprocessado.
-      window.history.replaceState(null, "", `${window.location.pathname}#/login`);
-      window.location.reload();
+      this.navTo("Login");
     }
     onOpenExpenseDialog() {
       this.prepareExpenseDialogState();

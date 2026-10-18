@@ -2,10 +2,12 @@ sap.ui.define(["sap/ui/core/Core", "sap/ui/util/Storage"], function (Core, Stora
   "use strict";
 
   const THEME_KEY = "expensemanager-theme";
-  const THEME_STORAGE = new Storage(Storage.Type.session);
+  // localStorage: o tema sobrevive ao fechar o app, então ele já abre no tema
+  // escolhido (e o iOS lê a cor da barra de status já no tema certo).
+  const THEME_STORAGE = new Storage(Storage.Type.local);
 
   /**
-   * Preferência de tema do app, persistida em sessionStorage via sap.ui.util.Storage.
+   * Preferência de tema do app, persistida em localStorage via sap.ui.util.Storage.
    * O Storage grava os valores em formato JSON (JSON.stringify), por isso a leitura
    * crua no pré-boot do index.html precisa usar JSON.parse para obter o valor.
    */
@@ -15,8 +17,24 @@ sap.ui.define(["sap/ui/core/Core", "sap/ui/util/Storage"], function (Core, Stora
   }
   function setHtmlTheme(dark) {
     document.documentElement.setAttribute("data-theme", dark ? "dark" : "");
-    // Pinta a barra de status (PWA/navegador) na cor do header do tema ativo.
-    document.querySelector("meta[name='theme-color']")?.setAttribute("content", dark ? "#142422" : "#ffffff");
+    // A cor fixada pelo pré-boot (index.html) daria o header escuro no claro.
+    document.documentElement.style.removeProperty("--header-bg");
+    applyStatusBarColor(dark ? "#142422" : "#ffffff");
+  }
+
+  /**
+   * Pinta a barra de status (PWA/navegador) na cor do header. O iOS usa a cor de
+   * fundo do body e não repinta só porque a variável CSS mudou: a cor vai inline
+   * no html/body e a meta theme-color é recriada, que é o que o WebKit observa.
+   */
+  function applyStatusBarColor(color) {
+    document.documentElement.style.setProperty("background-color", color, "important");
+    document.body?.style.setProperty("background-color", color, "important");
+    document.querySelector("meta[name='theme-color']")?.remove();
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = color;
+    document.head.appendChild(meta);
   }
   function applyThemePreference(dark) {
     THEME_STORAGE.put(THEME_KEY, dark ? "dark" : "light");

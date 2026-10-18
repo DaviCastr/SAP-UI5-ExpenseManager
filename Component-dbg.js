@@ -1,4 +1,4 @@
-sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "sap/m/MessageBox", "./model/models", "./model/UiModel", "./auth/AuthenticationService", "./auth/providers/AuthenticatedProviderFactory", "./auth/providers/XsuaaAuthHelper", "./auth/storage/SessionStorage", "./util/Environment", "./util/http", "./util/feedback", "./util/theme"], function (BaseComponent, ODataModel, MessageBox, ___model_models, __UiModel, ___auth_AuthenticationService, ___auth_providers_AuthenticatedProviderFactory, ___auth_providers_XsuaaAuthHelper, ___auth_storage_SessionStorage, __Environment, ___util_http, ___util_feedback, ___util_theme) {
+sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "sap/m/MessageBox", "./model/models", "./model/UiModel", "./auth/AuthenticationService", "./auth/providers/AuthenticatedProviderFactory", "./auth/providers/XsuaaAuthHelper", "./auth/storage/SessionStorage", "./util/Environment", "./util/http", "./util/feedback", "./util/theme", "./util/personEvents"], function (BaseComponent, ODataModel, MessageBox, ___model_models, __UiModel, ___auth_AuthenticationService, ___auth_providers_AuthenticatedProviderFactory, ___auth_providers_XsuaaAuthHelper, ___auth_storage_SessionStorage, __Environment, ___util_http, ___util_feedback, ___util_theme, ___util_personEvents) {
   "use strict";
 
   function _interopRequireDefault(obj) {
@@ -16,6 +16,8 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
   const isBackendUnavailableError = ___util_http["isBackendUnavailableError"];
   const getBackendErrorMessage = ___util_feedback["getBackendErrorMessage"];
   const ensureThemeApplied = ___util_theme["ensureThemeApplied"];
+  const PERSON_CHANNEL = ___util_personEvents["PERSON_CHANNEL"];
+  const PERSON_DRAFT_CLOSING = ___util_personEvents["PERSON_DRAFT_CLOSING"];
   /**
    * @namespace apps.dflc.expensemanager
    */
@@ -54,6 +56,7 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
       this.registerGlobalErrorHandlers();
       AuthenticationService.initialize(AuthenticatedProviderFactory.create());
       AuthenticationService.onSessionExpired(() => this.handleSessionExpired());
+      AuthenticationService.onSignedOut(() => this.resetServiceModel());
       AuthenticationService.onAuthError(message => this.handleAuthError(message));
       this.setModel(createDeviceModel(), "device");
       this.setModel(new UiModel(), "ui");
@@ -227,6 +230,20 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
         XsuaaAuthHelper.setServiceUrl(uri);
       }
     },
+    /**
+     * Descarta o model de serviço e o estado da UI no logout, para o próximo
+     * usuário nunca ver dados em cache do anterior. A Home percebe o model
+     * novo no próximo login (isServiceOutdated) e recarrega tudo.
+     */
+    resetServiceModel: function _resetServiceModel() {
+      const model = this.getModel();
+      this.getEventBus().publish(PERSON_CHANNEL, PERSON_DRAFT_CLOSING);
+      this._serviceModelPromise = null;
+      this._modelToken = "";
+      this.setModel(null);
+      model?.destroy();
+      this.getModel("ui").reset();
+    },
     handleSessionExpired: function _handleSessionExpired() {
       if (this._sessionExpiredShown) {
         return;
@@ -242,10 +259,8 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
         icon: MessageBox.Icon.WARNING,
         onClose: () => {
           this._sessionExpiredShown = false;
-          // Mesmo motivo do logout: recarregar descarta o model OData e o
-          // estado em memória da sessão expirada antes do próximo login.
-          window.history.replaceState(null, "", `${window.location.pathname}#/login`);
-          window.location.reload();
+          this.resetServiceModel();
+          this.getRouter().navTo("Login");
         }
       });
     },

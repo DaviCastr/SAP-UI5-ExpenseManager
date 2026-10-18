@@ -14,6 +14,7 @@ import Environment, { EnvironmentType } from "./util/Environment";
 import { isSessionExpiredError, isBackendUnavailableError } from "./util/http";
 import { getBackendErrorMessage } from "./util/feedback";
 import { ensureThemeApplied } from "./util/theme";
+import { PERSON_CHANNEL, PERSON_DRAFT_CLOSING } from "./util/personEvents";
 import type Home from "./controller/Home.controller";
 
 /**
@@ -66,6 +67,7 @@ export default class Component extends BaseComponent {
         );
 
         AuthenticationService.onSessionExpired(() => this.handleSessionExpired());
+        AuthenticationService.onSignedOut(() => this.resetServiceModel());
         AuthenticationService.onAuthError((message) => this.handleAuthError(message));
 
         this.setModel(createDeviceModel(), "device");
@@ -278,6 +280,22 @@ export default class Component extends BaseComponent {
         }
     }
 
+    /**
+     * Descarta o model de serviço e o estado da UI no logout, para o próximo
+     * usuário nunca ver dados em cache do anterior. A Home percebe o model
+     * novo no próximo login (isServiceOutdated) e recarrega tudo.
+     */
+    private resetServiceModel(): void {
+        const model = this.getModel() as ODataModel | undefined;
+
+        this.getEventBus().publish(PERSON_CHANNEL, PERSON_DRAFT_CLOSING);
+        this._serviceModelPromise = null;
+        this._modelToken = "";
+        this.setModel(null as unknown as ODataModel);
+        model?.destroy();
+        (this.getModel("ui") as UiModel).reset();
+    }
+
     private handleSessionExpired(): void {
         if (this._sessionExpiredShown) {
             return;
@@ -296,10 +314,8 @@ export default class Component extends BaseComponent {
             icon: MessageBox.Icon.WARNING,
             onClose: () => {
                 this._sessionExpiredShown = false;
-                // Mesmo motivo do logout: recarregar descarta o model OData e o
-                // estado em memória da sessão expirada antes do próximo login.
-                window.history.replaceState(null, "", `${window.location.pathname}#/login`);
-                window.location.reload();
+                this.resetServiceModel();
+                this.getRouter().navTo("Login");
             }
         });
     }
