@@ -199,7 +199,12 @@ export default class Home extends BaseController {
         } catch (error) {
             console.error("[logout]", error);
         }
-        this.navTo("Login");
+        // Recarrega a página na tela de login para descartar todo o estado em
+        // memória da conta anterior: model OData (com o token antigo no header
+        // e o cache), model "ui", abas e dialogs. Sem isso, outra conta entrava
+        // vendo os dados da anterior. Sem a query string, um "?code=" do OAuth
+        // não é reprocessado.
+        window.location.replace(`${window.location.pathname}#/login`);
     }
 
     public onOpenExpenseDialog(): void {

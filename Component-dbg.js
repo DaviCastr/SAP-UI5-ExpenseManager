@@ -242,7 +242,9 @@ sap.ui.define(["sap/ui/core/UIComponent", "sap/ui/model/odata/v4/ODataModel", "s
         icon: MessageBox.Icon.WARNING,
         onClose: () => {
           this._sessionExpiredShown = false;
-          this.getRouter().navTo("Login");
+          // Mesmo motivo do logout: recarregar descarta o model OData e o
+          // estado em memória da sessão expirada antes do próximo login.
+          window.location.replace(`${window.location.pathname}#/login`);
         }
       });
     },
