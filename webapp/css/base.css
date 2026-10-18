@@ -10,6 +10,7 @@
     --line: #e7eeee;
     --line-soft: #d5e3e1;
     --white: #ffffff;
+    --header-bg: #ffffff;
 
     /* Substitui o azul padrão do tema pelos tons da marca */
     --sapContent_FocusColor: var(--teal-700);
